@@ -257,8 +257,73 @@
               </div>
             </div>
 
+        </div>
+
+        <!-- SENTENCE BUILDER & SPEECH SYNTHESIS PANEL -->
+        <div class="sentence-builder-card" id="sentence-builder-card">
+          <div class="sb-header">
+            <div class="sb-header-left">
+              <span class="sb-title">🗣️ Live Sentence Builder</span>
+              <span id="sb-word-count" class="sb-badge">0 words</span>
+            </div>
+            <div class="sb-header-right">
+              <label class="sb-toggle-label" title="Automatically append recognized signs to the sentence">
+                <input type="checkbox" id="sb-auto-add-toggle" checked>
+                <span class="sb-toggle-text">Auto-Add (Conf &gt; 45%)</span>
+              </label>
+            </div>
           </div>
 
+          <!-- Sentence text display box -->
+          <div id="sb-display-box" class="sb-display-box" role="region" aria-label="Assembled Sentence" aria-live="polite">
+            <div id="sb-empty-state" class="sb-empty-state">
+              <span>Signs recognized from camera or upload will assemble here into complete sentences.</span>
+            </div>
+            <div id="sb-words-container" class="sb-words-container"></div>
+          </div>
+
+          <!-- Controls bar -->
+          <div class="sb-actions-bar">
+            <div class="sb-actions-left">
+              <button id="sb-btn-speak" class="sb-btn sb-btn-primary" title="Speak sentence aloud using text-to-speech">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                <span>Speak Sentence</span>
+              </button>
+              <button id="sb-btn-copy" class="sb-btn sb-btn-secondary" title="Copy sentence text to clipboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span id="sb-copy-text">Copy Text</span>
+              </button>
+              <button id="sb-btn-add-current" class="sb-btn sb-btn-secondary" title="Add currently recognized sign">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Add Current Sign</span>
+              </button>
+            </div>
+            <div class="sb-actions-right">
+              <button id="sb-btn-backspace" class="sb-btn sb-btn-ghost" title="Remove last word">
+                <span>⌫ Backspace</span>
+              </button>
+              <button id="sb-btn-clear" class="sb-btn sb-btn-ghost sb-btn-danger" title="Clear entire sentence">
+                <span>Clear All</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick High-Accuracy Vocabulary Chips -->
+          <div class="sb-quick-chips-row">
+            <span class="sb-chips-label">⭐ High Accuracy ASL Words:</span>
+            <div class="sb-chips-scroll">
+              <button class="sb-quick-chip" data-gloss="APPLE">APPLE</button>
+              <button class="sb-quick-chip" data-gloss="BLUE">BLUE</button>
+              <button class="sb-quick-chip" data-gloss="LABEL">LABEL</button>
+              <button class="sb-quick-chip" data-gloss="FAMILY">FAMILY</button>
+              <button class="sb-quick-chip" data-gloss="BREAK">BREAK</button>
+              <button class="sb-quick-chip" data-gloss="DEPARTMENT">DEPARTMENT</button>
+              <button class="sb-quick-chip" data-gloss="INDEPENDENT">INDEPENDENT</button>
+              <button class="sb-quick-chip" data-gloss="BADGE">BADGE</button>
+              <button class="sb-quick-chip" data-gloss="HUNDRED">HUNDRED</button>
+              <button class="sb-quick-chip" data-gloss="EIGHT">EIGHT</button>
+            </div>
+          </div>
         </div>
 
       </div>

@@ -76,6 +76,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const practiceTargetGloss     = document.getElementById('practice-target-gloss');
   const btnCancelPractice       = document.getElementById('btn-cancel-practice');
 
+  // Sentence Builder DOM Elements
+  const sbWordCount             = document.getElementById('sb-word-count');
+  const sbAutoAddToggle         = document.getElementById('sb-auto-add-toggle');
+  const sbEmptyState            = document.getElementById('sb-empty-state');
+  const sbWordsContainer        = document.getElementById('sb-words-container');
+  const sbBtnSpeak              = document.getElementById('sb-btn-speak');
+  const sbBtnCopy               = document.getElementById('sb-btn-copy');
+  const sbCopyText              = document.getElementById('sb-copy-text');
+  const sbBtnAddCurrent         = document.getElementById('sb-btn-add-current');
+  const sbBtnBackspace          = document.getElementById('sb-btn-backspace');
+  const sbBtnClear              = document.getElementById('sb-btn-clear');
+  const sbQuickChips            = document.querySelectorAll('.sb-quick-chip');
+
   // --------------------------------------------------------------------------
   // Pipeline Parameters & State
   // --------------------------------------------------------------------------
@@ -839,6 +852,12 @@ document.addEventListener('DOMContentLoaded', () => {
         confidenceAssessment.textContent = 'Sign clearly and complete the full motion';
       }
     }
+
+    // Auto-add high-confidence signs to Sentence Builder
+    if (sbAutoAddToggle && sbAutoAddToggle.checked && conf >= 45.0) {
+      addWordToSentence(gloss, true);
+    }
+
     renderTop5List(result.top_k);
   }
 
@@ -849,7 +868,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const rank   = String(i + 1).padStart(2, '0');
       const target = targetPracticeGloss && item.gloss.toUpperCase() === targetPracticeGloss.toUpperCase();
       return `
-        <div class="ranking-item ${target ? 'target-match' : ''}" role="listitem">
+        <div class="ranking-item ${target ? 'target-match' : ''}" role="listitem" data-gloss="${item.gloss}" title="Click to add '${item.gloss}' to sentence">
           <span class="rank-num">${rank}</span>
           <span class="rank-gloss" title="${item.gloss}">${item.gloss}</span>
           <div class="rank-bar-bg" aria-hidden="true">
@@ -858,6 +877,21 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="rank-prob">${prob}%</span>
         </div>`;
     }).join('');
+
+    // Clicking any candidate in Top-5 list immediately selects it and adds to sentence
+    top5List.querySelectorAll('.ranking-item:not(.empty)').forEach(el => {
+      el.addEventListener('click', () => {
+        const selectedGloss = el.getAttribute('data-gloss');
+        if (selectedGloss) {
+          primaryGloss.textContent = selectedGloss;
+          primaryGloss.classList.remove('update-pulse');
+          void primaryGloss.offsetWidth;
+          primaryGloss.classList.add('update-pulse');
+          addWordToSentence(selectedGloss, false);
+          updateCameraStatus(`Selected '${selectedGloss}' → Added to sentence`, 'active');
+        }
+      });
+    });
   }
 
   function setProcessingUI(msg) {
@@ -884,5 +918,143 @@ document.addEventListener('DOMContentLoaded', () => {
     lastStableGloss    = '—';
     consecutiveMatches = 0;
   }
+
+  // --------------------------------------------------------------------------
+  // Sentence Builder & Speech Synthesis Logic
+  // --------------------------------------------------------------------------
+  let sentenceWords     = [];
+  let lastAutoAddedWord = '';
+  let lastAutoAddedTime = 0;
+
+  function addWordToSentence(word, isAuto = false) {
+    if (!word || word === '—' || word === 'Analyzing…' || word.startsWith('Waiting')) return;
+    const cleanWord = word.trim().toUpperCase();
+    const now = Date.now();
+
+    // Prevent adding same sign continuously in live streaming within 2.5 seconds
+    if (isAuto) {
+      if (cleanWord === lastAutoAddedWord && (now - lastAutoAddedTime < 2500)) {
+        return;
+      }
+    }
+
+    sentenceWords.push(cleanWord);
+    lastAutoAddedWord = cleanWord;
+    lastAutoAddedTime = now;
+    renderSentenceUI();
+  }
+
+  function removeWordFromSentence(index) {
+    if (index >= 0 && index < sentenceWords.length) {
+      sentenceWords.splice(index, 1);
+      renderSentenceUI();
+    }
+  }
+
+  function backspaceSentence() {
+    if (sentenceWords.length > 0) {
+      sentenceWords.pop();
+      renderSentenceUI();
+    }
+  }
+
+  function clearSentence() {
+    sentenceWords = [];
+    lastAutoAddedWord = '';
+    renderSentenceUI();
+  }
+
+  function renderSentenceUI() {
+    if (!sbWordsContainer) return;
+    const count = sentenceWords.length;
+    if (sbWordCount) sbWordCount.textContent = `${count} word${count === 1 ? '' : 's'}`;
+
+    if (count === 0) {
+      if (sbEmptyState) sbEmptyState.classList.remove('hidden');
+      sbWordsContainer.innerHTML = '';
+    } else {
+      if (sbEmptyState) sbEmptyState.classList.add('hidden');
+      sbWordsContainer.innerHTML = sentenceWords.map((word, idx) => `
+        <span class="sb-word-chip" data-idx="${idx}">
+          <span>${word}</span>
+          <button class="sb-word-remove" title="Remove word" aria-label="Remove ${word}">&times;</button>
+        </span>
+      `).join('');
+
+      sbWordsContainer.querySelectorAll('.sb-word-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const chip = e.target.closest('.sb-word-chip');
+          const idx = parseInt(chip.getAttribute('data-idx'), 10);
+          removeWordFromSentence(idx);
+        });
+      });
+    }
+  }
+
+  function speakSentence() {
+    if (sentenceWords.length === 0) {
+      updateCameraStatus('Sentence is empty — sign words first!', 'neutral');
+      return;
+    }
+    const text = sentenceWords.join(' ').toLowerCase();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.lang = 'en-US';
+
+      if (sbBtnSpeak) sbBtnSpeak.classList.add('speaking');
+      utterance.onend = () => { if (sbBtnSpeak) sbBtnSpeak.classList.remove('speaking'); };
+      utterance.onerror = () => { if (sbBtnSpeak) sbBtnSpeak.classList.remove('speaking'); };
+
+      window.speechSynthesis.speak(utterance);
+      updateCameraStatus(`Speaking: "${text}"`, 'active');
+    } else {
+      alert('Text-to-speech is not supported in this browser.');
+    }
+  }
+
+  function copySentence() {
+    if (sentenceWords.length === 0) return;
+    const text = sentenceWords.join(' ');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (sbCopyText) sbCopyText.textContent = 'Copied!';
+        setTimeout(() => { if (sbCopyText) sbCopyText.textContent = 'Copy Text'; }, 1800);
+      }).catch(() => {});
+    }
+  }
+
+  // Sentence Builder event listeners
+  if (sbBtnSpeak)      sbBtnSpeak.addEventListener('click', speakSentence);
+  if (sbBtnCopy)       sbBtnCopy.addEventListener('click', copySentence);
+  if (sbBtnBackspace)  sbBtnBackspace.addEventListener('click', backspaceSentence);
+  if (sbBtnClear)      sbBtnClear.addEventListener('click', clearSentence);
+  if (sbBtnAddCurrent) {
+    sbBtnAddCurrent.addEventListener('click', () => {
+      const current = primaryGloss?.textContent;
+      if (current && current !== '—' && current !== 'Analyzing…') {
+        addWordToSentence(current, false);
+      }
+    });
+  }
+
+  // Quick high-accuracy vocabulary chips
+  if (sbQuickChips) {
+    sbQuickChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const gloss = chip.getAttribute('data-gloss');
+        if (gloss) {
+          addWordToSentence(gloss, false);
+          updateCameraStatus(`Added '${gloss}' to sentence`, 'active');
+        }
+      });
+    });
+  }
+
+  // Initial Sentence Builder render
+  renderSentenceUI();
 
 }); // end DOMContentLoaded
