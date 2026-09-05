@@ -157,7 +157,24 @@
                   <button id="btn-toggle-camera" class="btn-secondary" disabled>
                     <span>Stop Camera</span>
                   </button>
-                  <span class="guidance-hint">Tip: Position your upper body and hands clearly in frame.</span>
+                  <button id="btn-capture-sign" class="btn-sign-action" disabled title="Click or press Spacebar to perform and recognize a sign (2 seconds)">
+                    <span>⚡ Sign Now (Space)</span>
+                  </button>
+                  <button id="btn-toggle-debug" class="btn-secondary" title="Toggle Real-Time Debug HUD (D)">
+                    <span>🛠️ Debug</span>
+                  </button>
+                  <span class="guidance-hint">Click <strong>Sign Now</strong> or hold <strong>Space</strong> to sign.</span>
+                </div>
+
+                <!-- Recording Progress Indicator Bar -->
+                <div id="capture-progress-container" class="capture-progress-container hidden">
+                  <div class="capture-progress-info">
+                    <span id="capture-status-text">Recording sign gesture…</span>
+                    <span id="capture-time-text">2.0s</span>
+                  </div>
+                  <div class="capture-progress-track">
+                    <div id="capture-progress-fill" class="capture-progress-fill"></div>
+                  </div>
                 </div>
               </div>
             </div>

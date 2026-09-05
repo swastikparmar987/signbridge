@@ -555,17 +555,86 @@ html, body {
 }
 
 .camera-controls-bar {
-  padding: 16px 20px;
+  padding: 14px 18px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   border-top: 1px solid var(--border-light);
   background-color: var(--bg-surface);
+  flex-wrap: wrap;
+}
+
+.btn-sign-action {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-sign-action:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
+}
+
+.btn-sign-action.recording {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  animation: pulse-recording 1s infinite alternate ease-in-out;
+}
+
+@keyframes pulse-recording {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  100% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}
+
+.capture-progress-container {
+  padding: 8px 18px 14px;
+  background-color: var(--bg-surface);
+  border-top: 1px dashed var(--border-light);
+}
+
+.capture-progress-container.hidden {
+  display: none;
+}
+
+.capture-progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 6px;
+}
+
+.capture-progress-track {
+  width: 100%;
+  height: 6px;
+  background-color: var(--bg-surface-subtle);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.capture-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #06b6d4);
+  border-radius: 3px;
+  transition: width 0.05s linear;
 }
 
 .guidance-hint {
   font-size: 0.8125rem;
   color: var(--text-muted);
+  flex-grow: 1;
+  text-align: right;
 }
 
 .upload-dropzone {
