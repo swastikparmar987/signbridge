@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Dataset (too large — 46GB)
+dataset/
+
+# Landmark caches (regenerated automatically)
+landmark_cache/
+landmark_interpolation_cache/
+landmark_pose_cache/
+landmark_cache_full/
+
+# Environment variables & secrets
+.env
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+logs/
+
+# PyTorch / ML artifacts
+*.pyc
+wandb/
+runs/
+
+# Node
+node_modules/

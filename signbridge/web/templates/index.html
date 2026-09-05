@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignBridge — Turning signs into understanding</title>
+  <meta name="description" content="Real-time sign language recognition and learning, designed to make communication feel effortless.">
+  
+  <!-- Inter & System Font Preloads -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- MediaPipe Hands & Camera Dependencies (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <!-- Skip link for keyboard accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="app-wrapper">
+    <!-- Header / Brand Area -->
+    <header class="site-header" role="banner">
+      <div class="header-container">
+        
+        <div class="brand">
+          <div class="brand-logo" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 16C6 10.4772 10.4772 6 16 6C21.5228 6 26 10.4772 26 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="9" cy="20" r="3" fill="currentColor"/>
+              <circle cx="23" cy="20" r="3" fill="currentColor"/>
+              <path d="M12 20H20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="brand-title">SIGNBRIDGE</span>
+        </div>
+
+        <!-- Primary Top View Navigation -->
+        <nav class="top-nav" aria-label="Main application mode">
+          <button id="nav-recognize" class="nav-btn active" aria-current="page">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="10 8 16 12 10 16 10 8"></polygon>
+            </svg>
+            <span>Recognize</span>
+          </button>
+
+          <button id="nav-learn" class="nav-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span>Learn & Practice</span>
+          </button>
+
+          <button id="btn-teach-me-top" class="nav-btn-highlight" title="Pick a random sign to learn">
+            <span>🎲 Teach Me Something</span>
+          </button>
+        </nav>
+
+        <div class="header-badge" id="system-status-badge">
+          <span class="status-indicator-dot"></span>
+          <span id="system-status-text">Model Ready (2,731 Glosses)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main">
+      
+      <!-- ==================================================================== -->
+      <!-- VIEW 1: RECOGNIZE MODE (Camera / Video Upload)                        -->
+      <!-- ==================================================================== -->
+      <div id="view-recognize" class="view-section active">
+        
+        <!-- Hero Header -->
+        <section class="hero-section">
+          <h1 class="hero-headline">Turning signs into understanding.</h1>
+          <p class="hero-subline">Real-time sign language recognition, designed to make communication feel effortless.</p>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <div class="mode-tabs-container" role="tablist" aria-label="Input mode selection">
+          <button id="tab-camera" class="mode-tab active" role="tab" aria-selected="true" aria-controls="panel-camera">
+            <svg class="tab-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            <span>Use Camera</span>
+            <span class="tab-badge-primary">Recommended</span>
+          </button>
+
+          <button id="tab-upload" class="mode-tab" role="tab" aria-selected="false" aria-controls="panel-upload">
+            <svg class="tab-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>Upload Video</span>
+          </button>
+        </div>
+
+        <!-- Target Practice Goal Banner (Visible when practicing a specific sign) -->
+        <div id="practice-target-banner" class="practice-target-banner hidden">
+          <div class="banner-content">
+            <span class="banner-badge">PRACTICE MODE</span>
+            <span class="banner-text">Target Sign: <strong id="practice-target-gloss">APPLE</strong></span>
+            <button id="btn-cancel-practice" class="btn-text-muted">Exit Practice</button>
+          </div>
+        </div>
+
+        <!-- Application Workspace Layout (Two Columns on Desktop) -->
+        <div class="workspace-grid">
+          
+          <!-- Left Column: Input Stream / Camera / Dropzone -->
+          <div class="input-card-container">
+            
+            <!-- CAMERA PANEL -->
+            <div id="panel-camera" class="tab-panel active" role="tabpanel" aria-labelledby="tab-camera">
+              <div class="preview-card">
+                
+                <!-- Video & Canvas Overlay Stack -->
+                <div class="video-container">
+                  <video id="webcam-feed" autoplay playsinline muted></video>
+                  <canvas id="landmark-canvas"></canvas>
+                  
+                  <!-- Status Overlay Badge -->
+                  <div class="status-overlay-badge" id="camera-status-badge">
+                    <span class="pulse-dot"></span>
+                    <span id="camera-status-text">Camera off</span>
+                  </div>
+
+                  <!-- Initial Start Overlay -->
+                  <div id="camera-prompt-overlay" class="prompt-overlay">
+                    <div class="prompt-content">
+                      <div class="prompt-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                          <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                      </div>
+                      <h2>Start Your Camera</h2>
+                      <p>Show your signing hands to the camera for instant recognition.</p>
+                      <button id="btn-start-camera" class="btn-primary">
+                        <span>Enable Camera</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Camera Controls Bar -->
+                <div class="camera-controls-bar">
+                  <button id="btn-toggle-camera" class="btn-secondary" disabled>
+                    <span>Stop Camera</span>
+                  </button>
+                  <span class="guidance-hint">Tip: Position your upper body and hands clearly in frame.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- UPLOAD PANEL -->
+            <div id="panel-upload" class="tab-panel" role="tabpanel" aria-labelledby="tab-upload">
+              <div class="preview-card">
+                
+                <!-- Upload Dropzone -->
+                <div id="dropzone" class="upload-dropzone" tabindex="0" role="button" aria-label="Drop sign language video here or click to select">
+                  <input type="file" id="video-file-input" accept="video/mp4,video/webm,video/quicktime,video/avi" class="file-input-hidden">
+                  <div class="dropzone-content">
+                    <div class="upload-icon">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                      </svg>
+                    </div>
+                    <h2>Drop a sign video here</h2>
+                    <p>or click to browse your files (MP4, MOV, WEBM)</p>
+                    <span class="file-limits-note">Supports videos with clear view of signing hands</span>
+                  </div>
+                </div>
+
+                <!-- Uploaded Video Preview Container -->
+                <div id="upload-preview-container" class="upload-preview-container hidden">
+                  <video id="upload-video-player" controls playsinline></video>
+                  <div class="upload-file-bar">
+                    <span id="upload-file-name" class="upload-file-name">filename.mp4</span>
+                    <button id="btn-reupload" class="btn-text">Choose Another Video</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Prediction Results -->
+          <div class="results-card-container">
+            
+            <!-- Primary Hero Prediction Box -->
+            <div class="hero-prediction-card" id="hero-prediction-card">
+              
+              <div class="prediction-header">
+                <span class="prediction-meta-label">CURRENT RECOGNITION</span>
+                <span id="confidence-badge" class="confidence-badge neutral">Awaiting Input</span>
+              </div>
+
+              <!-- Main Recognized Gloss -->
+              <div class="gloss-display-container">
+                <span id="primary-gloss" class="primary-gloss" aria-live="polite">—</span>
+              </div>
+
+              <!-- Confidence Percent & Assessment -->
+              <div class="confidence-score-container">
+                <span id="primary-confidence" class="primary-confidence">0.0%</span>
+                <span id="confidence-assessment" class="confidence-assessment">Show a sign to get started</span>
+              </div>
+            </div>
+
+            <!-- Top-5 Possibilities List -->
+            <div class="rankings-card">
+              <div class="rankings-header">
+                <h3>OTHER POSSIBILITIES</h3>
+                <span class="rankings-subtitle">Top 5 model candidates</span>
+              </div>
+
+              <div id="top5-list" class="top5-list" role="list">
+                <div class="ranking-item empty">
+                  <span class="rank-num">01</span>
+                  <span class="rank-gloss">Waiting for sign input...</span>
+                  <div class="rank-bar-bg"><div class="rank-bar-fill" style="width: 0%"></div></div>
+                  <span class="rank-prob">0.0%</span>
+                </div>
+                <div class="ranking-item empty"><span class="rank-num">02</span><span class="rank-gloss">—</span><div class="rank-bar-bg"><div class="rank-bar-fill" style="width: 0%"></div></div><span class="rank-prob">0.0%</span></div>
+                <div class="ranking-item empty"><span class="rank-num">03</span><span class="rank-gloss">—</span><div class="rank-bar-bg"><div class="rank-bar-fill" style="width: 0%"></div></div><span class="rank-prob">0.0%</span></div>
+                <div class="ranking-item empty"><span class="rank-num">04</span><span class="rank-gloss">—</span><div class="rank-bar-bg"><div class="rank-bar-fill" style="width: 0%"></div></div><span class="rank-prob">0.0%</span></div>
+                <div class="ranking-item empty"><span class="rank-num">05</span><span class="rank-gloss">—</span><div class="rank-bar-bg"><div class="rank-bar-fill" style="width: 0%"></div></div><span class="rank-prob">0.0%</span></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ==================================================================== -->
+      <!-- VIEW 2: LEARN & PRACTICE MODE                                         -->
+      <!-- ==================================================================== -->
+      <div id="view-learn" class="view-section">
+        
+        <section class="hero-section">
+          <h1 class="hero-headline">Learn & Practice ASL</h1>
+          <p class="hero-subline">Watch actual sign demonstrations from the ASL Citizen dataset, then practice live with SignBridge feedback.</p>
+        </section>
+
+        <!-- Search & Filter Bar -->
+        <div class="search-filter-container">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="learn-search-input" placeholder="Search 2,731 supported signs (e.g. APPLE, LOVE, WATER)..." aria-label="Search supported signs">
+          </div>
+
+          <!-- Quick Chips -->
+          <div class="quick-chips-container">
+            <button class="chip-btn highlight" id="btn-teach-me-chip">🎲 Teach Me Something</button>
+            <button class="chip-btn" data-gloss="APPLE">🍎 APPLE</button>
+            <button class="chip-btn" data-gloss="LOVE">❤️ LOVE</button>
+            <button class="chip-btn" data-gloss="WATER">💧 WATER</button>
+            <button class="chip-btn" data-gloss="LABEL">🏷️ LABEL</button>
+            <button class="chip-btn" data-gloss="EASTER">🐰 EASTER</button>
+          </div>
+        </div>
+
+        <!-- Two-Column Workspace for Learn Mode -->
+        <div class="workspace-grid">
+          
+          <!-- Left Column: Vocabulary Browser List -->
+          <div class="vocab-browser-card">
+            <div class="card-header">
+              <h3>VOCABULARY CATALOG</h3>
+              <span id="vocab-count-badge" class="badge-subtle">2,731 Signs</span>
+            </div>
+
+            <div id="vocab-list" class="vocab-list" role="list">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+
+          <!-- Right Column: Demonstration & Action Card -->
+          <div class="demo-card-container">
+            
+            <div class="demo-card">
+              
+              <div class="demo-header">
+                <div>
+                  <span class="prediction-meta-label">DEMONSTRATION</span>
+                  <h2 id="demo-gloss-title" class="demo-gloss-title">APPLE</h2>
+                </div>
+                <span id="demo-tier-badge" class="confidence-badge high">High Precision</span>
+              </div>
+
+              <p class="demo-subline">Watch the ASL Citizen dataset demonstration video below, then try signing it yourself.</p>
+
+              <!-- Demonstration Video Player Area -->
+              <div class="demo-video-wrapper">
+                <video id="demo-video-player" controls loop playsinline></video>
+                <div id="demo-video-placeholder" class="demo-placeholder hidden">
+                  <p id="demo-placeholder-text">No demonstration video available for this sign yet.</p>
+                </div>
+              </div>
+
+              <!-- Demonstration Action Button -->
+              <div class="demo-actions">
+                <button id="btn-try-sign" class="btn-primary btn-large">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                  </svg>
+                  <span>Try Signing APPLE</span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer" role="contentinfo">
+      <div class="footer-container">
+        <p>SignBridge &copy; 2026 — Powered by PyTorch & ASL Citizen Dataset (2,731 Glosses)</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
