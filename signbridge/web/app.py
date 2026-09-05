@@ -135,6 +135,13 @@ async def health_check():
 # Learn & Practice Endpoints
 # -------------------------------------------------------------------
 
+@app.get("/api/classes")
+async def get_all_classes():
+    """Return complete list of supported ASL gloss classes."""
+    predictor = get_predictor()
+    return {"count": len(predictor.class_names), "classes": predictor.class_names}
+
+
 @app.get("/api/vocabulary")
 async def get_vocabulary(
     q: Optional[str] = Query(None, description="Search query string"),
@@ -467,3 +474,70 @@ async def predict_video_endpoint(
 
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+class NLPSmoothRequest(BaseModel):
+    glosses: List[str] = Field(..., description="List of recognized ASL gloss tokens")
+
+
+@app.post("/api/nlp/smooth")
+async def nlp_smooth_endpoint(req: NLPSmoothRequest):
+    """
+    NLP Gloss-to-English translation endpoint.
+    Converts raw ASL gloss sequence into natural, fluent English.
+    """
+    raw_glosses = req.glosses
+    if not raw_glosses:
+        return JSONResponse(content={"english": "", "glosses": []})
+
+    cleaned = [g.strip().upper().rstrip("0123456789").removesuffix("/IT") for g in raw_glosses if g.strip()]
+
+    # Quick rule matching
+    idioms = {
+        ("NICE", "MEET", "YOU"): "Nice to meet you!",
+        ("SEE", "YOU", "LATER"): "See you later!",
+        ("GOOD", "MORNING"): "Good morning!",
+        ("GOOD", "NIGHT"): "Good night!",
+        ("HOW", "YOU"): "How are you?",
+        ("YOU", "HOW"): "How are you?",
+        ("NAME", "YOU", "WHAT"): "What is your name?",
+        ("YOU", "NAME", "WHAT"): "What is your name?",
+        ("TIME", "WHAT"): "What time is it?",
+        ("WHERE", "BATHROOM"): "Where is the restroom?",
+        ("BATHROOM", "WHERE"): "Where is the bathroom?",
+        ("HELP", "ME"): "Can you please help me?",
+        ("THANKYOU",): "Thank you very much!",
+        ("SORRY",): "I am sorry.",
+        ("PLEASE",): "Please.",
+        ("HELLO",): "Hello!",
+        ("YES",): "Yes, absolutely.",
+        ("NO",): "No, thank you."
+    }
+
+    key = tuple(cleaned)
+    if key in idioms:
+        return JSONResponse(content={"english": idioms[key], "glosses": cleaned, "idiom": True})
+
+    # Basic grammatical assembly
+    pronouns = {"ME": "I", "I": "I", "MY": "my", "YOU": "you", "YOUR": "your", "WE": "we", "THEY": "they"}
+    tokens = [pronouns.get(w, w.lower()) for w in cleaned]
+
+    if len(tokens) >= 2 and tokens[0] in ["I", "you", "we", "they"]:
+        subj = tokens[0]
+        rest = tokens[1:]
+        if rest[0] in ["want", "like", "need", "eat", "have"]:
+            verb = rest[0]
+            obj = " ".join(rest[1:])
+            article = "an" if obj and obj[0] in "aeiou" else "a"
+            if verb == "want":
+                english = f"{subj} would like {article} {obj}." if obj else f"{subj} want that."
+            elif verb == "eat":
+                english = f"{subj} would like to eat {article} {obj}." if obj else f"{subj} am eating."
+            else:
+                english = f"{subj} {verb} {obj}." if obj else f"{subj} {verb} it."
+        else:
+            english = " ".join(tokens).capitalize() + "."
+    else:
+        english = " ".join(tokens).capitalize() + "."
+
+    return JSONResponse(content={"english": english, "glosses": cleaned, "idiom": False})

@@ -81,13 +81,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const sbAutoAddToggle         = document.getElementById('sb-auto-add-toggle');
   const sbEmptyState            = document.getElementById('sb-empty-state');
   const sbWordsContainer        = document.getElementById('sb-words-container');
+  const sbNlpBox                = document.getElementById('sb-nlp-box');
+  const sbNlpText               = document.getElementById('sb-nlp-text');
+  const sbNlpStatus             = document.getElementById('sb-nlp-status');
   const sbBtnSpeak              = document.getElementById('sb-btn-speak');
   const sbBtnCopy               = document.getElementById('sb-btn-copy');
   const sbCopyText              = document.getElementById('sb-copy-text');
   const sbBtnAddCurrent         = document.getElementById('sb-btn-add-current');
   const sbBtnBackspace          = document.getElementById('sb-btn-backspace');
   const sbBtnClear              = document.getElementById('sb-btn-clear');
+  const sbTtsVoiceSelect        = document.getElementById('sb-tts-voice-select');
+  const sbTtsRate               = document.getElementById('sb-tts-rate');
+  const sbTtsRateVal            = document.getElementById('sb-tts-rate-val');
   const sbQuickChips            = document.querySelectorAll('.sb-quick-chip');
+
+  // Hearing Partner Speech-to-Text (STT) Elements
+  const hpCard                  = document.getElementById('hearing-partner-card');
+  const hpBtnMic                = document.getElementById('hp-btn-mic');
+  const hpMicBadge              = document.getElementById('hp-mic-badge');
+  const hpMicLabel              = document.getElementById('hp-mic-label');
+  const hpSpeechBox             = document.getElementById('hp-speech-box');
+  const hpEmptyState            = document.getElementById('hp-empty-state');
+  const hpTranscriptionText     = document.getElementById('hp-transcription-text');
+  const hpMatchedSignsRow       = document.getElementById('hp-matched-signs-row');
+  const hpMatchedChips          = document.getElementById('hp-matched-chips');
 
   // --------------------------------------------------------------------------
   // Pipeline Parameters & State
@@ -920,11 +937,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --------------------------------------------------------------------------
-  // Sentence Builder & Speech Synthesis Logic
   // --------------------------------------------------------------------------
-  let sentenceWords     = [];
-  let lastAutoAddedWord = '';
-  let lastAutoAddedTime = 0;
+  // ASL Vocabulary Set for NLP & Speech-to-Text
+  // --------------------------------------------------------------------------
+  let allASLGlossesSet = new Set(['APPLE', 'BLUE', 'LABEL', 'FAMILY', 'BREAK', 'DEPARTMENT', 'INDEPENDENT', 'BADGE', 'HUNDRED', 'EIGHT', 'WANT', 'EAT', 'GO', 'HELP', 'LIKE', 'NEED', 'PLEASE', 'THANKYOU', 'SORRY', 'HELLO', 'YES', 'NO', 'TIME', 'WHAT', 'WHERE', 'WHO', 'WHY', 'HOW']);
+
+  fetch('/api/classes')
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.classes && Array.isArray(data.classes)) {
+        allASLGlossesSet = new Set(data.classes.map(c => c.toUpperCase()));
+      }
+    })
+    .catch(() => {});
+
+  // --------------------------------------------------------------------------
+  // Sentence Builder & NLP Translation Logic
+  // --------------------------------------------------------------------------
+  let sentenceWords      = [];
+  let lastAutoAddedWord  = '';
+  let lastAutoAddedTime  = 0;
+  let currentNLPEnglish  = '';
 
   function addWordToSentence(word, isAuto = false) {
     if (!word || word === '—' || word === 'Analyzing…' || word.startsWith('Waiting')) return;
@@ -942,12 +975,14 @@ document.addEventListener('DOMContentLoaded', () => {
     lastAutoAddedWord = cleanWord;
     lastAutoAddedTime = now;
     renderSentenceUI();
+    updateNLPTranslation();
   }
 
   function removeWordFromSentence(index) {
     if (index >= 0 && index < sentenceWords.length) {
       sentenceWords.splice(index, 1);
       renderSentenceUI();
+      updateNLPTranslation();
     }
   }
 
@@ -955,6 +990,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sentenceWords.length > 0) {
       sentenceWords.pop();
       renderSentenceUI();
+      updateNLPTranslation();
     }
   }
 
@@ -962,6 +998,44 @@ document.addEventListener('DOMContentLoaded', () => {
     sentenceWords = [];
     lastAutoAddedWord = '';
     renderSentenceUI();
+    updateNLPTranslation();
+  }
+
+  function updateNLPTranslation() {
+    if (!sbNlpText) return;
+
+    if (sentenceWords.length === 0) {
+      sbNlpText.innerHTML = '<em>Assemble signs to generate natural English grammar...</em>';
+      if (sbNlpStatus) sbNlpStatus.textContent = 'Ready';
+      currentNLPEnglish = '';
+      return;
+    }
+
+    // 1. Instant local NLP translation (0ms latency)
+    if (window.SignBridgeNLP) {
+      currentNLPEnglish = window.SignBridgeNLP.glossesToEnglish(sentenceWords);
+      sbNlpText.textContent = `"${currentNLPEnglish}"`;
+      if (sbNlpStatus) sbNlpStatus.textContent = 'Instant NLP';
+    } else {
+      currentNLPEnglish = sentenceWords.join(' ');
+      sbNlpText.textContent = `"${currentNLPEnglish}"`;
+    }
+
+    // 2. Asynchronous backend NLP smoothing
+    fetch('/api/nlp/smooth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ glosses: sentenceWords })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.english) {
+        currentNLPEnglish = data.english;
+        sbNlpText.textContent = `"${currentNLPEnglish}"`;
+        if (sbNlpStatus) sbNlpStatus.textContent = data.idiom ? 'ASL Idiom' : 'NLP Refined';
+      }
+    })
+    .catch(() => {});
   }
 
   function renderSentenceUI() {
@@ -992,39 +1066,233 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --------------------------------------------------------------------------
+  // Natural Voice Text-to-Speech (TTS) Engine
+  // --------------------------------------------------------------------------
+  let availableVoices = [];
+
+  function loadNaturalVoices() {
+    if (!('speechSynthesis' in window)) return;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return;
+
+    // Filter English voices
+    const enVoices = voices.filter(v => v.lang.startsWith('en') || v.lang.startsWith('en-'));
+    availableVoices = enVoices.length > 0 ? enVoices : voices;
+
+    if (!sbTtsVoiceSelect) return;
+    sbTtsVoiceSelect.innerHTML = '';
+
+    // Sort natural / enhanced voices first
+    const preferredKeywords = ['enhanced', 'natural', 'google', 'samantha', 'ava', 'alex', 'daniel', 'serena', 'karen'];
+    availableVoices.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const aPref = preferredKeywords.some(k => aName.includes(k)) ? 1 : 0;
+      const bPref = preferredKeywords.some(k => bName.includes(k)) ? 1 : 0;
+      return bPref - aPref;
+    });
+
+    availableVoices.forEach((voice, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${voice.name} (${voice.lang})${voice.default ? ' — System Default' : ''}`;
+      sbTtsVoiceSelect.appendChild(opt);
+    });
+  }
+
+  if ('speechSynthesis' in window) {
+    loadNaturalVoices();
+    window.speechSynthesis.onvoiceschanged = loadNaturalVoices;
+  }
+
+  if (sbTtsRate && sbTtsRateVal) {
+    sbTtsRate.addEventListener('input', () => {
+      sbTtsRateVal.textContent = `${parseFloat(sbTtsRate.value).toFixed(1)}x`;
+    });
+  }
+
   function speakSentence() {
-    if (sentenceWords.length === 0) {
+    if (sentenceWords.length === 0 && !currentNLPEnglish) {
       updateCameraStatus('Sentence is empty — sign words first!', 'neutral');
       return;
     }
-    const text = sentenceWords.join(' ').toLowerCase();
+
+    // Speak the natural NLP English sentence!
+    const textToSpeak = currentNLPEnglish || sentenceWords.join(' ');
+
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.95;
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+      // Voice selection
+      const voiceIdx = sbTtsVoiceSelect ? parseInt(sbTtsVoiceSelect.value, 10) : 0;
+      if (availableVoices && availableVoices[voiceIdx]) {
+        utterance.voice = availableVoices[voiceIdx];
+      }
+
+      // Rate and pitch
+      utterance.rate  = parseFloat(sbTtsRate?.value || 1.0);
       utterance.pitch = 1.0;
-      utterance.lang = 'en-US';
 
       if (sbBtnSpeak) sbBtnSpeak.classList.add('speaking');
       utterance.onend = () => { if (sbBtnSpeak) sbBtnSpeak.classList.remove('speaking'); };
       utterance.onerror = () => { if (sbBtnSpeak) sbBtnSpeak.classList.remove('speaking'); };
 
       window.speechSynthesis.speak(utterance);
-      updateCameraStatus(`Speaking: "${text}"`, 'active');
+      updateCameraStatus(`Speaking: "${textToSpeak}"`, 'active');
     } else {
       alert('Text-to-speech is not supported in this browser.');
     }
   }
 
   function copySentence() {
-    if (sentenceWords.length === 0) return;
-    const text = sentenceWords.join(' ');
+    const textToCopy = currentNLPEnglish || sentenceWords.join(' ');
+    if (!textToCopy) return;
+
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => {
+      navigator.clipboard.writeText(textToCopy).then(() => {
         if (sbCopyText) sbCopyText.textContent = 'Copied!';
         setTimeout(() => { if (sbCopyText) sbCopyText.textContent = 'Copy Text'; }, 1800);
       }).catch(() => {});
     }
+  }
+
+  // --------------------------------------------------------------------------
+  // Speech-to-Text (STT) Hearing Partner Module
+  // --------------------------------------------------------------------------
+  let speechRecognizer = null;
+  let isListeningSTT   = false;
+
+  function initSpeechToText() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      if (hpMicBadge) {
+        hpMicBadge.textContent = 'Mic Not Supported';
+      }
+      if (hpBtnMic) {
+        hpBtnMic.disabled = true;
+        hpBtnMic.title = 'Speech Recognition is not supported in this browser (Use Chrome or Edge).';
+      }
+      return;
+    }
+
+    speechRecognizer = new SpeechRecognition();
+    speechRecognizer.continuous     = true;
+    speechRecognizer.interimResults  = true;
+    speechRecognizer.lang           = 'en-US';
+
+    speechRecognizer.onstart = () => {
+      isListeningSTT = true;
+      if (hpMicBadge) {
+        hpMicBadge.textContent = 'Listening…';
+        hpMicBadge.className = 'hp-badge listening';
+      }
+      if (hpBtnMic) {
+        hpBtnMic.classList.add('active');
+        if (hpMicLabel) hpMicLabel.textContent = 'Stop Listening';
+      }
+      if (hpSpeechBox) hpSpeechBox.classList.add('listening');
+      if (hpEmptyState) hpEmptyState.style.display = 'none';
+      if (hpTranscriptionText) hpTranscriptionText.style.display = 'block';
+    };
+
+    speechRecognizer.onresult = (event) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      const fullSpokenText = (finalTranscript || interimTranscript).trim();
+      if (!fullSpokenText) return;
+
+      if (hpTranscriptionText) {
+        hpTranscriptionText.textContent = fullSpokenText;
+      }
+
+      // NLP match spoken English words to ASL signs
+      if (window.SignBridgeNLP) {
+        const matches = window.SignBridgeNLP.extractASLGlossesFromSpeech(fullSpokenText, allASLGlossesSet);
+        renderSTTMatchedSigns(matches);
+      }
+    };
+
+    speechRecognizer.onerror = (err) => {
+      console.warn('Speech recognition error:', err);
+      if (err.error === 'not-allowed') {
+        updateCameraStatus('Microphone access was denied.', 'error');
+      }
+    };
+
+    speechRecognizer.onend = () => {
+      isListeningSTT = false;
+      if (hpMicBadge) {
+        hpMicBadge.textContent = 'Microphone Idle';
+        hpMicBadge.className = 'hp-badge';
+      }
+      if (hpBtnMic) {
+        hpBtnMic.classList.remove('active');
+        if (hpMicLabel) hpMicLabel.textContent = 'Start Listening';
+      }
+      if (hpSpeechBox) hpSpeechBox.classList.remove('listening');
+    };
+  }
+
+  function toggleSpeechToText() {
+    if (!speechRecognizer) {
+      initSpeechToText();
+    }
+    if (!speechRecognizer) return;
+
+    if (isListeningSTT) {
+      speechRecognizer.stop();
+    } else {
+      try {
+        speechRecognizer.start();
+      } catch (err) {
+        console.warn('Recognition start exception:', err);
+      }
+    }
+  }
+
+  function renderSTTMatchedSigns(matches) {
+    if (!hpMatchedSignsRow || !hpMatchedChips) return;
+
+    if (!matches || matches.length === 0) {
+      hpMatchedSignsRow.style.display = 'none';
+      hpMatchedChips.innerHTML = '';
+      return;
+    }
+
+    hpMatchedSignsRow.style.display = 'flex';
+    hpMatchedChips.innerHTML = matches.map(m => `
+      <button class="hp-asl-chip" data-gloss="${m.gloss}" title="Click to add '${m.gloss}' to sentence">
+        <span>${m.gloss}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+    `).join('');
+
+    hpMatchedChips.querySelectorAll('.hp-asl-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const gloss = btn.getAttribute('data-gloss');
+        if (gloss) {
+          addWordToSentence(gloss, false);
+          updateCameraStatus(`Added '${gloss}' from partner's speech`, 'active');
+        }
+      });
+    });
+  }
+
+  // Initialize Speech-to-Text
+  initSpeechToText();
+  if (hpBtnMic) {
+    hpBtnMic.addEventListener('click', toggleSpeechToText);
   }
 
   // Sentence Builder event listeners
@@ -1056,5 +1324,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial Sentence Builder render
   renderSentenceUI();
+  updateNLPTranslation();
 
 }); // end DOMContentLoaded
