@@ -13,7 +13,7 @@ Powered by **MediaPipe Hands**, a custom **PyTorch GRU Neural Network**, and a h
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Hands-007ACC?style=for-the-badge&logo=google&logoColor=white)](https://mediapipe.dev/)
-[![License](https://img.shields.io/badge/License-MIT-F5A623?style=for-the-badge)](LICENSE)
+
 
 [**Explore Features**](#-core-features) • [**Quick Start**](#-quick-start) • [**Architecture**](#-neural-architecture) • [**API Docs**](#-rest-api-reference) • [**Learn Mode**](#-interactive-learning--practice)
 
