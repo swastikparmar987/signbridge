@@ -116,13 +116,13 @@ The recognition pipeline is built for high accuracy and ultra-low temporal laten
 
 ```mermaid
 flowchart LR
-    A[Webcam Feed] --> B[MediaPipe Hands]
-    B -->|42 Landmarks x 3D| C[Rolling 32-Frame Buffer]
-    C -->|POST Payload [32, 42, 3]| D[FastAPI Backend]
-    D --> E[Wrist & Scale Normalization]
-    E --> F[PyTorch GRU Tensor [1, 32, 126]]
-    F --> G[Linear Classifier]
-    G --> H[Softmax Top-5 Ranked Glosses]
+    A["Webcam Feed"] --> B["MediaPipe Hands"]
+    B -->|"42 Landmarks × 3D"| C["Rolling 32-Frame Buffer"]
+    C -->|"POST Payload (32, 42, 3)"| D["FastAPI Backend"]
+    D --> E["Wrist & Scale Normalization"]
+    E --> F["PyTorch GRU Tensor (1, 32, 126)"]
+    F --> G["Linear Classifier"]
+    G --> H["Softmax Top-5 Ranked Glosses"]
 ```
 
 ### Model Specifications
