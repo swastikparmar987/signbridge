@@ -15,7 +15,9 @@ from pydantic import BaseModel, Field
 from signbridge.inference.predictor import SignBridgePredictor
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DEFAULT_CHECKPOINT = PROJECT_ROOT / "trained_models" / "best_gru_normalized.pth"
+PRODUCTION_CHECKPOINT = PROJECT_ROOT / "trained_models" / "production" / "best_model.pth"
+FALLBACK_CHECKPOINT = PROJECT_ROOT / "trained_models" / "best_gru_normalized.pth"
+DEFAULT_CHECKPOINT = PRODUCTION_CHECKPOINT if PRODUCTION_CHECKPOINT.exists() else FALLBACK_CHECKPOINT
 VIDEOS_DIR = PROJECT_ROOT / "dataset" / "ASL_Citizen" / "videos"
 SPLITS_DIR = PROJECT_ROOT / "dataset" / "ASL_Citizen" / "splits"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -244,7 +246,10 @@ async def teach_me_something():
 
 @app.post("/api/predict/sequence")
 async def predict_sequence_endpoint(request: Union[SequenceRequest, FlatSequenceRequest]):
-    """Run inference on live camera landmark sequence."""
+    """
+    Run inference on live camera landmark sequence.
+    Sequence is validated, normalized via official normalize_sequence(), and classified.
+    """
     try:
         predictor = get_predictor()
         import numpy as np
@@ -254,6 +259,16 @@ async def predict_sequence_endpoint(request: Union[SequenceRequest, FlatSequence
 
         if sequence_np.ndim not in (2, 3):
             raise HTTPException(status_code=400, detail=f"Invalid sequence array dimensions: {sequence_np.ndim}")
+
+        # Ensure (T, 42, 3) shape
+        if sequence_np.ndim == 2 and sequence_np.shape[1] == 126:
+            sequence_np = sequence_np.reshape(sequence_np.shape[0], 42, 3)
+
+        if sequence_np.shape[1:] != (42, 3):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Expected shape (T, 42, 3) or (T, 126), got {sequence_np.shape}"
+            )
 
         result = predictor.predict_sequence(sequence_np, is_normalized=False, top_k=top_k)
         return JSONResponse(content=result)
@@ -269,6 +284,182 @@ async def predict_sequence_endpoint(request: Union[SequenceRequest, FlatSequence
 # Returns full diagnostic data about ONE received payload.
 # Does NOT modify model or normalization. Remove in production.
 # -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# DIAGNOSTIC ENDPOINTS FOR WEBCAM BOTTLENECKS
+# -------------------------------------------------------------------
+
+class DiagnosticSequenceRequest(BaseModel):
+    sequence: List[List[List[float]]] = Field(..., description="Shape (T, 42, 3)")
+    mode: str = Field(..., description="'sign_now' or 'continuous_live'")
+    window_number: int = Field(..., description="Inference window counter")
+    hand_stats: Dict[str, Any] = Field(default_factory=dict)
+
+
+@app.post("/api/diagnostic/predict")
+async def diagnostic_predict_endpoint(request: DiagnosticSequenceRequest):
+    """
+    Diagnostic prediction endpoint that logs raw model behavior.
+    Returns comprehensive diagnostic data including:
+    1. Raw model predictions (Top-5)
+    2. Active frame statistics
+    3. Filtering outcomes
+    4. Timestamp for temporal analysis
+    """
+    import numpy as np
+    from datetime import datetime
+
+    try:
+        predictor = get_predictor()
+        seq_np = np.array(request.sequence, dtype=np.float32)
+
+        # Basic shape validation
+        if seq_np.ndim != 3 or seq_np.shape[1:] != (42, 3):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Expected shape (T, 42, 3), got {seq_np.shape}"
+            )
+
+        T = seq_np.shape[0]
+
+        # Calculate active frame statistics
+        hand0_active_frames = np.sum(~np.all(seq_np[:, :21, :] == 0, axis=(1, 2)))
+        hand1_active_frames = np.sum(~np.all(seq_np[:, 21:, :] == 0, axis=(1, 2)))
+        total_active_frames = np.sum(~np.all(seq_np == 0, axis=(1, 2)))
+        zero_frame_percentage = ((T - total_active_frames) / T * 100) if T > 0 else 0
+
+        # Run inference to get raw predictions
+        result = predictor.predict_sequence(seq_np, is_normalized=False, top_k=5)
+
+        # Extract top predictions
+        top1_class = result["predictions"][0]["gloss"] if result["predictions"] else None
+        top1_confidence = result["predictions"][0]["confidence"] if result["predictions"] else 0
+        top2_class = result["predictions"][1]["gloss"] if len(result["predictions"]) > 1 else None
+        top2_confidence = result["predictions"][1]["confidence"] if len(result["predictions"]) > 1 else 0
+
+        # Calculate margin (confidence difference)
+        margin = top1_confidence - top2_confidence if top2_confidence is not None else 0
+
+        # Get current UI filtering parameters (from environment or config)
+        confidence_threshold = 0.60
+        margin_threshold = 0.04
+        consecutive_threshold = 2
+
+        # Determine if raw prediction would pass filters
+        passes_confidence = top1_confidence >= confidence_threshold
+        passes_margin = margin >= margin_threshold
+        passes_filter = passes_confidence and passes_margin
+
+        # Diagnostic metadata
+        diagnostics = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "window_number": request.window_number,
+            "mode": request.mode,
+
+            # Frame statistics
+            "frame_stats": {
+                "total_frames": T,
+                "hand0_active_frames": int(hand0_active_frames),
+                "hand1_active_frames": int(hand1_active_frames),
+                "total_active_frames": int(total_active_frames),
+                "zero_frame_percentage": round(zero_frame_percentage, 1),
+                "hand_stats": request.hand_stats,
+            },
+
+            # Raw model predictions
+            "raw_predictions": {
+                "top1": {
+                    "class": top1_class,
+                    "confidence": round(top1_confidence, 4)
+                },
+                "top2": {
+                    "class": top2_class,
+                    "confidence": round(top2_confidence, 4) if top2_confidence is not None else 0
+                },
+                "margin": round(margin, 4),
+                "all_predictions": result["predictions"]
+            },
+
+            # Filter analysis
+            "filter_analysis": {
+                "current_thresholds": {
+                    "confidence": confidence_threshold,
+                    "margin": margin_threshold,
+                    "consecutive": consecutive_threshold
+                },
+                "passes_confidence": passes_confidence,
+                "passes_margin": passes_margin,
+                "would_pass_filter": passes_filter,
+                "reason": "both thresholds met" if passes_filter else
+                        f"confidence {'' if passes_confidence else 'NOT '}met, margin {'' if passes_margin else 'NOT '}met"
+            },
+
+            # Hand ordering stability check
+            "hand_stability": analyze_hand_stability(seq_np)
+        }
+
+        # Log to console for immediate visibility
+        print(f"\n{'='*60}")
+        print(f"DIAGNOSTIC [{request.mode}] Window #{request.window_number}")
+        print(f"Raw Top-1: {top1_class} @ {top1_confidence:.2%}")
+        print(f"Active frames: {total_active_frames}/{T} ({zero_frame_percentage:.1f}% zero)")
+        print(f"Filter pass: {passes_filter} ({'C+M' if passes_filter else 'C' if passes_confidence else 'M' if passes_margin else 'none'})")
+        print(f"{'='*60}\n")
+
+        # Combine with original result
+        combined_result = result.copy()
+        combined_result["diagnostics"] = diagnostics
+
+        return JSONResponse(content=combined_result)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Diagnostic prediction error: {str(e)}")
+
+
+def analyze_hand_stability(seq_np: np.ndarray) -> Dict[str, Any]:
+    """Analyze hand ordering stability across frames."""
+    T = seq_np.shape[0]
+    hand_swaps = 0
+
+    for t in range(T):
+        # Check if both hands are present in this frame
+        h0_present = not np.allclose(seq_np[t, :21], 0)
+        h1_present = not np.allclose(seq_np[t, 21:], 0)
+
+        if h0_present and h1_present:
+            # Get wrist X coordinates
+            h0_wrist_x = seq_np[t, 0, 0]
+            h1_wrist_x = seq_np[t, 21, 0]
+
+            # Check if ordering is consistent (left hand should have smaller X)
+            if t > 0:
+                # Compare with previous frame if both were present
+                prev_h0_present = not np.allclose(seq_np[t-1, :21], 0)
+                prev_h1_present = not np.allclose(seq_np[t-1, 21:], 0)
+
+                if prev_h0_present and prev_h1_present:
+                    prev_h0_wrist_x = seq_np[t-1, 0, 0]
+                    prev_h1_wrist_x = seq_np[t-1, 21, 0]
+
+                    # Check if hand identities swapped
+                    h0_was_left = prev_h0_wrist_x < prev_h1_wrist_x
+                    h0_is_left = h0_wrist_x < h1_wrist_x
+
+                    if h0_was_left != h0_is_left:
+                        hand_swaps += 1
+
+    stability_score = 100 * (1 - hand_swaps / max(1, T))
+
+    return {
+        "total_frames_analyzed": T,
+        "hand_swaps_detected": hand_swaps,
+        "swap_percentage": round(100 * hand_swaps / max(1, T), 1),
+        "stability_score": round(stability_score, 1),
+        "interpretation": "excellent" if stability_score > 95 else
+                         "good" if stability_score > 85 else
+                         "poor" if stability_score > 70 else "unstable"
+    }
+
 
 @app.post("/api/debug/sequence")
 async def debug_sequence_endpoint(request: Union[SequenceRequest, FlatSequenceRequest]):

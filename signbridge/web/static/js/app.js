@@ -108,11 +108,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --------------------------------------------------------------------------
   // Pipeline Parameters & State
-  // --------------------------------------------------------------------------
+  // -------------------------------------
+  // 
+  
+  -------------------------------------
   const SEQUENCE_LENGTH         = 32;       // Target temporal length for GRU model
-  const HISTORY_WINDOW_FRAMES   = 60;       // ~2.0 seconds at 30 FPS
+  const HISTORY_WINDOW_FRAMES   = 90;       // ~3.0 seconds at 30 FPS
   const GESTURE_CAPTURE_MS      = 2000;     // 2.0s capture window for "Sign Now"
-  const CONTINUOUS_INTERVAL_MS  = 650;      // Continuous streaming inference interval
+  const CONTINUOUS_INTERVAL_MS  = 180;      // Continuous streaming inference check (~5 Hz)
+  const SLIDING_WINDOW_FRAMES   = 48;       // Overlapping sliding window size (~1.6s)
+  const STRIDE_FRAMES           = 6;        // Sliding window stride (~200ms / 6 frames)
+  const MIN_ACTIVE_FRAMES       = 8;        // Min hand-active frames in window to trigger inference
+  const IDLE_GATING_FRAMES      = 12;       // Frames without hands before marking state as IDLE
 
   let isCameraRunning           = false;
   let mediaStream               = null;
@@ -120,16 +127,20 @@ document.addEventListener('DOMContentLoaded', () => {
   let animationFrameId          = null;
 
   // Buffering
-  let rollingHistory            = [];       // Rolling buffer of last ~60 raw frames (including zeros)
+  let rollingHistory            = [];       // Rolling buffer of last ~90 raw frames (including zeros)
   let isRecordingGesture        = false;    // True during 2-second "Sign Now" capture
   let gestureRecordedFrames     = [];       // Accumulated frames during interactive capture
   let gestureStartTime          = 0;
   let gestureProgressInterval   = null;
 
   let lastContinuousInference   = 0;
+  let framesSinceLastInference  = 0;
+  let idleNoHandsCount          = 0;
   let isInferencing             = false;
 
-  // Smoothing & Stability
+  // Smoothing & Stability — confidence-weighted vote buffer with margin gating
+  let voteBuffer                = [];       // Array of recent predictions
+  const VOTE_BUFFER_SIZE        = 5;        // Number of recent sliding-window predictions to consider
   let lastStableGloss           = '—';
   let consecutiveMatches        = 0;
   const CONSECUTIVE_REQUIRED    = 2;
@@ -300,6 +311,10 @@ document.addEventListener('DOMContentLoaded', () => {
       updateCameraStatus('Connecting camera…', 'neutral');
       DS.cameraReady = false;
 
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera API not available. Please access the site via http://localhost:8000 or HTTPS.");
+      }
+
       mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
         audio: false,
@@ -349,6 +364,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rollingHistory        = [];
     gestureRecordedFrames = [];
+    voteBuffer            = [];
+    consecutiveMatches    = 0;
+    lastStableGloss       = '—';
     Object.assign(DS, {
       cameraReady: false, handsDetected: 0, historyLength: 0,
       activeFramesInHist: 0, apiStatus: 'IDLE', samplingMode: 'IDLE'
@@ -465,12 +483,27 @@ document.addEventListener('DOMContentLoaded', () => {
       DS.handsDetected = 0;
     }
 
+    // ── Explicit Idle / No-Hands Gating ──────────────────────────────────────
+    if (DS.handsDetected === 0) {
+      idleNoHandsCount++;
+      if (idleNoHandsCount >= IDLE_GATING_FRAMES && !isRecordingGesture) {
+        if (voteBuffer.length > 0) {
+          // Gracefully decay vote buffer during rest periods to prevent stale triggers
+          voteBuffer.shift();
+          consecutiveMatches = 0;
+        }
+        DS.samplingMode = 'IDLE (No Hands)';
+      }
+    } else {
+      idleNoHandsCount = 0;
+    }
+
     // ── Mode 1: Interactive Timed Gesture Capture ────────────────────────────
     if (isRecordingGesture) {
       gestureRecordedFrames.push(frameLandmarks);
     }
 
-    // ── Mode 2: Continuous Rolling History Buffer (~60 frames / 2.0s) ────────
+    // ── Mode 2: Continuous Rolling History Buffer (~90 frames / 3.0s) ────────
     // We intentionally push ALL frames (including zeros) to capture natural rest/sign/rest motion
     rollingHistory.push(frameLandmarks);
     if (rollingHistory.length > HISTORY_WINDOW_FRAMES) {
@@ -482,31 +515,38 @@ document.addEventListener('DOMContentLoaded', () => {
     DS.activeFramesInHist = rollingHistory.filter(f => !isZeroFrame(f)).length;
     updateDebugHUD();
 
-    // ── Autonomous Continuous Stream Inference ──────────────────────────────
+    // ── Autonomous Overlapping Sliding Window Inference ──────────────────────
+    framesSinceLastInference++;
     const now = Date.now();
     if (
       !isRecordingGesture &&
       !isInferencing &&
       rollingHistory.length >= 32 &&
+      framesSinceLastInference >= STRIDE_FRAMES &&
       now - lastContinuousInference >= CONTINUOUS_INTERVAL_MS
     ) {
-      // Check if there is meaningful signing activity in the window (at least 6 frames with hands)
-      if (DS.activeFramesInHist >= 6) {
+      // Extract the sliding window of recent frames (overlapping 48 frames)
+      const slidingWindow = rollingHistory.slice(-SLIDING_WINDOW_FRAMES);
+      const activeCount = slidingWindow.filter(f => !isZeroFrame(f)).length;
+
+      // Gate inference on hand presence and activity (prevent inferencing on empty air)
+      if (activeCount >= MIN_ACTIVE_FRAMES && idleNoHandsCount < IDLE_GATING_FRAMES) {
         lastContinuousInference = now;
-        DS.samplingMode = 'CONTINUOUS (60f→32f)';
-        const sampledSequence = resampleTo32Frames(rollingHistory);
+        framesSinceLastInference = 0;
+        DS.samplingMode = `SLIDING (${slidingWindow.length}f [s=${STRIDE_FRAMES}]→32f)`;
+        const sampledSequence = resampleTo32Frames(slidingWindow);
         executeSequenceInference(sampledSequence, false);
       }
     }
   }
 
   // --------------------------------------------------------------------------
-  // Uniform Temporal Resampling (matches np.linspace(0, total-1, 32))
+  // Temporal Resampling with Linear Interpolation (Preserves Continuity)
   // --------------------------------------------------------------------------
   /**
-   * Resamples an arbitrary sequence of frames (e.g. 50-70 frames from a 2-second capture)
-   * into exactly 32 frames uniformly distributed across time.
-   * This identically replicates Python's get_sampled_frame_indices() used during training.
+   * Resamples an arbitrary sequence of frames (e.g. 40-70 frames from a capture or sliding window)
+   * into exactly 32 frames using smooth linear interpolation instead of nearest-neighbor snapping.
+   * Preserves hand coordinate continuity and avoids artificial velocity jumps.
    */
   function resampleTo32Frames(frames) {
     if (!frames || frames.length === 0) {
@@ -519,10 +559,90 @@ document.addEventListener('DOMContentLoaded', () => {
     const result = [];
     const total = frames.length;
     for (let i = 0; i < SEQUENCE_LENGTH; i++) {
-      const idx = Math.min(Math.round((i * (total - 1)) / (SEQUENCE_LENGTH - 1)), total - 1);
-      result.push(frames[idx]);
+      const t = (i * (total - 1)) / (SEQUENCE_LENGTH - 1);
+      const i0 = Math.floor(t);
+      const i1 = Math.min(i0 + 1, total - 1);
+      const alpha = t - i0;
+
+      if (alpha === 0 || i0 === i1) {
+        result.push(frames[i0]);
+        continue;
+      }
+
+      const f0 = frames[i0];
+      const f1 = frames[i1];
+      const interpolated = [];
+
+      // Interpolate per-hand to preserve coordinate continuity & handle missing hand transitions
+      for (let h = 0; h < 2; h++) {
+        const offset = h * 21;
+        const h0Active = f0[offset][0] !== 0 || f0[offset][1] !== 0;
+        const h1Active = f1[offset][0] !== 0 || f1[offset][1] !== 0;
+
+        if (h0Active && h1Active) {
+          // Both frames have hand detected -> smooth linear interpolation
+          for (let lm = 0; lm < 21; lm++) {
+            const p0 = f0[offset + lm];
+            const p1 = f1[offset + lm];
+            interpolated.push([
+              (1 - alpha) * p0[0] + alpha * p1[0],
+              (1 - alpha) * p0[1] + alpha * p1[1],
+              (1 - alpha) * p0[2] + alpha * p1[2],
+            ]);
+          }
+        } else if (h0Active && !h1Active) {
+          const useH0 = alpha < 0.5;
+          for (let lm = 0; lm < 21; lm++) {
+            interpolated.push(useH0 ? f0[offset + lm] : [0, 0, 0]);
+          }
+        } else if (!h0Active && h1Active) {
+          const useH1 = alpha >= 0.5;
+          for (let lm = 0; lm < 21; lm++) {
+            interpolated.push(useH1 ? f1[offset + lm] : [0, 0, 0]);
+          }
+        } else {
+          for (let lm = 0; lm < 21; lm++) {
+            interpolated.push([0, 0, 0]);
+          }
+        }
+      }
+      result.push(interpolated);
     }
     return result;
+  }
+
+  /**
+   * Extract the peak signing window from rolling history.
+   * Finds the contiguous window of `windowSize` frames with the most hand-active frames.
+   * This focuses inference on the most informative segment rather than random sampling.
+   */
+  function extractPeakWindow(history, windowSize) {
+    if (history.length <= windowSize) return history;
+
+    // Count active frames in each possible window position
+    let bestStart = 0;
+    let bestCount = 0;
+
+    // Pre-compute active flags
+    const active = history.map(f => !isZeroFrame(f));
+
+    // Sliding window sum
+    let count = 0;
+    for (let i = 0; i < windowSize && i < active.length; i++) {
+      if (active[i]) count++;
+    }
+    bestCount = count;
+
+    for (let start = 1; start + windowSize <= history.length; start++) {
+      if (active[start - 1]) count--;
+      if (active[start + windowSize - 1]) count++;
+      if (count > bestCount) {
+        bestCount = count;
+        bestStart = start;
+      }
+    }
+
+    return history.slice(bestStart, bestStart + windowSize);
   }
 
   function isZeroFrame(frame) {
@@ -639,24 +759,84 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --------------------------------------------------------------------------
-  // Temporal Smoothing (for continuous live streaming mode)
+  // Temporal Smoothing & Margin-Aware Confidence-Weighted Voting
   // --------------------------------------------------------------------------
+  function computeTop1Top2Margin(topK) {
+    if (!topK || topK.length < 2) return topK?.[0]?.confidence || 0.0;
+    return Math.max(0.0, (topK[0]?.confidence || 0.0) - (topK[1]?.confidence || 0.0));
+  }
+
   function applyTemporalSmoothing(result) {
     const rawTop1 = result.predicted_gloss;
     const rawConf = result.confidence;
+    const margin = computeTop1Top2Margin(result.top_k);
 
-    if (rawTop1 === lastStableGloss) {
+    // Margin-scaled confidence weighting:
+    // Decisive predictions (large margin between #1 and #2) receive up to 2.5x vote weight.
+    // Ambiguous ties (e.g. 35% vs 34%, margin ~1%) receive base weight without amplification.
+    const marginMultiplier = 1.0 + Math.min(Math.max(margin, 0.0) / 25.0, 1.5);
+    const voteWeight = rawConf * marginMultiplier;
+
+    // Add to sliding vote buffer
+    voteBuffer.push({
+      gloss: rawTop1,
+      confidence: rawConf,
+      margin: margin,
+      weight: voteWeight,
+      topK: result.top_k,
+    });
+    if (voteBuffer.length > VOTE_BUFFER_SIZE) voteBuffer.shift();
+
+    // Aggregate weighted votes across buffer
+    const votes = {};
+    for (const v of voteBuffer) {
+      if (!votes[v.gloss]) votes[v.gloss] = 0;
+      votes[v.gloss] += v.weight;
+    }
+
+    // Find the most-voted gloss
+    let winnerGloss = rawTop1;
+    let winnerScore = 0;
+    for (const [gloss, score] of Object.entries(votes)) {
+      if (score > winnerScore) { winnerScore = score; winnerGloss = gloss; }
+    }
+
+    // Track consecutive matches for the winner
+    if (winnerGloss === lastStableGloss) {
       consecutiveMatches++;
     } else {
       consecutiveMatches = 1;
-      lastStableGloss    = rawTop1;
+      lastStableGloss    = winnerGloss;
     }
 
-    // Update hero prediction if confirmed consecutively OR if model is very confident
-    if (consecutiveMatches >= CONSECUTIVE_REQUIRED || rawConf >= 60.0) {
-      updatePredictionUI(result);
-    } else {
-      renderTop5List(result.top_k);
+    // Always update Top-5 list for live feedback
+    renderTop5List(result.top_k);
+
+    // Telemetry: record margin in debug HUD
+    DS.lastPrediction = `${rawTop1} (${rawConf.toFixed(1)}%, Δ${margin.toFixed(1)}%)`;
+    updateDebugHUD();
+
+    // Update hero prediction if:
+    // 1. Confirmed consecutively with positive margin, OR
+    // 2. Clear decisive single prediction (high confidence + strong margin), OR
+    // 3. Dominant confidence (>= 60%)
+    const isConfirmedConsecutively = consecutiveMatches >= CONSECUTIVE_REQUIRED && margin >= 4.0;
+    const isDecisivePrediction = rawConf >= 45.0 && margin >= 12.0;
+    const isDominantConfidence = rawConf >= 60.0;
+
+    if (isConfirmedConsecutively || isDecisivePrediction || isDominantConfidence) {
+      // Find the best result in the buffer for this winner
+      const bestResult = voteBuffer
+        .filter(v => v.gloss === winnerGloss)
+        .reduce((best, v) => (v.confidence > (best?.confidence ?? 0) ? v : best), null);
+
+      if (bestResult) {
+        updatePredictionUI({
+          predicted_gloss: winnerGloss,
+          confidence: bestResult.confidence,
+          top_k: bestResult.topK,
+        });
+      }
     }
   }
 

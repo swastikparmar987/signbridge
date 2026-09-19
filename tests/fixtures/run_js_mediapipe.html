@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MediaPipe JS Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body style="background:#111; color:#eee;">
+  <h2>MediaPipe JS Processing Frame...</h2>
+  <canvas id="canvas" width="960" height="540"></canvas>
+  <div id="status">Starting...</div>
+  <script>
+    console.log('[HTML] Page script initialized');
+    window.__LOGS__ = [];
+    function log(msg) {
+      console.log(msg);
+      window.__LOGS__.push(msg);
+      document.getElementById('status').textContent = msg;
+    }
+
+    async function run() {
+      log('Loading image...');
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = '/fixtures/apple_frame_20.png';
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = (e) => reject('Failed to load image: ' + e);
+      });
+
+      log('Image loaded. Drawing to canvas...');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, 960, 540);
+
+      log('Initializing Hands instance...');
+      const hands = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+
+      hands.setOptions({
+        maxNumHands: 2,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+
+      hands.onResults((results) => {
+        log('onResults fired!');
+        const data = {
+          detected_hands_count: results.multiHandLandmarks ? results.multiHandLandmarks.length : 0,
+          hands: []
+        };
+
+        if (results.multiHandLandmarks) {
+          results.multiHandLandmarks.forEach((handLms, idx) => {
+            const handedness = results.multiHandedness && results.multiHandedness[idx] 
+              ? results.multiHandedness[idx].label 
+              : 'Unknown';
+            const handednessScore = results.multiHandedness && results.multiHandedness[idx]
+              ? results.multiHandedness[idx].score
+              : 0;
+            const lms = handLms.map(lm => [lm.x, lm.y, lm.z]);
+            data.hands.push({
+              index: idx,
+              handedness: handedness,
+              handedness_score: handednessScore,
+              wrist_x: lms[0][0],
+              wrist_y: lms[0][1],
+              wrist_z: lms[0][2],
+              landmarks: lms
+            });
+          });
+        }
+
+        window.__MEDIAPIPE_RESULT__ = data;
+        log('Results stored in window.__MEDIAPIPE_RESULT__');
+      });
+
+      log('Sending canvas to hands.send()...');
+      await hands.send({ image: canvas });
+      log('hands.send() complete');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      run().catch(err => {
+        log('ERROR in run: ' + (err.stack || err));
+        window.__ERROR__ = String(err);
+      });
+    });
+  </script>
+</body>
+</html>

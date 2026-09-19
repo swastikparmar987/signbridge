@@ -225,3 +225,171 @@ Made with ❤️ for inclusive, accessible communication.
 [![GitHub Forks](https://img.shields.io/github/forks/swastikparmar987/signbridge?style=social)](https://github.com/swastikparmar987/signbridge/network/members)
 
 </div>
+
+---
+
+## 🧑‍💻 Setup for Teammates
+
+### Complete Local Setup
+
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/swastikparmar987/signbridge.git
+cd signbridge
+```
+
+#### 2. Set Up Python Environment
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate (macOS/Linux)
+source .venv/bin/activate
+
+# Activate (Windows)
+# .venv\Scripts\activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+#### 3. Configure Environment Variables
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your local paths
+# You'll need to set up:
+# - DATASET_PATH: Path to ASL Citizen dataset
+# - Model checkpoint paths
+# - Cache directory paths
+```
+
+#### 4. Set Up Dataset & Models
+
+**Dataset Setup**:
+- Obtain the ASL Citizen dataset (46GB, not included in repo)
+- Place it in the location specified in `.env` (DATASET_PATH)
+- Structure: `dataset/ASL_Citizen/{videos, splits, ...}`
+
+**Model Setup**:
+- Model checkpoints are NOT included in the repository
+- Place your model files (.pth) in appropriate locations
+- Update `PRODUCTION_MODEL_PATH` and `FALLBACK_MODEL_PATH` in `.env`
+
+#### 5. Start the Application
+```bash
+# Start FastAPI server
+python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+#### 6. Open in Browser
+👉 **[http://localhost:8000](http://localhost:8000)**
+
+### Verification
+```bash
+# Test imports
+python -c "import signbridge; print('Import successful')"
+
+# Health check
+curl http://localhost:8000/api/health
+
+# Run tests
+python -m pytest tests/
+```
+
+### Important Notes for Teammates
+
+**Dataset**:
+- The ASL Citizen dataset (46GB) is NOT included in this repository
+- Each team member must obtain it separately and place it locally
+- Update `DATASET_PATH` in your `.env` file to point to your local copy
+
+**Model Checkpoints**:
+- Model weights (.pth files) are NOT included
+- You need to obtain/place model files in locations specified in `.env`
+- The application will fail gracefully with clear error messages if models are missing
+
+**Cache Directories**:
+- Landmark caches are automatically generated when needed
+- Cache directories are excluded from Git (see `.gitignore`)
+- First run will be slower as caches are built
+
+**Environment Variables**:
+- Never commit `.env` to version control
+- Use `.env.example` as a template for required variables
+- All sensitive configuration should be in `.env`
+
+### Troubleshooting for New Teammates
+
+<details>
+<summary><b>1. Missing dataset error</b></summary>
+
+**Symptoms**: Application starts but shows "Dataset not found" errors
+**Solution**: 
+1. Obtain ASL Citizen dataset
+2. Update `DATASET_PATH` in `.env`
+3. Ensure structure: `dataset/ASL_Citizen/{videos, splits, ...}`
+</details>
+
+<details>
+<summary><b>2. Missing model checkpoints</b></summary>
+
+**Symptoms**: Application fails to start with "Model file not found" error
+**Solution**:
+1. Obtain model checkpoint files (.pth)
+2. Update model paths in `.env`
+3. Place files in correct locations
+</details>
+
+<details>
+<summary><b>3. Webcam permission issues</b></summary>
+
+**Symptoms**: Camera doesn't start in browser
+**Solution**:
+- **macOS**: System Settings → Privacy & Security → Camera → Enable browser
+- **Linux/Windows**: Check browser permissions
+- Verify camera is selected as input device
+</details>
+
+<details>
+<summary><b>4. Dependency installation issues</b></summary>
+
+**Symptoms**: `pip install` fails
+**Solution**:
+```bash
+# Ensure Python 3.10+
+python --version
+
+# Upgrade pip
+pip install --upgrade pip
+
+# Install system dependencies first (Ubuntu/Debian)
+sudo apt-get install python3-dev python3-venv
+
+# Create fresh virtual environment
+rm -rf .venv
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+</details>
+
+### Quick Test Commands
+```bash
+# Test Python imports
+python -c "import signbridge; from signbridge.inference.predictor import SignBridgePredictor; print('✓ All imports successful')"
+
+# Test API health
+curl -s http://localhost:8000/api/health | jq '.status'
+
+# Run available tests
+python -m pytest tests/ -v
+```
+
+### Need Help?
+- Check existing issues on GitHub
+- Review the troubleshooting section above
+- Contact the team for dataset/model access
+- Update `.env.example` if you find missing required variables

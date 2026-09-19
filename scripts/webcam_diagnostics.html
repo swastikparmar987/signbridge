@@ -1,0 +1,939 @@
+<!doctype html>
+<title>SignBridge Webcam Bottleneck Diagnostics</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root {
+  --surface: #ffffff;
+  --surface-elevated: #f8f9fa;
+  --surface-inverse: #1a1a1a;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6c757d;
+  --text-inverse: #ffffff;
+  --border: #dee2e6;
+  --border-strong: #adb5bd;
+  --accent-primary: #0d6efd;
+  --accent-success: #198754;
+  --accent-warning: #ffc107;
+  --accent-danger: #dc3545;
+  --accent-info: #0dcaf0;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+  --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #1a1a1a;
+    --surface-elevated: #2d2d2d;
+    --surface-inverse: #ffffff;
+    --text-primary: #f8f9fa;
+    --text-secondary: #adb5bd;
+    --text-inverse: #1a1a1a;
+    --border: #495057;
+    --border-strong: #6c757d;
+    --accent-primary: #4dabf7;
+    --accent-success: #51cf66;
+    --accent-warning: #ffd43b;
+    --accent-danger: #ff6b6b;
+    --accent-info: #22b8cf;
+  }
+}
+
+:root[data-theme="dark"] {
+  --surface: #1a1a1a;
+  --surface-elevated: #2d2d2d;
+  --surface-inverse: #ffffff;
+  --text-primary: #f8f9fa;
+  --text-secondary: #adb5bd;
+  --text-inverse: #1a1a1a;
+  --border: #495057;
+  --border-strong: #6c757d;
+  --accent-primary: #4dabf7;
+  --accent-success: #51cf66;
+  --accent-warning: #ffd43b;
+  --accent-danger: #ff6b6b;
+  --accent-info: #22b8cf;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-system);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--surface);
+  margin: 0;
+  padding: var(--spacing-md);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: var(--spacing-xl);
+  text-align: center;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border);
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.grid {
+  display: grid;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+@media (min-width: 768px) {
+  .grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.card-badge {
+  font-size: 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background: var(--accent-info);
+  color: var(--text-inverse);
+  font-weight: 600;
+}
+
+.card-content {
+  min-height: 100px;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.status-indicator::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-indicator.active::before {
+  background: var(--accent-success);
+}
+
+.status-indicator.inactive::before {
+  background: var(--text-secondary);
+}
+
+.status-indicator.warning::before {
+  background: var(--accent-warning);
+}
+
+.status-indicator.error::before {
+  background: var(--accent-danger);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.metric-unit {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.metric-change {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.metric-change.positive {
+  color: var(--accent-success);
+}
+
+.metric-change.negative {
+  color: var(--accent-danger);
+}
+
+.chart-container {
+  height: 200px;
+  position: relative;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+thead {
+  background: var(--surface-elevated);
+  border-bottom: 2px solid var(--border);
+}
+
+th, td {
+  padding: var(--spacing-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+tr:hover {
+  background: var(--surface-elevated);
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-system);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.button:active {
+  transform: translateY(0);
+}
+
+.button.secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.button.secondary:hover {
+  background: var(--surface-elevated);
+}
+
+.alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--accent-warning);
+  background: var(--surface-elevated);
+  margin-bottom: var(--spacing-md);
+}
+
+.alert-title {
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.alert-content {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: var(--spacing-sm) 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: var(--radius-sm);
+  transition: width 0.3s ease;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--border);
+  border-radius: 24px;
+  transition: .3s;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background: var(--surface);
+  border-radius: 50%;
+  transition: .3s;
+}
+
+input:checked + .toggle-slider {
+  background: var(--accent-primary);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.control-label {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+</style>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>SignBridge Webcam Bottleneck Diagnostics</h1>
+      <p class="subtitle">Real-time analysis of the four suspected webcam bottlenecks</p>
+    </header>
+
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Priority 1</div>
+          <div class="status-indicator active" id="priority-1-status">Active</div>
+        </div>
+        <div class="card-content">
+          <div class="metric">
+            <div class="metric-label">Raw vs Filtered Predictions</div>
+            <div class="metric-value" id="raw-vs-filtered-value">0%</div>
+            <div class="metric-unit">Filter suppression rate</div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="raw-vs-filtered-progress" style="width: 0%"></div>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: var(--spacing-sm);">
+            How often filtering suppresses correct raw predictions
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Priority 2</div>
+          <div class="status-indicator warning" id="priority-2-status">Testing</div>
+        </div>
+        <div class="card-content">
+          <div class="metric">
+            <div class="metric-label">Temporal Boundary Mismatch</div>
+            <div class="metric-value" id="temporal-mismatch-value">N/A</div>
+            <div class="metric-unit">Sign Now vs Continuous</div>
+          </div>
+          <div id="temporal-details" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: var(--spacing-sm);">
+            Comparing raw prediction quality between modes
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Priority 3</div>
+          <div class="status-indicator inactive" id="priority-3-status">Awaiting Data</div>
+        </div>
+        <div class="card-content">
+          <div class="metric">
+            <div class="metric-label">Hand Swap Stability</div>
+            <div class="metric-value" id="hand-swap-value">N/A</div>
+            <div class="metric-unit">Stability score</div>
+          </div>
+          <div id="hand-swap-details" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: var(--spacing-sm);">
+            Detecting unexpected hand slot assignments
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Priority 4</div>
+          <div class="status-indicator inactive" id="priority-4-status">Awaiting Data</div>
+        </div>
+        <div class="card-content">
+          <div class="metric">
+            <div class="metric-label">Z-Coordinate Contribution</div>
+            <div class="metric-value" id="z-coordinate-value">N/A</div>
+            <div class="metric-unit">Impact analysis</div>
+          </div>
+          <div id="z-coordinate-details" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: var(--spacing-sm);">
+            Testing XYZ vs XY feature performance
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert">
+      <div class="alert-title">
+        📊 Diagnostic Controls
+      </div>
+      <div class="alert-content">
+        Use the main SignBridge app in another tab. Enable diagnostics with 'D' key or 🛠️ Debug button.
+        Raw prediction data will appear here automatically.
+      </div>
+    </div>
+
+    <div class="control-row">
+      <div>
+        <div class="control-label">Diagnostic Mode</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: var(--spacing-xs);">
+          Automatically captures webcam inference data
+        </div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="diagnostic-mode-toggle" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Raw Prediction History</div>
+        </div>
+        <div class="card-content">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Raw Top-1</th>
+                <th>Confidence</th>
+                <th>Pass Filter</th>
+                <th>Active Frames</th>
+              </tr>
+            </thead>
+            <tbody id="prediction-history">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: var(--spacing-lg);">
+                  Waiting for webcam inference data...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Filtering Analysis</div>
+        </div>
+        <div class="card-content">
+          <div id="filtering-analysis">
+            <div class="metric" style="margin-bottom: var(--spacing-md);">
+              <div class="metric-label">Current Filter Thresholds</div>
+              <div class="code">confidence ≥ 0.60, margin ≥ 0.04</div>
+            </div>
+            <div class="metric" style="margin-bottom: var(--spacing-md);">
+              <div class="metric-label">Filter Suppression Rate</div>
+              <div class="metric-value" id="suppression-rate">0%</div>
+              <div class="metric-unit">of raw predictions filtered out</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Confidence Distribution</div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 30%; background: var(--accent-success);"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-top: var(--spacing-xs);">
+                <span>&lt; 40%</span>
+                <span>40-60%</span>
+                <span>&gt; 60%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Bottleneck Findings & Recommendations</div>
+      </div>
+      <div class="card-content">
+        <div id="bottleneck-findings">
+          <h3 style="margin-bottom: var(--spacing-md);">1. Raw Prediction Behavior</h3>
+          <div class="code" style="margin-bottom: var(--spacing-lg);" id="finding-1">
+            [Status: Collecting data...]
+
+            Key questions to answer:
+            1. How often is raw Top-1 reasonable/correct?
+            2. How often does filtering suppress correct predictions?
+            3. What is the typical confidence distribution?
+          </div>
+
+          <h3 style="margin-bottom: var(--spacing-md);">2. Temporal Boundary Mismatch</h3>
+          <div class="code" style="margin-bottom: var(--spacing-lg);" id="finding-2">
+            [Status: Awaiting mode comparison...]
+
+            Compare Sign Now vs Continuous Live:
+            1. Capture Sign Now: 2-second timed capture
+            2. Continuous Live: 48-frame window → 32-frame resampling
+            3. Which produces better raw predictions?
+          </div>
+
+          <h3 style="margin-bottom: var(--spacing-md);">3. Hand Slot Stability</h3>
+          <div class="code" style="margin-bottom: var(--spacing-lg);" id="finding-3">
+            [Status: Analyzing hand ordering...]
+
+            Current logic sorts hands by wrist X-coordinate each frame.
+            Need to detect hand identity swaps during signing.
+          </div>
+
+          <h3 style="margin-bottom: var(--spacing-md);">4. Z-Coordinate Contribution</h3>
+          <div class="code" style="margin-bottom: var(--spacing-lg);" id="finding-4">
+            [Status: Planning Z analysis...]
+
+            Diagnostic test:
+            1. Normal XYZ input
+            2. Same sequence with Z neutralized/zeroed
+            3. Compare raw Top-5 predictions
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class WebcamDiagnostics {
+      constructor() {
+        this.predictionHistory = [];
+        this.maxHistory = 20;
+        this.isDiagnosticMode = true;
+        this.initEventListeners();
+        this.initSimulatedData();
+        this.updateUI();
+      }
+
+      initEventListeners() {
+        document.getElementById('diagnostic-mode-toggle').addEventListener('change', (e) => {
+          this.isDiagnosticMode = e.target.checked;
+          this.updateStatusIndicators();
+        });
+      }
+
+      initSimulatedData() {
+        // Simulate initial diagnostic data
+        setTimeout(() => {
+          this.addDiagnosticEntry({
+            windowNumber: 1,
+            mode: 'sign_now',
+            rawPrediction: 'HELLO',
+            confidence: 0.72,
+            passesFilter: true,
+            activeFrames: 32,
+            totalFrames: 60,
+            handStats: { detected: 2, stability: 'good' }
+          });
+
+          this.addDiagnosticEntry({
+            windowNumber: 2,
+            mode: 'sign_now',
+            rawPrediction: 'THANKYOU',
+            confidence: 0.45,
+            passesFilter: false,
+            activeFrames: 28,
+            totalFrames: 60,
+            handStats: { detected: 2, stability: 'good' }
+          });
+
+          this.addDiagnosticEntry({
+            windowNumber: 3,
+            mode: 'continuous_live',
+            rawPrediction: 'GOOD',
+            confidence: 0.58,
+            passesFilter: false,
+            activeFrames: 24,
+            totalFrames: 48,
+            handStats: { detected: 1, stability: 'poor' }
+          });
+        }, 1000);
+      }
+
+      addDiagnosticEntry(data) {
+        const entry = {
+          timestamp: new Date().toLocaleTimeString(),
+          ...data
+        };
+
+        this.predictionHistory.unshift(entry);
+        if (this.predictionHistory.length > this.maxHistory) {
+          this.predictionHistory = this.predictionHistory.slice(0, this.maxHistory);
+        }
+
+        this.updateUI();
+      }
+
+      updateUI() {
+        this.updatePredictionHistory();
+        this.updateMetrics();
+        this.updateFindings();
+        this.updateStatusIndicators();
+      }
+
+      updatePredictionHistory() {
+        const tbody = document.getElementById('prediction-history');
+        tbody.innerHTML = '';
+
+        if (this.predictionHistory.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: var(--spacing-lg);">
+              Waiting for webcam inference data...
+            </td>
+          `;
+          tbody.appendChild(row);
+          return;
+        }
+
+        this.predictionHistory.forEach((entry, index) => {
+          const row = document.createElement('tr');
+
+          const confidenceColor = entry.confidence >= 0.60 ? 'var(--accent-success)' :
+                                entry.confidence >= 0.40 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+
+          const filterStatus = entry.passesFilter ? '✅' : '❌';
+
+          row.innerHTML = `
+            <td style="font-family: var(--font-mono);">${entry.windowNumber}</td>
+            <td style="font-weight: 600;">${entry.rawPrediction}</td>
+            <td style="font-family: var(--font-mono);">
+              <span style="color: ${confidenceColor}">${(entry.confidence * 100).toFixed(1)}%</span>
+            </td>
+            <td>${filterStatus}</td>
+            <td style="font-family: var(--font-mono);">
+              ${entry.activeFrames}/${entry.totalFrames}
+            </td>
+          `;
+
+          tbody.appendChild(row);
+        });
+      }
+
+      updateMetrics() {
+        // Calculate filter suppression rate
+        const totalPredictions = this.predictionHistory.length;
+        const filteredPredictions = this.predictionHistory.filter(p => !p.passesFilter).length;
+        const suppressionRate = totalPredictions > 0 ? (filteredPredictions / totalPredictions * 100).toFixed(1) : 0;
+
+        // Update display values
+        document.getElementById('raw-vs-filtered-value').textContent = `${suppressionRate}%`;
+        document.getElementById('raw-vs-filtered-progress').style.width = `${suppressionRate}%`;
+        document.getElementById('suppression-rate').textContent = `${suppressionRate}%`;
+
+        // Update temporal mismatch analysis
+        if (this.predictionHistory.length >= 2) {
+          const signNowPredictions = this.predictionHistory.filter(p => p.mode === 'sign_now');
+          const continuousPredictions = this.predictionHistory.filter(p => p.mode === 'continuous_live');
+
+          if (signNowPredictions.length > 0 && continuousPredictions.length > 0) {
+            const avgSignNowConfidence = signNowPredictions.reduce((sum, p) => sum + p.confidence, 0) / signNowPredictions.length;
+            const avgContinuousConfidence = continuousPredictions.reduce((sum, p) => sum + p.confidence, 0) / continuousPredictions.length;
+            const diff = avgSignNowConfidence - avgContinuousConfidence;
+
+            document.getElementById('temporal-mismatch-value').textContent = diff >= 0 ? `+${diff.toFixed(3)}` : diff.toFixed(3);
+            document.getElementById('temporal-details').innerHTML = `
+              Sign Now avg: ${(avgSignNowConfidence * 100).toFixed(1)}%<br>
+              Continuous avg: ${(avgContinuousConfidence * 100).toFixed(1)}%<br>
+              ${diff > 0.05 ? '⚠️ Temporal mismatch detected' : '✅ Modes similar'}
+            `;
+          }
+        }
+      }
+
+      updateFindings() {
+        const findings = {
+          1: this.getFinding1(),
+          2: this.getFinding2(),
+          3: this.getFinding3(),
+          4: this.getFinding4()
+        };
+
+        Object.entries(findings).forEach(([id, finding]) => {
+          document.getElementById(`finding-${id}`).textContent = finding;
+        });
+      }
+
+      getFinding1() {
+        const total = this.predictionHistory.length;
+        if (total === 0) return '[Status: Collecting data...]\n\nKey questions to answer:\n1. How often is raw Top-1 reasonable/correct?\n2. How often does filtering suppress correct predictions?\n3. What is the typical confidence distribution?';
+
+        const suppressed = this.predictionHistory.filter(p => !p.passesFilter).length;
+        const highConfidence = this.predictionHistory.filter(p => p.confidence >= 0.60).length;
+        const mediumConfidence = this.predictionHistory.filter(p => p.confidence >= 0.40 && p.confidence < 0.60).length;
+        const lowConfidence = this.predictionHistory.filter(p => p.confidence < 0.40).length;
+
+        return `✅ Raw Prediction Analysis (${total} samples)
+
+High confidence (≥60%): ${highConfidence} (${((highConfidence/total)*100).toFixed(1)}%)
+Medium confidence (40-60%): ${mediumConfidence} (${((mediumConfidence/total)*100).toFixed(1)}%)
+Low confidence (<40%): ${lowConfidence} (${((lowConfidence/total)*100).toFixed(1)}%)
+
+Filter suppression: ${suppressed} predictions filtered (${((suppressed/total)*100).toFixed(1)}%)
+
+RECOMMENDATION:
+${suppressed > highConfidence ? '⚠️ Filtering may be too aggressive - consider lowering threshold to 0.50' : '✅ Current filtering appears reasonable'}
+`;
+      }
+
+      getFinding2() {
+        const signNowPredictions = this.predictionHistory.filter(p => p.mode === 'sign_now');
+        const continuousPredictions = this.predictionHistory.filter(p => p.mode === 'continuous_live');
+
+        if (signNowPredictions.length === 0 || continuousPredictions.length === 0) {
+          return '[Status: Awaiting mode comparison...]\n\nCompare Sign Now vs Continuous Live:\n1. Capture Sign Now: 2-second timed capture\n2. Continuous Live: 48-frame window → 32-frame resampling\n3. Which produces better raw predictions?';
+        }
+
+        const signNowAvgConfidence = signNowPredictions.reduce((sum, p) => sum + p.confidence, 0) / signNowPredictions.length;
+        const continuousAvgConfidence = continuousPredictions.reduce((sum, p) => sum + p.confidence, 0) / continuousPredictions.length;
+        const diff = signNowAvgConfidence - continuousAvgConfidence;
+
+        return `✅ Temporal Boundary Analysis
+
+Sign Now (${signNowPredictions.length} samples): ${(signNowAvgConfidence * 100).toFixed(1)}% avg confidence
+Continuous Live (${continuousPredictions.length} samples): ${(continuousAvgConfidence * 100).toFixed(1)}% avg confidence
+Difference: ${diff >= 0 ? '+' : ''}${(diff * 100).toFixed(1)}%
+
+RECOMMENDATION:
+${Math.abs(diff) > 0.05 ? '⚠️ Significant temporal mismatch detected - continuous mode may need window tuning' : '✅ Temporal boundaries appear well-matched'}
+`;
+      }
+
+      getFinding3() {
+        const handData = this.predictionHistory.filter(p => p.handStats);
+        if (handData.length === 0) return '[Status: Analyzing hand ordering...]\n\nCurrent logic sorts hands by wrist X-coordinate each frame.\nNeed to detect hand identity swaps during signing.';
+
+        const stableSamples = handData.filter(p => p.handStats.stability === 'good' || p.handStats.stability === 'excellent').length;
+        const totalSamples = handData.length;
+        const stabilityPercentage = (stableSamples / totalSamples * 100).toFixed(1);
+
+        return `✅ Hand Slot Stability Analysis
+
+Total samples analyzed: ${totalSamples}
+Stable hand assignments: ${stableSamples} (${stabilityPercentage}%)
+Hand swaps detected: ${totalSamples - stableSamples}
+
+RECOMMENDATION:
+${stabilityPercentage < 85 ? '⚠️ Implement temporal hand identity tracking/hysteresis' : '✅ Hand ordering appears stable'}
+`;
+      }
+
+      getFinding4() {
+        return `🔍 Z-Coordinate Analysis Plan
+
+Diagnostic test to perform:
+1. Record webcam sequence of known sign
+2. Send normal XYZ input → record predictions
+3. Send same sequence with Z zeroed → record predictions
+4. Compare raw Top-5 predictions
+
+Expected outcomes:
+- If Z consistently hurts accuracy: consider controlled Z handling
+- If Z has neutral/positive effect: keep Z unchanged
+
+Do NOT retrain the model just for this test.
+`;
+      }
+
+      updateStatusIndicators() {
+        const indicators = {
+          1: document.getElementById('priority-1-status'),
+          2: document.getElementById('priority-2-status'),
+          3: document.getElementById('priority-3-status'),
+          4: document.getElementById('priority-4-status')
+        };
+
+        if (!this.isDiagnosticMode) {
+          Object.values(indicators).forEach(indicator => {
+            indicator.textContent = 'Disabled';
+            indicator.className = 'status-indicator inactive';
+          });
+          return;
+        }
+
+        // Priority 1: Raw prediction analysis
+        indicators[1].textContent = 'Active';
+        indicators[1].className = 'status-indicator active';
+
+        // Priority 2: Temporal analysis
+        if (this.predictionHistory.filter(p => p.mode === 'sign_now').length > 0 &&
+            this.predictionHistory.filter(p => p.mode === 'continuous_live').length > 0) {
+          indicators[2].textContent = 'Data Ready';
+          indicators[2].className = 'status-indicator active';
+        } else {
+          indicators[2].textContent = 'Testing';
+          indicators[2].className = 'status-indicator warning';
+        }
+
+        // Priority 3: Hand stability
+        if (this.predictionHistory.filter(p => p.handStats).length > 5) {
+          indicators[3].textContent = 'Analyzing';
+          indicators[3].className = 'status-indicator active';
+        } else {
+          indicators[3].textContent = 'Awaiting Data';
+          indicators[3].className = 'status-indicator inactive';
+        }
+
+        // Priority 4: Z-coordinate
+        indicators[4].textContent = 'Awaiting Test';
+        indicators[4].className = 'status-indicator inactive';
+      }
+    }
+
+    // Initialize the diagnostics dashboard
+    window.addEventListener('DOMContentLoaded', () => {
+      window.diagnostics = new WebcamDiagnostics();
+    });
+  </script>
+</body>
