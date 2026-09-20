@@ -1,32 +1,34 @@
 <div align="center">
 
-# SignBridge
+# 🤟 SignBridge
 
 ### Real-time American Sign Language recognition & learning
 
 </div>
 
-<img src="docs/signbridge-hero.jpg" alt="SignBridge interface showing webcam recognition and learning mode" align="right" width="360"/>
+---
 
-SignBridge is a real-time American Sign Language (ASL) recognition system and interactive learning tool. The model tracks hand landmarks via MediaPipe, classifies 2,731 ASL glosses with a PyTorch GRU neural network, and runs behind a local FastAPI web interface.
+## 🤟 What Is SignBridge?
 
-A full benchmark sweep of the ASL Citizen test set (32,941 samples) is reproducible through the built-in verification suite. The production checkpoint — `BiGRUAttentionPoolingClassifier` with label-smoothing and cosine annealing — achieves **48.62% Top-1** and **72.89% Top-5** accuracy.
+SignBridge is a real-time **American Sign Language (ASL)** recognition system and interactive learning tool. It tracks hand landmarks via MediaPipe, classifies **2,731 ASL glosses** with a PyTorch GRU neural network, and runs behind a local **FastAPI** web interface.
+
+A full benchmark sweep of the **ASL Citizen test set (32,941 samples)** is reproducible through the built-in verification suite. The production checkpoint — `BiGRUAttentionPoolingClassifier` with label-smoothing and cosine annealing — achieves **48.62% Top-1** and **72.89% Top-5** accuracy.
 
 ---
 
-## Table of Contents
+## 📖 Table of Contents
 
-- [Quick Start](#quick-start)
-- [Features](#features)
-- [Model Architecture](#model-architecture)
-- [Benchmark Results](#benchmark-results)
-- [REST API](#rest-api)
-- [CLI Tools](#cli-tools)
-- [Project Structure](#project-structure)
+- [🚀 Quick Start](#-quick-start)
+- [✨ Features](#-features)
+- [🧠 Model Architecture](#-model-architecture)
+- [📊 Benchmark Results](#-benchmark-results)
+- [🌐 REST API](#-rest-api)
+- [💻 CLI Tools](#-cli-tools)
+- [📂 Project Structure](#-project-structure)
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
 git clone https://github.com/swastikparmar987/signbridge.git
@@ -39,80 +41,80 @@ pip install -r requirements.txt
 PYTHONPATH=. python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8000
 ```
 
-Then open [http://localhost:8000](http://localhost:8000) in your browser.
+👉 Then open [http://localhost:8000](http://localhost:8000) in your browser.
 
-> **System requirements**: Python 3.10+. CPU-only inference works out of the box; Apple Silicon uses Metal (`mps`) automatically; NVIDIA GPUs use CUDA if PyTorch with cuDNN is installed.
+> **🖥️ System requirements**: Python 3.10+. CPU-only inference works out of the box; Apple Silicon uses Metal (`mps`) automatically; NVIDIA GPUs use CUDA if PyTorch with cuDNN is installed.
 
 ---
 
-## Features
+## ✨ Features
 
 | Capability | Details |
 |---|---|
-| **Live webcam recognition** | 32-frame rolling buffer with ~40 ms inference on Apple Silicon |
-| **Video file inference** | Upload `.mp4`, `.mov`, or `.webm` for offline analysis |
-| **Interactive learning** | 2,731 glosses with demonstration videos and guided practice mode |
-| **Diagnostic overlay** | Press `D` to toggle live telemetry (hand tracking, buffer health, API latency) |
-| **Confidence ranking** | Top-1 and ranked Top-5 predictions with per-gloss confidence bars |
-| **REST API** | JSON and multipart endpoints for sequence, video, and cache prediction |
+| 🎥 **Live webcam recognition** | 32-frame rolling buffer with ~40 ms inference on Apple Silicon |
+| 📁 **Video file inference** | Upload `.mp4`, `.mov`, or `.webm` for offline analysis |
+| 📚 **Interactive learning** | 2,731 glosses with demonstration videos and guided practice mode |
+| 🛠️ **Diagnostic overlay** | Press `D` to toggle live telemetry (hand tracking, buffer health, API latency) |
+| 🎯 **Confidence ranking** | Top-1 and ranked Top-5 predictions with per-gloss confidence bars |
+| 🔌 **REST API** | JSON and multipart endpoints for sequence, video, and cache prediction |
 
 ---
 
-## Model Architecture
+## 🧠 Model Architecture
 
-The recognition pipeline extracts 21 3D landmarks per hand (42 keypoints x 3 coordinates = 126 features per frame), applies wrist-centered and scale-invariant normalization, then feeds a 32-frame sequence into the GRU classifier.
+The recognition pipeline extracts **21 3D landmarks per hand** (42 keypoints x 3 coordinates = **126 features per frame**), applies wrist-centered and scale-invariant normalization, then feeds a 32-frame sequence into the GRU classifier.
 
 ```
-Webcam Feed
+🎥 Webcam Feed
     │
     ▼
-MediaPipe Hands ──► 42 Landmarks x 3D
+📷 MediaPipe Hands ──► 42 Landmarks x 3D
     │
     ▼
-Rolling 32-Frame Buffer  (shape: 32 x 126)
+🔄 Rolling 32-Frame Buffer  (shape: 32 x 126)
     │
     ▼
-Wrist & Scale Normalization
+🎯 Wrist & Scale Normalization
     │
     ▼
-PyTorch GRU Classifier
+🧠 PyTorch GRU Classifier
     │
     ▼
-Softmax ──► Ranked Gloss Predictions (Top-1 / Top-5)
+📊 Softmax ──► Ranked Gloss Predictions (Top-1 / Top-5)
 ```
 
-### Production Model: `BiGRUAttentionPoolingClassifier`
+### 🏗️ Production Model: `BiGRUAttentionPoolingClassifier`
 
 | Parameter | Value |
 |---|---|
-| Input shape | `[32, 126]` — 32 frames x (2 hands x 21 landmarks x 3) |
-| Hidden units | 256 |
-| GRU layers | 2 (bidirectional) |
-| Attention | Temporal attention pooling |
-| Classes | 2,731 |
-| Parameters | 6,036,225 |
-| Checkpoint size | ~16 MB |
-| Device | `mps` (Apple Silicon), `cuda` (NVIDIA), or `cpu` fallback |
+| 📐 Input shape | `[32, 126]` — 32 frames x (2 hands x 21 landmarks x 3) |
+| 🧠 Hidden units | 256 |
+| 🔁 GRU layers | 2 (bidirectional) |
+| 👁️ Attention | Temporal attention pooling |
+| 🎯 Classes | 2,731 |
+| 🔢 Parameters | 6,036,225 |
+| 💾 Checkpoint size | ~16 MB |
+| ⚡ Device | `mps` (Apple Silicon), `cuda` (NVIDIA), or `cpu` fallback |
 
-### Training Configuration
+### ⚙️ Training Configuration
 
 | Setting | Value |
 |---|---|
-| Optimizer | AdamW |
-| Loss | CrossEntropyLoss with label smoothing (0.1) |
-| Learning rate | 1e-3 (warmup) → cosine annealing to 1e-5 |
-| Batch size | 128 |
-| Best epoch | 34 |
-| Total training time | ~62 minutes (single GPU) |
-| Preprocessing | Wrist-relative centering, palm-scale normalization, 32-frame temporal resampling |
+| 🔧 Optimizer | AdamW |
+| 📉 Loss | CrossEntropyLoss with label smoothing (0.1) |
+| 📈 Learning rate | 1e-3 (warmup) → cosine annealing to 1e-5 |
+| 📦 Batch size | 128 |
+| 🏆 Best epoch | 34 |
+| ⏱️ Total training time | ~62 minutes (single GPU) |
+| 🧹 Preprocessing | Wrist-relative centering, palm-scale normalization, 32-frame temporal resampling |
 
 ---
 
-## Benchmark Results
+## 📊 Benchmark Results
 
-All numbers below were generated by `python -m signbridge.inference.verify_pipeline` against the full ASL Citizen test set (32,941 samples). Each experiment uses a different architecture or training strategy to isolate what improves accuracy.
+All numbers below were generated by `python -m signbridge.inference.verify_pipeline` against the full ASL Citizen test set (**32,941 samples**). Each experiment uses a different architecture or training strategy.
 
-### 2731-Class Benchmark (ASL Citizen test split)
+### 📈 2731-Class Benchmark (ASL Citizen test split)
 
 | Experiment | Architecture | Params | Epochs | Val Top-1 | Test Top-1 | Test Top-3 | Test Top-5 | Macro F1 |
 |---|---|---|---|---|---|---|---|---|
@@ -124,9 +126,9 @@ All numbers below were generated by `python -m signbridge.inference.verify_pipel
 | exp6_class_balanced | BiGRUAttentionPoolingClassifier | 6,038,956 | 34 | 60.61% | 48.91% | 66.96% | 72.75% | 48.65% |
 | exp7_arcface | BiGRUArcFaceClassifier | 6,036,225 | 34 | 61.39% | 49.75% | 68.40% | **74.35%** | **49.82%** |
 
-### Benchmark Progression
+### 📐 Benchmark Progression
 
-The progression below shows how the model evolved from the original GRU baseline:
+The chart below shows how the model evolved from the original GRU baseline through seven experiments:
 
 ```
 Accuracy (Test Top-1)
@@ -142,22 +144,22 @@ Accuracy (Test Top-1)
 
 The best model (**exp7_arcface**) — a BiGRU with ArcFace loss — reaches **49.75% Top-1** and **74.35% Top-5** accuracy, a **+14.9 percentage point** improvement over the original baseline.
 
-### Production Model: exp5_label_smoothing_cosine
+### 🚢 Production Model: exp5_label_smoothing_cosine
 
-The deployed checkpoint (`trained_models/production/best_model.pth`) is based on exp5, selected for the best balance of Top-1 accuracy and stability:
+The deployed checkpoint (`trained_models/production/best_model.pth`) is based on **exp5**, selected for the best balance of Top-1 accuracy and stability:
 
 | Metric | Production Model |
 |---|---|
-| Test Top-1 Accuracy | **48.62%** |
-| Test Top-3 Accuracy | 66.92% |
-| Test Top-5 Accuracy | 72.89% |
-| Macro F1 | 48.43% |
-| Weighted F1 | 48.51% |
-| Test samples | 32,941 |
-| Best epoch | 34 |
-| Training configuration | AdamW, lr=1e-3, label smoothing=0.1, cosine annealing, batch size=128 |
+| 🎯 Test Top-1 Accuracy | **48.62%** |
+| 📊 Test Top-3 Accuracy | 66.92% |
+| 🎯 Test Top-5 Accuracy | 72.89% |
+| 📈 Macro F1 | 48.43% |
+| 📈 Weighted F1 | 48.51% |
+| 🧪 Test samples | 32,941 |
+| 🏆 Best epoch | 34 |
+| ⚙️ Training config | AdamW, lr=1e-3, label smoothing=0.1, cosine annealing, batch size=128 |
 
-### 50-Class Subset Evaluation
+### 🔤 50-Class Subset Evaluation
 
 For the 50-sign demo subset, results are substantially higher due to reduced class ambiguity:
 
@@ -169,7 +171,7 @@ For the 50-sign demo subset, results are substantially higher due to reduced cla
 
 Transfer learning from the 2,731-class checkpoint yields a **+7.5 pp** Top-1 improvement over training from scratch on the 50-class subset.
 
-### Notable Patterns
+### 🔍 Notable Patterns
 
 - **Top-confusion pairs** (e.g., `CALENDAR1`↔`CALENDAR2`, `BRAVE`↔`HEALTH`, `HALLOWEEN1`↔`PEEKABOO`) reflect signs that are visually similar — this is expected behavior at the current accuracy level.
 - **Best-class examples** (e.g., `ZEBRA`, `WORKSHOP`, `YAWN2`, `PARANOID`) are consistently near or at 100% accuracy, indicating the model excels on distinctive gestures.
@@ -177,7 +179,7 @@ Transfer learning from the 2,731-class checkpoint yields a **+7.5 pp** Top-1 imp
 
 ---
 
-## REST API
+## 🌐 REST API
 
 | Method | Route | Description |
 |:---:|---|---|
@@ -190,49 +192,49 @@ Transfer learning from the 2,731-class checkpoint yields a **+7.5 pp** Top-1 imp
 
 ---
 
-## CLI Tools
+## 💻 CLI Tools
 
 ```bash
-# Run the full forensic verification suite (reproduces the numbers above)
+# 🔍 Run the full forensic verification suite (reproduces the numbers above)
 PYTHONPATH=. python -m signbridge.inference.verify_pipeline
 
-# Predict from a video file
+# 🎬 Predict from a video file
 PYTHONPATH=. python -m signbridge.inference.predict_video --video path/to/sample.mp4
 
-# Predict from a cached .npy landmark sequence
+# 📦 Predict from a cached .npy landmark sequence
 PYTHONPATH=. python -m signbridge.inference.predict_cache --index 339
 ```
 
 The verification suite checks:
-1. Model checkpoint loads correctly and class count matches (2,731)
-2. Class mapping parity between the checkpoint and the ASL Citizen test split
-3. Golden-sample parity on four reference indices
-4. Exact reproduction of Top-1 (34.84%) and Top-5 (61.54%) accuracy on the original baseline model
+1. ✅ Model checkpoint loads correctly and class count matches (2,731)
+2. ✅ Class mapping parity between the checkpoint and the ASL Citizen test split
+3. ✅ Golden-sample parity on four reference indices
+4. ✅ Exact reproduction of Top-1 (34.84%) and Top-5 (61.54%) accuracy on the original baseline model
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 signbridge/
 ├── signbridge/
-│   ├── preprocessing/      # MediaPipe landmark extraction & normalization
-│   ├── inference/          # Model, predictor, verification suite
-│   └── web/                # FastAPI backend, templates, CSS, JS
+│   ├── preprocessing/      # 📷 MediaPipe landmark extraction & normalization
+│   ├── inference/          # 🧠 Model, predictor, verification suite
+│   └── web/                # 🌐 FastAPI backend, templates, CSS, JS
 ├── trained_models/
-│   ├── best_gru_normalized.pth     # Original baseline (34.84% Top-1)
-│   ├── production/                 # Deployed checkpoint (exp5, 48.62% Top-1)
-│   ├── demo_50/                    # 50-class subset experiments
-│   └── full_2731/                  # 2731-class benchmark experiments
-├── dataset/                        # ASL Citizen dataset (not in repo, ~46 GB)
-├── docs/                           # Documentation and reference materials
+│   ├── best_gru_normalized.pth     # 📊 Original baseline (34.84% Top-1)
+│   ├── production/                 # 🚀 Deployed checkpoint (exp5, 48.62% Top-1)
+│   ├── demo_50/                    # 🔤 50-class subset experiments
+│   └── full_2731/                  # 📈 2731-class benchmark experiments
+├── dataset/                        # 🗂️ ASL Citizen dataset (not in repo, ~46 GB)
+├── docs/                           # 📖 Documentation and reference materials
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Development & Deployment
+## 🛠️ Development & Deployment
 
 For team setup, environment configuration, dataset access, and troubleshooting, see [README_DEPLOYMENT.md](README_DEPLOYMENT.md).
 
@@ -246,3 +248,6 @@ Contributions, bug reports, and feature requests are welcome.
 <a href="https://github.com/swastikparmar987/signbridge/network"><img src="https://img.shields.io/github/forks/swastikparmar987/signbridge?label=Forks"></a>
 
 </div>
+
+---
+
