@@ -1,395 +1,160 @@
 <div align="center">
 
-# 🤟 SignBridge
+# SignBridge
 
-### *Bridging Silence and Sound with Real-Time AI*
+### Real-time American Sign Language recognition & learning
 
-**An ultra-low latency, real-time American Sign Language (ASL) recognition & learning platform.**  
-Powered by **MediaPipe Hands**, a custom **PyTorch GRU Neural Network**, and a high-throughput **FastAPI** backend.
+An open-source platform for translating American Sign Language (ASL) into text and supporting interactive learning. The system uses hand landmark tracking, a PyTorch GRU neural network, and a FastAPI backend.
 
----
-
-[![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![MediaPipe](https://img.shields.io/badge/MediaPipe-Hands-007ACC?style=for-the-badge&logo=google&logoColor=white)](https://mediapipe.dev/)
-
-
-[**Explore Features**](#-core-features) • [**Quick Start**](#-quick-start) • [**Architecture**](#-neural-architecture) • [**API Docs**](#-rest-api-reference) • [**Learn Mode**](#-interactive-learning--practice)
+<a href="https://github.com/swastikparmar987/signbridge/actions"><img src="https://img.shields.io/github/actions/workflow/status/swastikparmar987/signbridge/ci.yml?branch=main&label=CI&style=flat-square"></a>
+<a href="https://github.com/swastikparmar987/signbridge/releases"><img src="https://img.shields.io/github/v/release/swastikparmar987/signbridge?style=flat-square"></a>
+<a href="https://github.com/swastikparmar987/signbridge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/swastikparmar987/signbridge?style=flat-square"></a>
 
 </div>
 
 ---
 
-## 🌟 Highlights
+## Overview
 
-- ⚡ **Real-Time Webcam Inference**: Continuous live video recognition with a 32-frame dynamic rolling buffer (~40ms inference on Apple Silicon / CUDA).
-- 🎯 **Massive Vocabulary**: Recognizes **2,731 distinct ASL glosses** trained on the comprehensive ASL Citizen dataset.
-- 🖐️ **Sub-Pixel Landmark Normalization**: Dual-hand wrist-centered origin translation and scale invariance for camera distance independence.
-- 🎓 **Interactive Learning Suite**: Instant demonstration videos for every vocabulary sign with guided live practice and accuracy scoring.
-- 🛠️ **Built-In Diagnostic Overlay**: Live telemetry HUD displaying camera state, hand landmark tracking, buffer health, and API latency.
-- ♿ **Accessible by Design**: WCAG 2.2 AA compliant, dark-mode optimized interface with full keyboard navigation.
+SignBridge processes live webcam input to detect and recognize ASL gestures in real time. It also includes a learning mode with demonstrations for each sign.
+
+**Built with:**
+- [MediaPipe Hands](https://mediapipe.dev/) for landmark tracking
+- [PyTorch](https://pytorch.org/) GRU network for sequence classification
+- [FastAPI](https://fastapi.tiangolo.com/) backend serving the web interface and API
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
-Get SignBridge up and running in **less than 2 minutes**.
-
-### 1. Clone the Repository
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/swastikparmar987/signbridge.git
 cd signbridge
-```
-
-### 2. Set Up Virtual Environment
-
-<details open>
-<summary><b>macOS & Linux</b></summary>
-
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-</details>
-
-<details>
-<summary><b>Windows (Command Prompt / PowerShell)</b></summary>
-
-```cmd
-python -m venv .venv
-.venv\Scripts\activate
-```
-</details>
-
-### 3. Install Dependencies
-
-```bash
-pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-> 🚀 **Hardware Acceleration Note**:
-> - **macOS (Apple Silicon M1/M2/M3/M4)**: Automatically runs on **Metal (`mps`)**.
-> - **Linux / Windows with NVIDIA GPU**: Automatically runs on **CUDA**.
-> - **CPU Fallback**: Gracefully executes vectorized CPU tensor operations.
-
-### 4. Launch the Server
+### 2. Start the server
 
 ```bash
 python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 5. Open in Browser
+### 3. Open
 
-👉 Navigate to: **[http://localhost:8000](http://localhost:8000)**
-
----
-
-## 🎮 How to Use
-
-<table>
-  <tr>
-    <td width="33%" align="center">
-      <h3>🎥 Live Recognition</h3>
-      <p>Click <b>Start Camera</b>. Hold your hands up, sign naturally, and get immediate Top-1 and Top-5 ranked predictions.</p>
-    </td>
-    <td width="33%" align="center">
-      <h3>📁 Video File Upload</h3>
-      <p>Drag and drop any <code>.mp4</code>, <code>.mov</code>, or <code>.webm</code> video file to instantly analyze offline recordings.</p>
-    </td>
-    <td width="33%" align="center">
-      <h3>📚 Learn & Practice</h3>
-      <p>Browse 2,731 sign definitions, watch demo clips, and practice in real time with interactive score feedback.</p>
-    </td>
-  </tr>
-</table>
-
-> 💡 **Pro-Tip**: Press the **`D`** key at any time while the camera is active to toggle the **Real-Time Diagnostic Panel** to inspect exact tensor dimensions and latency.
+Navigate to [http://localhost:8000](http://localhost:8000).
 
 ---
 
-## 🧠 Neural Architecture
+## Features
 
-The recognition pipeline is built for high accuracy and ultra-low temporal latency:
+| Capability | Description |
+|---|---|
+| Live Recognition | Real-time webcam gesture recognition with Top-1 and Top-5 predictions |
+| Video Upload | Analyze offline recordings (`.mp4`, `.mov`, `.webm`) |
+| Learn & Practice | Browse sign definitions, watch demo clips, practice live with scoring |
+| Diagnostic Panel | Press `D` during camera use to toggle a telemetry overlay |
+| API Access | REST endpoints for health checks, predictions, and vocabulary lookup |
+
+---
+
+## How to Use
+
+1. Click **Start Camera** and sign naturally. Predictions appear ranked by confidence.
+2. Or drag a video file onto the interface for offline analysis.
+3. Use the **Learn** section to browse 2,731 signs, view demos, and practice with real-time feedback.
+
+---
+
+## Architecture
 
 ```mermaid
 flowchart LR
     A["Webcam Feed"] --> B["MediaPipe Hands"]
-    B -->|"42 Landmarks × 3D"| C["Rolling 32-Frame Buffer"]
-    C -->|"POST Payload (32, 42, 3)"| D["FastAPI Backend"]
+    B -->|"42 Landmarks x 3D"| C["Rolling 32-Frame Buffer"]
+    C --> D["FastAPI Backend"]
     D --> E["Wrist & Scale Normalization"]
-    E --> F["PyTorch GRU Tensor (1, 32, 126)"]
+    E --> F["PyTorch GRU Sequence Model"]
     F --> G["Linear Classifier"]
-    G --> H["Softmax Top-5 Ranked Glosses"]
+    G --> H["Softmax Top-5 Predictions"]
 ```
 
-### Model Specifications
+### Model Details
 
-| Parameter | Specification | Description |
-|---|---|---|
-| **Model Type** | Gated Recurrent Unit (`GRUClassifier`) | Optimized for sequential temporal gesture tracking |
-| **Input Shape** | `[Batch, 32, 126]` | 32 Frames × (2 Hands × 21 Landmarks × 3 Coordinates) |
-| **Hidden Units** | `256` units | 2 Bidirectional-aware recurrent layers with dropout |
-| **Vocabulary Size** | `2,731` Classes | Full ASL Citizen gesture spectrum |
-| **Checkpoint** | `trained_models/best_gru_normalized.pth` | Lightweight **15.98 MB** pre-trained weight distribution |
-| **Top-1 / Top-5 Accuracy** | **34.84%** / **61.54%** | Benchmarked over 32,941 wild test samples |
+| Parameter | Value |
+|---|---|
+| Model Type | Gated Recurrent Unit (`GRUClassifier`) |
+| Input Shape | `[Batch, 32, 126]` — 32 frames x 126 landmark coordinates |
+| Hidden Units | 256 |
+| Vocabulary | 2,731 ASL glosses |
+| Checkpoint | `trained_models/best_gru_normalized.pth` (~16 MB) |
+| Top-1 Accuracy | 34.84% |
+| Top-5 Accuracy | 61.54% |
+
+Accuracy measured over 32,941 test samples from the ASL Citizen dataset.
 
 ---
 
-## 🧪 Forensic Verification & CLI Tools
-
-SignBridge includes built-in verification suites to test accuracy and offline inference:
-
-#### Run Full Test Suite Verification
-```bash
-python -m signbridge.inference.verify_pipeline
-```
-
-#### Run CLI Prediction on Video Files
-```bash
-python -m signbridge.inference.predict_video --video path/to/sample_sign.mp4
-```
-
----
-
-## 🌐 REST API Reference
+## REST API
 
 | Method | Route | Description |
-|:---|:---|:---|
-| `GET` | `/api/health` | Verifies health status, device accelerator (`mps`/`cuda`/`cpu`), and active classes |
-| `POST` | `/api/predict/sequence` | Accepts JSON `{"sequence": [[[x, y, z], ...]]}` shape `(32, 42, 3)` |
-| `POST` | `/api/predict/video` | Multipart file upload (`.mp4`, `.mov`, `.webm`) for batch inference |
-| `POST` | `/api/debug/sequence` | Diagnostic inspection endpoint (reports wrist coordinates & zero-fills) |
-| `GET` | `/api/vocabulary` | Paginated dictionary lookup with search query filtering |
-| `GET` | `/api/demonstration/{gloss}` | Returns demonstration video metadata and target video source |
-| `GET` | `/api/teach-me` | Returns a curated random sign for discovery |
+|---|---|---|
+| `GET` | `/api/health` | Health check, device info, active class count |
+| `POST` | `/api/predict/sequence` | Predict from raw JSON landmark sequence |
+| `POST` | `/api/predict/video` | Batch inference from uploaded video file |
+| `GET` | `/api/vocabulary` | Paginated dictionary with search filtering |
+| `GET` | `/api/demonstration/{gloss}` | Demo video metadata for a gloss |
+| `GET` | `/api/teach-me` | Random curated sign for discovery |
 
 ---
 
-## 📂 Project Structure
+## CLI Tools
+
+```bash
+# Verify the full pipeline
+python -m signbridge.inference.verify_pipeline
+
+# Predict from a video file
+python -m signbridge.inference.predict_video --video path/to/sample.mp4
+```
+
+---
+
+## Project Structure
 
 ```
 signbridge/
-├── 📦 signbridge/
-│   ├── 🧠 inference/          # Predictor engine, GRU model, pipeline verifier
-│   ├── 📐 preprocessing/      # MediaPipe landmark extraction & coordinate normalizers
-│   └── 🌐 web/                # FastAPI application, templates, CSS & interactive JS
-├── 🏋️ trained_models/         # Pre-trained neural network weights (15.98 MB)
-├── 📜 requirements.txt        # Production dependency manifest
-├── 📖 README.md               # Visual project documentation
-└── 🛡️ .gitignore              # Ignores local caches, venvs, and 46GB raw datasets
+├── signbridge/
+│   ├── inference/          # Model, predictor, pipeline verification
+│   ├── preprocessing/      # Landmark extraction and normalization
+│   └── web/                # FastAPI app, templates, CSS, JS
+├── trained_models/         # Model checkpoints
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## 🛠️ Troubleshooting & FAQ
+## Development
 
-<details>
-<summary><b>1. The webcam isn't starting in the browser</b></summary>
+See [README_DEPLOYMENT.md](README_DEPLOYMENT.md) for teammate setup, environment configuration, dataset requirements, and troubleshooting.
 
-- Ensure your browser has been granted permission to access your camera.
-- On **macOS**: Go to *System Settings → Privacy & Security → Camera* and ensure your browser (Chrome, Safari, etc.) is toggled ON.
-- If using an external webcam, verify that it is selected as the default input device in your browser's site settings.
-</details>
+---
 
-<details>
-<summary><b>2. Error: Port 8000 is already in use</b></summary>
+## License
 
-You can specify an alternate port when running Uvicorn:
-```bash
-python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8080
-```
-Then visit `http://localhost:8080`.
-</details>
-
-<details>
-<summary><b>3. How do I verify my GPU is being used?</b></summary>
-
-Hit the health check endpoint in your browser or terminal:
-```bash
-curl http://localhost:8000/api/health
-```
-Look for `"device": "mps"` (Apple Silicon) or `"device": "cuda"` (NVIDIA).
-</details>
+This project is licensed under the terms specified in [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-Made with ❤️ for inclusive, accessible communication.  
-**Contributions, bug reports, and feature requests are welcome!**
+Contributions and bug reports are welcome. Open an issue or submit a pull request.
 
-[![GitHub Stars](https://img.shields.io/github/stars/swastikparmar987/signbridge?style=social)](https://github.com/swastikparmar987/signbridge/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/swastikparmar987/signbridge?style=social)](https://github.com/swastikparmar987/signbridge/network/members)
+<a href="https://github.com/swastikparmar987/signbridge/stargazers"><img src="https://img.shields.io/github/stars/swastikparmar987/signbridge?style=social"></a>
+<a href="https://github.com/swastikparmar987/signbridge/network/members"><img src="https://img.shields.io/github/forks/swastikparmar987/signbridge?style=social"></a>
 
 </div>
-
----
-
-## 🧑‍💻 Setup for Teammates
-
-### Complete Local Setup
-
-#### 1. Clone the Repository
-```bash
-git clone https://github.com/swastikparmar987/signbridge.git
-cd signbridge
-```
-
-#### 2. Set Up Python Environment
-```bash
-# Create virtual environment
-python3 -m venv .venv
-
-# Activate (macOS/Linux)
-source .venv/bin/activate
-
-# Activate (Windows)
-# .venv\Scripts\activate
-
-# Install dependencies
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-#### 3. Configure Environment Variables
-```bash
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your local paths
-# You'll need to set up:
-# - DATASET_PATH: Path to ASL Citizen dataset
-# - Model checkpoint paths
-# - Cache directory paths
-```
-
-#### 4. Set Up Dataset & Models
-
-**Dataset Setup**:
-- Obtain the ASL Citizen dataset (46GB, not included in repo)
-- Place it in the location specified in `.env` (DATASET_PATH)
-- Structure: `dataset/ASL_Citizen/{videos, splits, ...}`
-
-**Model Setup**:
-- Model checkpoints are NOT included in the repository
-- Place your model files (.pth) in appropriate locations
-- Update `PRODUCTION_MODEL_PATH` and `FALLBACK_MODEL_PATH` in `.env`
-
-#### 5. Start the Application
-```bash
-# Start FastAPI server
-python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8000 --reload
-```
-
-#### 6. Open in Browser
-👉 **[http://localhost:8000](http://localhost:8000)**
-
-### Verification
-```bash
-# Test imports
-python -c "import signbridge; print('Import successful')"
-
-# Health check
-curl http://localhost:8000/api/health
-
-# Run tests
-python -m pytest tests/
-```
-
-### Important Notes for Teammates
-
-**Dataset**:
-- The ASL Citizen dataset (46GB) is NOT included in this repository
-- Each team member must obtain it separately and place it locally
-- Update `DATASET_PATH` in your `.env` file to point to your local copy
-
-**Model Checkpoints**:
-- Model weights (.pth files) are NOT included
-- You need to obtain/place model files in locations specified in `.env`
-- The application will fail gracefully with clear error messages if models are missing
-
-**Cache Directories**:
-- Landmark caches are automatically generated when needed
-- Cache directories are excluded from Git (see `.gitignore`)
-- First run will be slower as caches are built
-
-**Environment Variables**:
-- Never commit `.env` to version control
-- Use `.env.example` as a template for required variables
-- All sensitive configuration should be in `.env`
-
-### Troubleshooting for New Teammates
-
-<details>
-<summary><b>1. Missing dataset error</b></summary>
-
-**Symptoms**: Application starts but shows "Dataset not found" errors
-**Solution**: 
-1. Obtain ASL Citizen dataset
-2. Update `DATASET_PATH` in `.env`
-3. Ensure structure: `dataset/ASL_Citizen/{videos, splits, ...}`
-</details>
-
-<details>
-<summary><b>2. Missing model checkpoints</b></summary>
-
-**Symptoms**: Application fails to start with "Model file not found" error
-**Solution**:
-1. Obtain model checkpoint files (.pth)
-2. Update model paths in `.env`
-3. Place files in correct locations
-</details>
-
-<details>
-<summary><b>3. Webcam permission issues</b></summary>
-
-**Symptoms**: Camera doesn't start in browser
-**Solution**:
-- **macOS**: System Settings → Privacy & Security → Camera → Enable browser
-- **Linux/Windows**: Check browser permissions
-- Verify camera is selected as input device
-</details>
-
-<details>
-<summary><b>4. Dependency installation issues</b></summary>
-
-**Symptoms**: `pip install` fails
-**Solution**:
-```bash
-# Ensure Python 3.10+
-python --version
-
-# Upgrade pip
-pip install --upgrade pip
-
-# Install system dependencies first (Ubuntu/Debian)
-sudo apt-get install python3-dev python3-venv
-
-# Create fresh virtual environment
-rm -rf .venv
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-</details>
-
-### Quick Test Commands
-```bash
-# Test Python imports
-python -c "import signbridge; from signbridge.inference.predictor import SignBridgePredictor; print('✓ All imports successful')"
-
-# Test API health
-curl -s http://localhost:8000/api/health | jq '.status'
-
-# Run available tests
-python -m pytest tests/ -v
-```
-
-### Need Help?
-- Check existing issues on GitHub
-- Review the troubleshooting section above
-- Contact the team for dataset/model access
-- Update `.env.example` if you find missing required variables
