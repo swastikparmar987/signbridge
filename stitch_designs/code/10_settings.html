@@ -1,0 +1,636 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SignBridge - Settings</title>
+<!-- Tailwind CSS CDN with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              orange: '#ff5722',
+              'orange-hover': '#f4511e',
+              'orange-light': '#fff3ed',
+              dark: '#111318',
+              sidebar: '#12141a',
+              bg: '#f7f6f2',
+              card: '#ffffff',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-layout">
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f7f6f2;
+      color: #1a1e26;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Custom Toggle Styles */
+    .toggle-checkbox:checked {
+      right: 0;
+      border-color: #ff5722;
+    }
+    .toggle-checkbox:checked + .toggle-label {
+      background-color: #ff5722;
+    }
+  </style>
+</head>
+<body class="bg-[#f7f6f2] flex min-h-screen text-slate-800 antialiased selection:bg-orange-500 selection:text-white">
+<!-- BEGIN: Sidebar -->
+<aside class="w-[260px] bg-[#111318] text-white flex-shrink-0 flex flex-col justify-between py-6 px-4 min-h-screen select-none" data-purpose="sidebar-navigation">
+<!-- Top Branding & Navigation Links -->
+<div class="space-y-6">
+<!-- Logo & Brand Header -->
+<div class="px-2 pt-1">
+<div class="flex items-center gap-3">
+<!-- Hand Logo Icon -->
+<div class="text-[#ff5722]">
+<svg class="w-8 h-8 fill-current" viewBox="0 0 24 24">
+<path d="M12.5 2a1.5 1.5 0 0 0-1.5 1.5v6.25a.75.75 0 0 1-1.5 0V4.5a1.5 1.5 0 0 0-3 0v6.75a.75.75 0 0 1-1.5 0V6a1.5 1.5 0 0 0-3 0v7.5C2 18.3 5.7 22 10.25 22h3.5c4.55 0 8.25-3.7 8.25-8.25v-5a1.5 1.5 0 0 0-3 0v4.5a.75.75 0 0 1-1.5 0V3.5a1.5 1.5 0 0 0-3 0v6.25a.75.75 0 0 1-1.5 0V3.5A1.5 1.5 0 0 0 12.5 2z"></path>
+</svg>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-white leading-none">SignBridge</h1>
+<p class="text-[10px] text-gray-400 font-normal mt-1 leading-snug">Different Signs.<br>Same Human Connection.</p>
+</div>
+</div>
+</div>
+<!-- Navigation Menu -->
+<nav class="space-y-1 text-sm font-medium">
+<!-- Home -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all" href="#">
+<svg class="w-5 h-5 text-gray-400 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M3 9.75L12 3l9 6.75V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.75z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Home</span>
+</a>
+<!-- Live Translate -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all" href="#">
+<svg class="w-5 h-5 text-gray-400 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<rect height="12" rx="2" stroke-linecap="round" stroke-linejoin="round" width="14" x="2" y="6"></rect>
+<path d="M16 10l5-3v10l-5-3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Live Translate</span>
+</a>
+<!-- Video Translate -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all" href="#">
+<svg class="w-5 h-5 text-gray-400 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<rect height="16" rx="3" stroke-linecap="round" stroke-linejoin="round" width="20" x="2" y="4"></rect>
+<polygon fill="currentColor" points="10 8 16 12 10 16" stroke="none"></polygon>
+</svg>
+<span class="">Video Translate</span>
+</a>
+<!-- Teach SignBridge -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all" href="#">
+<svg class="w-5 h-5 text-gray-400 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<rect height="18" rx="2" stroke-linecap="round" stroke-linejoin="round" width="18" x="3" y="3"></rect>
+<line x1="12" x2="12" y1="8" y2="16"></line>
+<line x1="8" x2="16" y1="12" y2="12"></line>
+</svg>
+<span class="">Teach SignBridge</span>
+</a>
+<!-- Learn -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all" href="#">
+<svg class="w-5 h-5 text-gray-400 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Learn</span>
+</a>
+<!-- Practice -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all" href="#">
+<svg class="w-5 h-5 text-gray-400 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="9"></circle>
+<path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Practice</span>
+</a>
+<!-- Communication -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all" href="#">
+<svg class="w-5 h-5 text-gray-400 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Communication</span>
+</a>
+<!-- Settings (Active) -->
+<a class="flex items-center gap-3.5 px-4 py-3 rounded-2xl bg-[#ff5722] text-white font-medium shadow-md shadow-[#ff5722]/20" href="#">
+<svg class="w-5 h-5 text-white stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[15px]">Settings</span>
+</a>
+<!-- Profile -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all" href="#">
+<svg class="w-5 h-5 text-gray-400 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Profile</span>
+</a>
+</nav>
+</div>
+<!-- Bottom Promo Artwork Card -->
+<div class="mt-8 rounded-2xl overflow-hidden bg-[#181a20] border border-white/5 shadow-xl relative" data-purpose="sidebar-promo">
+  <div class="relative w-full aspect-[412/704] overflow-hidden rounded-2xl">
+    <img alt="A more inclusive world, together" class="w-full h-full object-cover object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4B_9YartCuPJHy78gBGS8DRsx3tGcwCOg5p_tHo2OSXuwc5njj8VrYId1kSjJDSXw3qV-CTeh7vm2i1TryhpvxrznpkblBy5uUzfwpz7I82m__ikMwBxRURQP2CJdVNACJ_5tZwIM9XXGl4vJNJZGIxXNYMY1oV-ZlsrzR_7IkCL-mIYrnSrh_ZaWd0zHH6LjFxHMzKgKvE8HSnHJ3dM2nOC7plj3AUsk-8ZOeWi7F0i1lTtnU8mGgt60Jo5EVF3qS_Y">
+  </div>
+</div>
+</aside>
+<!-- END: Sidebar -->
+<!-- BEGIN: Main Content Area -->
+<main class="flex-1 px-10 py-9 overflow-y-auto">
+<!-- Header Section -->
+<header class="mb-7" data-purpose="page-header">
+<span class="text-[11px] font-bold tracking-widest text-[#ff5722] uppercase">SETTINGS</span>
+<h2 class="text-3xl font-extrabold text-slate-900 mt-0.5 tracking-tight">Settings</h2>
+<p class="text-sm text-slate-500 mt-1">Customize your SignBridge experience and preferences.</p>
+</header>
+<!-- 2-Column Settings Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-[1300px]" data-purpose="settings-grid">
+<!-- ================= CARD 1: Appearance ================= -->
+<section class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between" data-purpose="card-appearance">
+<div>
+<!-- Header -->
+<div class="flex items-start gap-3 pb-5">
+<div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0 mt-0.5">
+<svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<h3 class="font-bold text-slate-900 text-base leading-tight">Appearance</h3>
+<p class="text-xs text-slate-400 mt-0.5">Customize the look and feel of the app.</p>
+</div>
+</div>
+<!-- Theme -->
+<div class="mt-1 mb-5">
+<label class="block text-xs font-semibold text-slate-700 mb-2">Theme</label>
+<div class="grid grid-cols-3 gap-2.5">
+<!-- Light (Active) -->
+<button class="flex items-center justify-center gap-2 py-3 px-3 rounded-xl border-2 border-[#ff5722] bg-[#fffaf8] text-[#ff5722] font-semibold text-xs transition-colors">
+<svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="4"></circle>
+<path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41m14.14-14.14l-1.41 1.41" stroke-linecap="round"></path>
+</svg>
+<span class="">Light</span>
+</button>
+<!-- Dark -->
+<button class="flex items-center justify-center gap-2 py-3 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-xs hover:border-slate-300 transition-colors">
+<svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Dark</span>
+</button>
+<!-- System -->
+<button class="flex items-center justify-center gap-2 py-3 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-xs hover:border-slate-300 transition-colors">
+<svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<rect height="14" rx="2" stroke-linecap="round" stroke-linejoin="round" width="20" x="2" y="3"></rect>
+<line stroke-linecap="round" x1="8" x2="16" y1="21" y2="21"></line>
+<line stroke-linecap="round" x1="12" x2="12" y1="17" y2="21"></line>
+</svg>
+<span class="">System</span>
+</button>
+</div>
+</div>
+<!-- Accent Color Swatches -->
+<div class="mb-5">
+<label class="block text-xs font-semibold text-slate-700 mb-2">Accent Color</label>
+<div class="flex items-center gap-3">
+<!-- Orange (Active) -->
+<button class="w-7 h-7 rounded-full bg-[#ff5722] ring-2 ring-offset-2 ring-[#ff5722] focus:outline-none"></button>
+<!-- Blue -->
+<button class="w-7 h-7 rounded-full bg-[#3b82f6] hover:opacity-90 focus:outline-none"></button>
+<!-- Purple -->
+<button class="w-7 h-7 rounded-full bg-[#8b5cf6] hover:opacity-90 focus:outline-none"></button>
+<!-- Mint -->
+<button class="w-7 h-7 rounded-full bg-[#10b981] hover:opacity-90 focus:outline-none"></button>
+<!-- Pink -->
+<button class="w-7 h-7 rounded-full bg-[#ec4899] hover:opacity-90 focus:outline-none"></button>
+</div>
+</div>
+<!-- Font Size -->
+<div class="flex items-center justify-between pt-1">
+<label class="text-xs font-semibold text-slate-700">Font Size</label>
+<div class="relative w-48">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">Medium</option>
+<option>Small</option>
+<option>Large</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= CARD 2: Language & Region ================= -->
+<section class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between" data-purpose="card-language-region">
+<div>
+<!-- Header -->
+<div class="flex items-start gap-3 pb-5">
+<div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0 mt-0.5">
+<svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<line x1="2" x2="22" y1="12" y2="12"></line>
+<path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<h3 class="font-bold text-slate-900 text-base leading-tight">Language &amp; Region</h3>
+<p class="text-xs text-slate-400 mt-0.5">Set your preferred language and regional settings.</p>
+</div>
+</div>
+<!-- App Language -->
+<div class="flex items-center justify-between py-2">
+<label class="text-xs font-semibold text-slate-700">App Language</label>
+<div class="relative w-52">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">English (US)</option>
+<option>Español</option>
+<option>Français</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Sign Language -->
+<div class="flex items-center justify-between py-2">
+<label class="text-xs font-semibold text-slate-700">Sign Language</label>
+<div class="relative w-52">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">American Sign Language (ASL)</option>
+<option>British Sign Language (BSL)</option>
+<option>Indian Sign Language (ISL)</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Spoken Language (Voice) -->
+<div class="flex items-center justify-between py-2">
+<label class="text-xs font-semibold text-slate-700">Spoken Language (Voice)</label>
+<div class="relative w-52">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">English (US)</option>
+<option>English (UK)</option>
+<option>Hindi</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Location/Region -->
+<div class="flex items-center justify-between py-2">
+<label class="text-xs font-semibold text-slate-700">Location/Region</label>
+<div class="relative w-52">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">India (IN)</option>
+<option>United States (US)</option>
+<option>United Kingdom (UK)</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Auto-detect language Toggle -->
+<div class="flex items-center justify-between pt-3">
+<div>
+<p class="text-xs font-semibold text-slate-800">Auto-detect language</p>
+<p class="text-[11px] text-slate-400">Automatically detect sign or spoken language.</p>
+</div>
+<!-- Toggle Active -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff5722]"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- ================= CARD 3: Translation Preferences ================= -->
+<section class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between" data-purpose="card-translation-preferences">
+<div>
+<!-- Header -->
+<div class="flex items-start gap-3 pb-5">
+<div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0 mt-0.5">
+<svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<h3 class="font-bold text-slate-900 text-base leading-tight">Translation Preferences</h3>
+<p class="text-xs text-slate-400 mt-0.5">Configure how translations are displayed and generated.</p>
+</div>
+</div>
+<!-- Default Translation Mode -->
+<div class="flex items-center justify-between py-2">
+<label class="text-xs font-semibold text-slate-700">Default Translation Mode</label>
+<div class="relative w-48">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">Sign to Text</option>
+<option>Sign to Voice</option>
+<option>Voice to Sign</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Show Confidence Score -->
+<div class="flex items-center justify-between py-2.5">
+<div>
+<p class="text-xs font-semibold text-slate-800">Show Confidence Score</p>
+<p class="text-[11px] text-slate-400">Display model confidence for detected signs.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff5722]"></div>
+</label>
+</div>
+<!-- Show Word Suggestions -->
+<div class="flex items-center justify-between py-2.5">
+<div>
+<p class="text-xs font-semibold text-slate-800">Show Word Suggestions</p>
+<p class="text-[11px] text-slate-400">Show alternative predictions while translating.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff5722]"></div>
+</label>
+</div>
+<!-- Playback Speed -->
+<div class="flex items-center justify-between py-2">
+<label class="text-xs font-semibold text-slate-700">Playback Speed</label>
+<div class="relative w-48">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">Normal (1.0x)</option>
+<option>0.75x</option>
+<option>1.25x</option>
+<option>1.5x</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Auto Translate -->
+<div class="flex items-center justify-between pt-2.5">
+<div>
+<p class="text-xs font-semibold text-slate-800">Auto Translate</p>
+<p class="text-[11px] text-slate-400">Start translating automatically when input is detected.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff5722]"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- ================= CARD 4: Camera & Input ================= -->
+<section class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between" data-purpose="card-camera-input">
+<div>
+<!-- Header -->
+<div class="flex items-start gap-3 pb-5">
+<div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0 mt-0.5">
+<svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke-linecap="round" stroke-linejoin="round"></path>
+<circle cx="12" cy="13" r="4"></circle>
+</svg>
+</div>
+<div>
+<h3 class="font-bold text-slate-900 text-base leading-tight">Camera &amp; Input</h3>
+<p class="text-xs text-slate-400 mt-0.5">Manage camera, microphone and input settings.</p>
+</div>
+</div>
+<!-- Camera Device -->
+<div class="flex items-center justify-between py-1.5">
+<label class="text-xs font-semibold text-slate-700">Camera Device</label>
+<div class="relative w-52">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">Default Camera</option>
+<option>External Webcam</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Microphone Device -->
+<div class="flex items-center justify-between py-1.5">
+<label class="text-xs font-semibold text-slate-700">Microphone Device</label>
+<div class="relative w-52">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">Default Microphone</option>
+<option>Headset Microphone</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Video Quality -->
+<div class="flex items-center justify-between py-1.5">
+<label class="text-xs font-semibold text-slate-700">Video Quality</label>
+<div class="relative w-52">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">HD (720p)</option>
+<option>Full HD (1080p)</option>
+<option>SD (480p)</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Frame Rate -->
+<div class="flex items-center justify-between py-1.5">
+<label class="text-xs font-semibold text-slate-700">Frame Rate</label>
+<div class="relative w-52">
+<select class="w-full text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-[#ff5722] focus:border-[#ff5722]">
+<option selected="">30 FPS</option>
+<option>60 FPS</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Mirror Camera Preview -->
+<div class="flex items-center justify-between py-2">
+<div>
+<p class="text-xs font-semibold text-slate-800">Mirror Camera Preview</p>
+<p class="text-[11px] text-slate-400">Mirror the camera view horizontally.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff5722]"></div>
+</label>
+</div>
+<!-- Show Landmarks -->
+<div class="flex items-center justify-between py-2">
+<div>
+<p class="text-xs font-semibold text-slate-800">Show Landmarks</p>
+<p class="text-[11px] text-slate-400">Display hand landmarks while detecting signs.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff5722]"></div>
+</label>
+</div>
+<!-- Noise Reduction (Inactive) -->
+<div class="flex items-center justify-between pt-2">
+<div>
+<p class="text-xs font-semibold text-slate-800">Noise Reduction</p>
+<p class="text-[11px] text-slate-400">Reduce background noise for better accuracy.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff5722]"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- ================= CARD 5: Data & Storage ================= -->
+<section class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between" data-purpose="card-data-storage">
+<div>
+<!-- Header -->
+<div class="flex items-start gap-3 pb-5">
+<div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0 mt-0.5">
+<svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+<path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+<path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+</svg>
+</div>
+<div>
+<h3 class="font-bold text-slate-900 text-base leading-tight">Data &amp; Storage</h3>
+<p class="text-xs text-slate-400 mt-0.5">Manage your data, cache and storage settings.</p>
+</div>
+</div>
+<!-- Clear Cache -->
+<div class="flex items-center justify-between py-3 border-b border-slate-50">
+<div>
+<p class="text-xs font-semibold text-slate-800">Clear Cache</p>
+<p class="text-[11px] text-slate-400">Remove temporary files and cached data.</p>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-[#ff5722] hover:bg-orange-50 font-medium text-xs transition-colors">
+<svg class="w-3.5 h-3.5 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Clear Cache</span>
+</button>
+</div>
+<!-- Export Data -->
+<div class="flex items-center justify-between py-3 border-b border-slate-50">
+<div>
+<p class="text-xs font-semibold text-slate-800">Export Data</p>
+<p class="text-[11px] text-slate-400">Download your saved phrases and learning data.</p>
+</div>
+<button class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs transition-colors">
+<svg class="w-3.5 h-3.5 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Export</span>
+</button>
+</div>
+<!-- Import Data -->
+<div class="flex items-center justify-between pt-3">
+<div>
+<p class="text-xs font-semibold text-slate-800">Import Data</p>
+<p class="text-[11px] text-slate-400">Restore your previously exported data.</p>
+</div>
+<button class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs transition-colors">
+<svg class="w-3.5 h-3.5 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Import</span>
+</button>
+</div>
+</div>
+</section>
+<!-- ================= CARD 6: Account & Privacy ================= -->
+<section class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between" data-purpose="card-account-privacy">
+<div>
+<!-- Header -->
+<div class="flex items-start gap-3 pb-4">
+<div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0 mt-0.5">
+<svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<h3 class="font-bold text-slate-900 text-base leading-tight">Account &amp; Privacy</h3>
+<p class="text-xs text-slate-400 mt-0.5">Manage your account and privacy settings.</p>
+</div>
+</div>
+<!-- Saved Phrases -->
+<div class="flex items-center justify-between py-2.5">
+<div>
+<p class="text-xs font-semibold text-slate-800">Saved Phrases</p>
+<p class="text-[11px] text-slate-400">View and manage your saved phrases.</p>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs transition-colors">
+<svg class="w-3.5 h-3.5 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Manage</span>
+</button>
+</div>
+<!-- Conversation History -->
+<div class="flex items-center justify-between py-2.5">
+<div>
+<p class="text-xs font-semibold text-slate-800">Conversation History</p>
+<p class="text-[11px] text-slate-400">View or clear your conversation history.</p>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs transition-colors">
+<svg class="w-3.5 h-3.5 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">View</span>
+</button>
+</div>
+<!-- Privacy Mode (Inactive) -->
+<div class="flex items-center justify-between py-2.5">
+<div>
+<p class="text-xs font-semibold text-slate-800">Privacy Mode</p>
+<p class="text-[11px] text-slate-400">Disable data storage and run locally when possible.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff5722]"></div>
+</label>
+</div>
+<!-- Allow Usage Analytics (Active) -->
+<div class="flex items-center justify-between pt-2.5">
+<div>
+<p class="text-xs font-semibold text-slate-800">Allow Usage Analytics</p>
+<p class="text-[11px] text-slate-400">Help us improve SignBridge with anonymous data.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#ff5722]"></div>
+</label>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- END: Main Content Area -->
+
+
+</body></html>

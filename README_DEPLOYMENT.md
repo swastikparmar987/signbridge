@@ -21,10 +21,10 @@ uv pip install --python .venv -r requirements.txt
 Run the production web server:
 
 ```bash
-PYTHONPATH=. .venv/bin/python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8000
+PYTHONPATH=. .venv/bin/python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8080
 ```
 
-Open your browser at: `http://localhost:8000`
+Open your browser at: `http://localhost:8080`
 
 ---
 

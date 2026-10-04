@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-fixed-variant":"#6f3804","tertiary-fixed-dim":"#ffb783","surface-bright":"#fff8f5","tertiary":"#8c4f1c","on-tertiary-fixed":"#301400","on-background":"#201a17","on-error":"#ffffff","surface-container-highest":"#ece0da","on-secondary-fixed-variant":"#7b2f00","on-primary-container":"#501f00","inverse-surface":"#362f2b","on-surface-variant":"#574238","secondary":"#a14000","secondary-fixed-dim":"#ffb694","error":"#ba1a1a","on-secondary-container":"#682700","primary-fixed":"#ffdbca","primary-container":"#e8752a","on-surface":"#201a17","surface-dim":"#e4d8d1","on-secondary":"#ffffff","surface-variant":"#ece0da","outline-variant":"#dec1b3","secondary-container":"#ff8343","inverse-on-surface":"#fbeee8","on-error-container":"#93000a","tertiary-fixed":"#ffdcc5","surface-container-low":"#fef1ea","on-primary-fixed-variant":"#773200","surface-container-high":"#f2e6df","inverse-primary":"#ffb68f","on-primary-fixed":"#331200","surface-container":"#f8ece5","on-secondary-fixed":"#351000","on-tertiary":"#ffffff","on-tertiary-container":"#4b2300","background":"#fff8f5","surface":"#fff8f5","outline":"#8a7266","tertiary-container":"#cd844c","error-container":"#ffdad6","secondary-fixed":"#ffdbcc","primary":"#9c4400","surface-tint":"#9c4400","primary-fixed-dim":"#ffb68f","surface-container-lowest":"#ffffff","on-primary":"#ffffff"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"gutter":"1.25rem","space-lg":"1.5rem","margin-md":"1.5rem","space-xl":"2rem","gutter-lg":"1.5rem","margin-lg":"2rem","space-sm":"0.5rem","space-md":"1rem","space-xs":"0.25rem","margin":"1rem"},fontFamily:{"headline-lg":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"label-md":["Inter"],"label-sm":["Inter"],"title-md":["Plus Jakarta Sans"],"code-gloss":["Inter"],"body-lg":["Inter"],"body-md":["Inter"],"headline-lg-mobile":["Plus Jakarta Sans"],"title-sm":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"]},fontSize:{"headline-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.02em",fontWeight:"700"}],"headline-sm":["20px",{lineHeight:"28px",letterSpacing:"-0.005em",fontWeight:"600"}],"label-md":["13px",{lineHeight:"18px",letterSpacing:"0.01em",fontWeight:"500"}],"label-sm":["12px",{lineHeight:"16px",letterSpacing:"0.02em",fontWeight:"500"}],"title-md":["18px",{lineHeight:"26px",fontWeight:"600"}],"code-gloss":["13px",{lineHeight:"16px",letterSpacing:"0.05em",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-lg-mobile":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"700"}],"title-sm":["16px",{lineHeight:"24px",fontWeight:"600"}],"headline-md":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"600"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-[240px] bg-surface-container-lowest border-r border-outline-variant/30 z-50 flex flex-col justify-between select-none"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center gap-space-sm border-b border-outline-variant/20"><img alt="SignBridge Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Wv-sqxcWYyIaDantWrtDIQUL7-4nozcnO1lY2ZTWfd0cgW7EDqFMM13mj4hJFR47y8HSOqyBWlx7mKzi7LKS0RWnSbiagoUx94ySh6j_HV5N9pYk6aC-Ma0WD7AVfHCYgvFDJZX0cbK925OgsVOj2u06Mk47cj5nDbITWIEl_PK_rJvMKdNHy8wsZ2deM0fA2ZPpKo7v7cULt01c6_e6PYg3mAS_E2kK6kIaGgHN9XTnw4ldjgtmLpQRR1"/><span class="font-title-md text-title-md text-on-surface tracking-tight font-bold">SignBridge</span></div><nav class="px-space-sm pt-space-md flex flex-col gap-1" data-active-classes="bg-primary-fixed text-primary font-bold rounded-lg shadow-none"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="home" href="#"><span class="material-symbols-outlined text-[20px]">home</span><span>Home</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="learn" href="#"><span class="material-symbols-outlined text-[20px]">menu_book</span><span>Learn</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="practice" href="#"><span class="material-symbols-outlined text-[20px]">front_hand</span><span>Practice</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="communication" href="#"><span class="material-symbols-outlined text-[20px]">forum</span><span>Communication</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="video-translation" href="#"><span class="material-symbols-outlined text-[20px]">videocam</span><span>Video Translation</span></a><div class="my-space-sm mx-space-sm h-[1px] bg-outline-variant/30"></div><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="profile" href="#"><span class="material-symbols-outlined text-[20px]">person</span><span>Profile</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span>Settings</span></a></nav></div><div class="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest"><div class="flex items-center gap-space-sm p-space-sm rounded-lg hover:bg-surface-container transition-colors cursor-pointer"><div class="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-title-sm text-title-sm font-semibold shrink-0">MR</div><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-on-surface font-semibold truncate">Maya Rodriguez</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">Learner &amp; Communicator</span></div></div></div></aside><div class="pl-[240px]"><header class="fixed top-0 left-[240px] right-0 h-16 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/20 z-40 flex items-center justify-between px-margin-lg"><div class="flex items-center gap-space-sm"><img alt="SignBridge Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Wv-sqxcWYyIaDantWrtDIQUL7-4nozcnO1lY2ZTWfd0cgW7EDqFMM13mj4hJFR47y8HSOqyBWlx7mKzi7LKS0RWnSbiagoUx94ySh6j_HV5N9pYk6aC-Ma0WD7AVfHCYgvFDJZX0cbK925OgsVOj2u06Mk47cj5nDbITWIEl_PK_rJvMKdNHy8wsZ2deM0fA2ZPpKo7v7cULt01c6_e6PYg3mAS_E2kK6kIaGgHN9XTnw4ldjgtmLpQRR1"/><span class="font-title-sm text-title-sm text-on-surface font-semibold">SignBridge</span><span class="text-outline-variant font-label-sm text-label-sm mx-1">/</span><div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant"><span class="hover:text-on-surface cursor-pointer transition-colors">Workspace</span><span class="text-outline-variant">/</span><span class="text-on-surface font-medium">Overview</span></div></div><div class="flex items-center gap-space-md"><div class="hidden md:flex items-center gap-2 px-space-sm py-1 rounded-full bg-surface-container-low border border-outline-variant/30 font-label-sm text-label-sm"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span><span class="text-on-surface-variant">Optical Engine: Active</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="relative pt-16 bg-background min-h-screen"><div class="flex flex-col w-full">
+<div class="px-margin-lg py-margin-md flex flex-col gap-space-lg max-w-[1560px] mx-auto w-full">
+<!-- Top Context & Header -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="hover:text-on-surface cursor-pointer transition-colors">Workspace</span>
+<span class="text-outline-variant">/</span>
+<span class="text-on-surface font-semibold">Video Translation</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md pt-space-xs">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Video translation</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-1">Upload a supported video, process it, and review the recognition results.</p>
+</div>
+<!-- Pipeline Health Tag -->
+<div class="flex items-center gap-space-sm bg-surface-container-low px-space-md py-2 rounded-lg">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-code-gloss text-code-gloss text-on-surface">V-OPTIC v4.2</span>
+</div>
+<span class="text-outline-variant text-label-sm font-label-sm">|</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">ASL Lexicon 2,400+ Signs</span>
+</div>
+</div>
+</div>
+<!-- Active Navigation Tabs -->
+<div class="flex items-center gap-space-sm bg-surface-container-low p-1.5 rounded-xl w-fit">
+<button class="flex items-center gap-2 px-space-md py-2 rounded-lg bg-surface-container-lowest text-primary font-title-sm text-title-sm shadow-sm transition-all">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+<span>Upload new video</span>
+</button>
+<button class="flex items-center gap-2 px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface font-title-sm text-title-sm transition-all">
+<span class="material-symbols-outlined text-[18px]">hourglass_top</span>
+<span>Processing queue</span>
+<span class="bg-surface-container text-on-surface-variant text-label-sm font-label-sm px-2 py-0.5 rounded-full">0</span>
+</button>
+<button class="flex items-center gap-2 px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface font-title-sm text-title-sm transition-all">
+<span class="material-symbols-outlined text-[18px]">history</span>
+<span>Previous translations</span>
+<span class="bg-primary-fixed text-primary text-label-sm font-label-sm px-2 py-0.5 rounded-full font-bold">2</span>
+</button>
+</div>
+<!-- Main Workspace Split Pane -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
+<!-- Left Column: Video Viewport & Media Controls -->
+<div class="lg:col-span-7 flex flex-col gap-space-lg">
+<!-- Video Player Module -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md flex flex-col gap-space-md shadow-sm">
+<!-- File Metadata Strip -->
+<div class="flex items-center justify-between gap-space-md bg-surface-container-low px-space-md py-2.5 rounded-lg">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-primary text-[22px] shrink-0">movie</span>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate">consultation_sample_asl.mp4</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">24.8 MB · Duration 00:18 · 1080p 30fps</span>
+</div>
+</div>
+<!-- Processing Status Badge -->
+<div class="shrink-0 flex items-center gap-1.5 bg-surface-container-highest px-2.5 py-1 rounded-full">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-on-secondary-fixed-variant font-semibold">Ready for Review</span>
+</div>
+</div>
+<!-- Video Surface with Optical Overlay -->
+<div class="relative w-full aspect-video bg-inverse-surface rounded-lg overflow-hidden group">
+<img class="w-full h-full object-cover select-none" data-alt="A medium close-up shot of a young adult communicator with warm terracotta neutral attire signing in clear American Sign Language in front of a warm cream minimal studio background with diffused soft editorial lighting. Clear hand poses visible, high photographic fidelity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJUXnBlRbUvK-HyFyz7v7-H8lNyRMzXMIlCvqxv-ndXdd1F2EAu5s_PU6EaFNvCusnoeY3IwbSmLZII0XsTGzV47Q8vMbwO7a4TQorjHYD0LQVtZtQjr43lnB8vWDeSk9EPrRWsMTH7rK-10eXXp3wMChHhsVLdC8lajYMWZlraCNWqrh0usuSDoFiw79n906UsBYSk8BRgXNf0Ja73x5IFaafZBsDocww7WN6D_aq9g6RhoUzIqRYDg"/>
+<!-- Real-time Skeletal Landmark Overlay Simulation -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none opacity-80" preserveaspectratio="none" viewbox="0 0 640 360">
+<!-- Torso & Shoulders -->
+<polyline class="text-secondary-container/60" fill="none" points="260,190 320,170 380,190" stroke="currentColor" stroke-width="2"></polyline>
+<!-- Left Arm / Hand Vector -->
+<polyline class="text-secondary-container" fill="none" points="260,190 230,230 280,260" stroke="currentColor" stroke-width="2"></polyline>
+<!-- Right Arm / Active Sign Vector -->
+<polyline class="text-primary-container" fill="none" points="380,190 410,210 360,150" stroke="currentColor" stroke-width="2.5"></polyline>
+<!-- Hand landmark nodes -->
+<circle class="fill-primary stroke-surface-container-lowest" cx="360" cy="150" r="4" stroke-width="1.5"></circle>
+<circle class="fill-primary-container" cx="350" cy="140" r="3"></circle>
+<circle class="fill-primary-container" cx="365" cy="135" r="3"></circle>
+<circle class="fill-primary-container" cx="375" cy="142" r="3"></circle>
+<circle class="fill-primary-container" cx="370" cy="158" r="3"></circle>
+<!-- Facial Anchor -->
+<circle class="fill-outline-variant/80" cx="320" cy="115" r="3"></circle>
+</svg>
+<!-- Video Player On-screen Indicators -->
+<div class="absolute top-space-sm left-space-sm flex items-center gap-space-xs">
+<span class="bg-inverse-surface/85 backdrop-blur-md text-inverse-on-surface font-code-gloss text-code-gloss px-2.5 py-1 rounded">FRAME 180 / 540</span>
+<span class="bg-primary/90 backdrop-blur-md text-on-primary font-label-sm text-label-sm px-2 py-0.5 rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">sensors</span> TRACKING LOCKED
+              </span>
+</div>
+<!-- Active Recognized Tag Pill Floater -->
+<div class="absolute top-space-sm right-space-sm bg-surface-container-lowest/95 backdrop-blur-md px-3 py-1.5 rounded-lg shadow-md flex items-center gap-2">
+<span class="text-on-surface-variant font-label-sm text-label-sm">Active Sign:</span>
+<span class="font-code-gloss text-code-gloss text-primary uppercase bg-primary-fixed px-2 py-0.5 rounded">HELP</span>
+</div>
+<!-- Central Hover Play Trigger -->
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-inverse-surface/20">
+<button aria-label="Play video" class="w-14 h-14 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[32px] translate-x-0.5">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Custom Warm Video Controls -->
+<div class="flex flex-col gap-space-xs bg-surface-container p-space-sm rounded-lg">
+<!-- Scrubber Timeline with Sign Landmark Markers -->
+<div class="relative w-full py-1 cursor-pointer group/scrub">
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden relative">
+<!-- Buffered -->
+<div class="absolute top-0 left-0 bottom-0 w-3/4 bg-outline-variant/30"></div>
+<!-- Play Progress: 00:06 of 00:18 is 33.3% -->
+<div class="absolute top-0 left-0 bottom-0 w-1/3 bg-primary rounded-full"></div>
+</div>
+<!-- Visual Keypoint Markers along timeline -->
+<div class="absolute top-0 bottom-0 left-[12%] w-1 bg-surface-container-lowest" title="00:02 - HELLO"></div>
+<div class="absolute top-0 bottom-0 left-[30%] w-1 bg-surface-container-lowest" title="00:05 - PLEASE"></div>
+<div class="absolute top-0 bottom-0 left-[50%] w-1 bg-surface-container-lowest" title="00:09 - HELP"></div>
+<div class="absolute top-0 bottom-0 left-[70%] w-1 bg-surface-container-lowest" title="00:13 - ME"></div>
+<div class="absolute top-0 bottom-0 left-[88%] w-1 bg-surface-container-lowest" title="00:16 - FIND OFFICE"></div>
+<!-- Thumb Scrub Handle -->
+<div class="absolute top-1/2 left-1/3 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-primary rounded-full shadow-md"></div>
+</div>
+<!-- Bottom Controller Row -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-space-sm">
+<button aria-label="Play/Pause" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[20px]">pause</span>
+</button>
+<button aria-label="Replay 5 seconds" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[20px]">replay_5</span>
+</button>
+<div class="font-code-gloss text-code-gloss text-on-surface-variant tracking-wider ml-1">
+<span class="text-on-surface font-bold">00:06</span> / 00:18
+                </div>
+</div>
+<!-- Playback Speed & Expansion -->
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center bg-surface-container-lowest rounded-lg p-0.5">
+<button class="px-2 py-0.5 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface rounded">0.5x</button>
+<button class="px-2 py-0.5 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface rounded">0.75x</button>
+<button class="px-2 py-0.5 text-label-sm font-label-sm bg-primary-fixed text-primary font-bold rounded">1.0x</button>
+</div>
+<button aria-label="Volume" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[20px]">volume_up</span>
+</button>
+<button aria-label="Fullscreen" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[20px]">fullscreen</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Video Processing Summary Ribbon -->
+<div class="bg-surface-container-low p-space-md rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-secondary/15 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Processing Complete</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">5 distinct signs recognized with high confidence score</span>
+</div>
+</div>
+<!-- Quick Action Links -->
+<div class="flex items-center gap-2 pt-1 sm:pt-0">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>Re-run pipeline</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-secondary transition-all shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Process another file</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Before You Upload: Format Guidance Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg flex flex-col gap-space-md shadow-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-tertiary text-[22px]">info</span>
+<h2 class="font-title-md text-title-md text-on-surface font-bold">Before You Upload</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Format Requirements -->
+<div class="flex flex-col gap-2 bg-surface-container-low p-space-md rounded-lg">
+<span class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">video_file</span>
+                Supported Containers &amp; Limits
+              </span>
+<ul class="flex flex-col gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<li class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
+<span><strong>MP4, MOV, or WebM</strong> video formats</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
+<span>Maximum payload size: <strong>100 MB</strong> per submission</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
+<span>Recommended framerate: <strong>30 to 60 fps</strong></span>
+</li>
+</ul>
+</div>
+<!-- Optical Video Best Practices -->
+<div class="flex flex-col gap-2 bg-surface-container-low p-space-md rounded-lg">
+<span class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">center_focus_strong</span>
+                Signer Visibility Guidelines
+              </span>
+<ul class="flex flex-col gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<li class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary shrink-0"></span>
+<span>Adequate front lighting; avoid harsh backlight</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary shrink-0"></span>
+<span>Both hands and upper torso unobstructed in frame</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary shrink-0"></span>
+<span>Steady stationary camera &amp; clean, neutral background</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Recognition Results, Gloss Breakdown & Synthesis -->
+<div class="lg:col-span-5 flex flex-col gap-space-lg">
+<!-- Recognized Glosses & Timeline Panel -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg flex flex-col gap-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-xs">
+<div>
+<h2 class="font-title-md text-title-md text-on-surface font-bold">Recognized Signs / Glosses</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Timestamped frame classifications extracted by model</p>
+</div>
+<span class="bg-primary-fixed text-primary font-code-gloss text-code-gloss px-2.5 py-1 rounded-full font-bold">5 EVENTS</span>
+</div>
+<!-- Timeline Segment List -->
+<div class="flex flex-col gap-space-xs">
+<!-- Item 1: HELLO -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors group cursor-pointer">
+<div class="flex items-center gap-space-md min-w-0">
+<span class="font-code-gloss text-code-gloss text-outline font-semibold w-24 shrink-0">00:01 - 00:03</span>
+<div class="flex items-center gap-2 min-w-0">
+<span class="font-code-gloss text-code-gloss bg-surface-container-lowest text-on-surface px-2.5 py-1 rounded shadow-sm tracking-wider font-bold">HELLO</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Salutation gesture</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-label-sm font-semibold text-secondary">94%</span>
+<div class="w-14 h-1.5 bg-outline-variant/40 rounded-full overflow-hidden mt-0.5">
+<div class="h-full bg-secondary rounded-full" style="width: 94%"></div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<!-- Item 2: PLEASE (Active selection indicator) -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container text-on-surface transition-colors group cursor-pointer ring-1 ring-primary/20">
+<div class="flex items-center gap-space-md min-w-0">
+<span class="font-code-gloss text-code-gloss text-primary font-bold w-24 shrink-0">00:04 - 00:07</span>
+<div class="flex items-center gap-2 min-w-0">
+<span class="font-code-gloss text-code-gloss bg-primary-fixed text-primary px-2.5 py-1 rounded shadow-sm tracking-wider font-bold">PLEASE</span>
+<span class="font-label-sm text-label-sm text-on-surface truncate">Chest circular motion</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-label-sm font-semibold text-secondary">87%</span>
+<div class="w-14 h-1.5 bg-outline-variant/40 rounded-full overflow-hidden mt-0.5">
+<div class="h-full bg-secondary rounded-full" style="width: 87%"></div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-primary">play_circle</span>
+</div>
+</div>
+<!-- Item 3: HELP -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors group cursor-pointer">
+<div class="flex items-center gap-space-md min-w-0">
+<span class="font-code-gloss text-code-gloss text-outline font-semibold w-24 shrink-0">00:08 - 00:11</span>
+<div class="flex items-center gap-2 min-w-0">
+<span class="font-code-gloss text-code-gloss bg-surface-container-lowest text-on-surface px-2.5 py-1 rounded shadow-sm tracking-wider font-bold">HELP</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Upward palm support</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-label-sm font-semibold text-secondary">92%</span>
+<div class="w-14 h-1.5 bg-outline-variant/40 rounded-full overflow-hidden mt-0.5">
+<div class="h-full bg-secondary rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<!-- Item 4: ME -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors group cursor-pointer">
+<div class="flex items-center gap-space-md min-w-0">
+<span class="font-code-gloss text-code-gloss text-outline font-semibold w-24 shrink-0">00:12 - 00:15</span>
+<div class="flex items-center gap-2 min-w-0">
+<span class="font-code-gloss text-code-gloss bg-surface-container-lowest text-on-surface px-2.5 py-1 rounded shadow-sm tracking-wider font-bold">ME</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Index pointing chest</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-label-sm font-semibold text-secondary">85%</span>
+<div class="w-14 h-1.5 bg-outline-variant/40 rounded-full overflow-hidden mt-0.5">
+<div class="h-full bg-secondary rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<!-- Item 5: FIND + OFFICE (Compound Sequence) -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors group cursor-pointer">
+<div class="flex items-center gap-space-md min-w-0">
+<span class="font-code-gloss text-code-gloss text-outline font-semibold w-24 shrink-0">00:15 - 00:18</span>
+<div class="flex items-center gap-1.5 min-w-0 flex-wrap">
+<span class="font-code-gloss text-code-gloss bg-surface-container-lowest text-on-surface px-2 py-0.5 rounded shadow-sm font-bold">FIND</span>
+<span class="text-outline-variant text-[11px]">+</span>
+<span class="font-code-gloss text-code-gloss bg-surface-container-lowest text-on-surface px-2 py-0.5 rounded shadow-sm font-bold">OFFICE</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Room enclosure</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-label-sm font-semibold text-primary">81%</span>
+<div class="w-14 h-1.5 bg-outline-variant/40 rounded-full overflow-hidden mt-0.5">
+<div class="h-full bg-primary-container rounded-full" style="width: 81%"></div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Confidence Guide Legend -->
+<div class="flex items-center justify-between pt-2 px-1 text-label-sm font-label-sm text-on-surface-variant">
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span> &gt; 85% High</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-primary-container"></span> 60-84% Moderate</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-tertiary"></span> &lt; 60% Low</span>
+</div>
+<button class="text-primary hover:underline font-label-sm font-semibold">Fine-tune thresholds</button>
+</div>
+</div>
+<!-- Synthesis & Natural Language Output Panel -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg flex flex-col gap-space-md shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">translate</span>
+<h3 class="font-title-md text-title-md text-on-surface font-bold">Generated English Sentence</h3>
+</div>
+<span class="text-label-sm font-label-sm bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">Review before use</span>
+</div>
+<!-- Synthesized English Textbox Container -->
+<div class="bg-surface-container-low p-space-md rounded-lg flex flex-col gap-space-sm relative group">
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight leading-snug">
+              “Hello, please help me find the office.”
+            </div>
+<div class="flex items-center gap-2 pt-2 border-t border-outline-variant/20">
+<span class="material-symbols-outlined text-[16px] text-outline">auto_awesome</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Synthesized from 5 lexical gloss predictions with natural English grammar smoothing</span>
+</div>
+</div>
+<!-- Action Control Toolbar -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+<button class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-all">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+<span>Edit text</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-all" onclick="navigator.clipboard.writeText('Hello, please help me find the office.')">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+<span>Copy text</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-all">
+<span class="material-symbols-outlined text-[18px]">volume_up</span>
+<span>Speak TTS</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-all">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Export SRT</span>
+</button>
+</div>
+<!-- Academic & Linguistic Transparency Disclaimer -->
+<div class="bg-surface-container p-3 rounded-lg flex items-start gap-2.5">
+<span class="material-symbols-outlined text-outline text-[18px] shrink-0 mt-0.5">policy</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">
+              Model recognizes isolated lexical gestures. Generated English reflects algorithmic smoothing and may require manual phrasing adjustment.
+            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Notice Banner -->
+<div class="w-full bg-primary-fixed rounded-xl p-space-md flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[20px]">info</span>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm w-full">
+<p class="font-body-md text-body-md text-on-primary-fixed font-medium">
+          Recognition output represents isolated sign predictions from video frames. It does not provide continuous automated ASL interpretation.
+        </p>
+<div class="shrink-0 flex items-center gap-2">
+<button class="font-label-md text-label-md text-on-primary-fixed font-bold hover:underline px-2 py-1">
+            Read Linguistic Guidelines
+          </button>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

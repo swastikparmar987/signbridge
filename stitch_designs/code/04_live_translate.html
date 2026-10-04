@@ -1,0 +1,552 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SignBridge - Real-time Sign Translation</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF5A2A',
+              orangeHover: '#F04C18',
+              orangeLight: '#FFF4EE',
+              warmBg: '#F7F1E7',
+              surface: '#FFFDF8',
+              sidebar: '#111318',
+              sidebarText: '#94A3B8',
+              cardBorder: '#EFEAE1',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="custom-scroll-and-visuals">
+    /* Hide scrollbar for tabs */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Waveform visual simulation */
+    .sound-bar {
+      display: inline-block;
+      width: 2.5px;
+      border-radius: 9999px;
+      background-color: #FF5A2A;
+    }
+    .sound-bar-muted {
+      display: inline-block;
+      width: 2px;
+      border-radius: 9999px;
+      background-color: #D6CEC5;
+    }
+  </style>
+<!-- END: Custom Styles -->
+<meta content="web_dashboard" name="shell-type"></head>
+<body class="bg-[#F7F1E7] text-slate-900 font-sans antialiased min-h-screen flex selection:bg-[#FF5A2A] selection:text-white">
+<!-- BEGIN: Left Navigation Sidebar -->
+<aside class="w-64 bg-[#111318] text-white flex-shrink-0 flex flex-col justify-between py-6 px-4 min-h-screen border-r border-neutral-800" data-purpose="sidebar">
+<div>
+<!-- Brand Logo & Slogan -->
+<div class="flex items-center gap-3 px-2 mb-8">
+<div class="w-10 h-10 rounded-full bg-white flex items-center justify-center p-1 shadow-lg shadow-[#FF5A2A]/20 overflow-hidden flex-shrink-0">
+<img alt="SignBridge Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoYhx8usKoILKCDjdkZxofnsLmYCv9My7ChmfganLvIbIORTc46hVj4NL7Lmk-nbFLLaou7-VVkcp0LdVGjkdsgTcSGNiuqEHMLxgjNN3EgEFqreL-oRTuhULyPG3g1VHQ8dDuzk9UfayT3H1PWs0s3M7lRW6PMDRUryxqdVJN75P5yIO0hzpAD8jZYfPcy_Si1YkY3CTYMMm0v2aqqdhZEjsYKHkYJBIw9pUlFoZh0YWpRQJeu7hTLbyZyJJSGglS9ks">
+</div>
+<div>
+<div class="flex items-center gap-1">
+<span class="font-bold text-lg tracking-tight text-white">SignBridge</span>
+</div>
+<p class="text-[10px] text-neutral-400 leading-tight">Different Signs.<br>Same Human Connection.</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="space-y-1.5 text-sm font-medium">
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  Home
+</a>
+<!-- Active State: Live Translate -->
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5A2A] to-[#FF7744] text-white font-semibold shadow-lg shadow-[#FF5A2A]/25" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  Live Translate
+</a>
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  Video Translate
+</a>
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  Teach SignBridge
+</a>
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  Learn
+</a>
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  Practice
+</a>
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  Communication
+</a>
+</nav>
+<!-- Divider -->
+<div class="my-6 border-t border-neutral-800"></div>
+<!-- Secondary Links -->
+<div class="space-y-1.5 text-sm font-medium">
+<a class="flex items-center gap-3.5 px-3.5 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  Settings
+</a>
+<a class="flex items-center gap-3.5 px-3.5 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  Profile
+</a>
+</div>
+</div>
+<!-- Bottom Promo / Mission Card -->
+<div class="relative overflow-hidden rounded-2xl border border-neutral-800 mt-auto shadow-md group cursor-pointer" data-purpose="promo-card"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfsfTyBKJjKtqT8RNhqD2QPq-qjl59H-nC3hCySfJs9O7ryWTQpJWEezDRZCnhj4bl7Hmbt8kf3Sk8Ti1o4AlHPc9LobgJ3zlaKjpwqq9lkf-kW5eRHiwHWjH_6Rqu83kcfka5eWcKQQWlRn_IhWr2OxAuJ3pLhu10huHGIPlTOXDBQA8dB8cT8wQ0FRw1rR8kTw7xyOFnwnsLPym9v7DHp7m7bumCDmyNWV9tuZkWTBisIgW3O_oNw0DivDrChN-D7yg" alt="A more inclusive world, together." class="w-full h-auto object-cover block rounded-2xl"></div>
+</aside>
+<!-- END: Left Navigation Sidebar -->
+<!-- BEGIN: Main Page Content Area -->
+<main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+<div class="flex flex-col w-full">
+<div class="px-8 py-7 flex flex-col gap-6 max-w-[1400px] mx-auto w-full">
+<!-- Top Header -->
+<header class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2">
+<div class="space-y-1">
+<span class="text-xs tracking-widest text-[#FF5A2A] uppercase font-bold">LIVE TRANSLATE</span>
+<h1 class="text-3xl lg:text-4xl text-slate-900 tracking-tight font-extrabold">Real-time Sign Translation</h1>
+<p class="text-base text-stone-500">Use your webcam and let SignBridge understand your signs.</p>
+</div>
+<div class="flex items-center gap-3 self-start md:self-auto">
+<div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFDF8] shadow-sm border border-stone-200/60">
+<span class="w-2 h-2 rounded-full bg-[#2EB875] animate-pulse"></span>
+<span class="text-xs text-slate-800 font-medium">Camera Connected</span>
+</div>
+<div class="relative inline-block text-left" id="cameraSelectorDropdown">
+<button class="inline-flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFDF8] text-slate-800 text-xs font-medium shadow-sm hover:bg-stone-50 border border-stone-200/60 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px] text-stone-500">videocam</span>
+<span class="">FaceTime HD Camera</span>
+<span class="material-symbols-outlined text-[16px] text-stone-400">expand_more</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Split Main Workspace (Upper Half) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+<!-- Viewfinder (7 cols) -->
+<section class="lg:col-span-7 flex flex-col">
+<div class="relative w-full h-[470px] bg-[#14161B] rounded-2xl overflow-hidden shadow-md flex flex-col justify-between p-6 select-none border border-neutral-800/60">
+<!-- Sleek Orange Corner Framing Brackets at all 4 corners -->
+<div class="absolute inset-7 pointer-events-none">
+<div class="absolute top-0 left-0 w-8 h-8 border-t-[2.5px] border-l-[2.5px] border-[#FF5A2A] rounded-tl-lg shadow-[0_0_8px_rgba(255,90,42,0.3)]"></div>
+<div class="absolute top-0 right-0 w-8 h-8 border-t-[2.5px] border-r-[2.5px] border-[#FF5A2A] rounded-tr-lg shadow-[0_0_8px_rgba(255,90,42,0.3)]"></div>
+<div class="absolute bottom-0 left-0 w-8 h-8 border-b-[2.5px] border-l-[2.5px] border-[#FF5A2A] rounded-bl-lg shadow-[0_0_8px_rgba(255,90,42,0.3)]"></div>
+<div class="absolute bottom-0 right-0 w-8 h-8 border-b-[2.5px] border-r-[2.5px] border-[#FF5A2A] rounded-br-lg shadow-[0_0_8px_rgba(255,90,42,0.3)]"></div>
+</div>
+<!-- Top Status Row -->
+<div class="relative z-10 flex items-center justify-between w-full">
+<!-- Top-Left Status Pill with Vibrant Orange Audio Waveform -->
+<div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[#1E2129]/90 text-stone-200 backdrop-blur-sm border border-neutral-700/50 shadow-sm">
+<div class="flex items-center gap-0.5 h-3.5 px-0.5">
+<span class="w-0.5 h-2 rounded-full bg-[#FF5A2A] animate-pulse"></span>
+<span class="w-0.5 h-3.5 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-0.5 h-2.5 rounded-full bg-[#FF5A2A] animate-pulse"></span>
+<span class="w-0.5 h-1.5 rounded-full bg-[#FF5A2A]"></span>
+</div>
+<span class="text-xs font-medium tracking-wide">Listening for signs...</span>
+</div>
+<!-- Hand Detection Pill -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1A2E24]/90 text-[#34D399] border border-[#2EB875]/30 text-xs font-medium backdrop-blur-sm">
+<span class="material-symbols-outlined text-[15px]">pan_tool</span>
+<span class="">Hand detected</span>
+<span class="material-symbols-outlined text-[14px]">expand_more</span>
+</div>
+</div>
+<!-- Viewfinder Center Guidance with Orange Accented Reticle & Hand -->
+<div class="relative z-10 flex flex-col items-center justify-center text-center my-auto">
+<div class="relative w-32 h-32 rounded-full border-2 border-dashed border-[#FF5A2A]/40 flex items-center justify-center mb-3 bg-[#1C1F26]/50">
+<div class="w-20 h-20 rounded-full bg-[#242832]/80 flex items-center justify-center text-[#FF5A2A] border border-[#FF5A2A]/60 shadow-[0_0_15px_rgba(255,90,42,0.2)]">
+<span class="material-symbols-outlined text-4xl">pan_tool</span>
+</div>
+</div>
+<span class="text-xs uppercase tracking-widest text-stone-400 font-bold mb-1">Camera Preview</span>
+<p class="text-sm text-stone-300 font-normal max-w-xs">
+    Position both hands comfortably within the center frame
+  </p>
+</div>
+<!-- Bottom Floating Action Dock: Solid Vibrant Orange Center Button -->
+<div class="relative z-10 flex items-center justify-center gap-6">
+<div class="flex flex-col items-center gap-1">
+<button aria-label="Switch Camera" class="w-11 h-11 rounded-full bg-[#222631] hover:bg-[#2C313E] text-stone-200 flex items-center justify-center transition active:scale-95 border border-neutral-700/60" title="Switch Camera" type="button">
+<span class="material-symbols-outlined text-[20px]">cameraswitch</span>
+</button>
+<span class="text-[11px] text-stone-400 font-medium">Switch Camera</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<button class="w-14 h-14 rounded-full bg-[#FF5A2A] hover:bg-[#F04C18] text-white flex items-center justify-center transition shadow-lg shadow-[#FF5A2A]/30 active:scale-95 border-2 border-[#FF7A45]" id="pauseTranslateBtn" title="Stop Translation" type="button">
+<span class="w-4 h-4 rounded-sm bg-white"></span>
+</button>
+<span class="text-[11px] text-stone-300 font-medium">Stop Translation</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<button aria-label="Camera Settings" class="w-11 h-11 rounded-full bg-[#222631] hover:bg-[#2C313E] text-stone-200 flex items-center justify-center transition active:scale-95 border border-neutral-700/60" title="Camera Settings" type="button">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+<span class="text-[11px] text-stone-400 font-medium">Settings</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Translation Communication Panel (5 cols) -->
+<section class="lg:col-span-5 flex flex-col">
+<div class="w-full h-full bg-[#FFFDF8] rounded-2xl p-6 shadow-sm border border-[#EFEAE1] flex flex-col justify-between">
+<div>
+<!-- Header: Pulsing Orange Dot & Orange Live Pill -->
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF5A2A] opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#FF5A2A]"></span>
+</span>
+<span class="text-xs uppercase tracking-wider text-stone-600 font-bold">CURRENT TRANSLATION</span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FF5A2A]/10 text-[#FF5A2A] text-xs font-bold tracking-wider">
+<span class="material-symbols-outlined text-[13px]">graphic_eq</span>
+<span class="">LIVE</span>
+</div>
+</div>
+<!-- Hero Recognized Word Display -->
+<div class="relative py-2">
+<div class="flex items-center justify-between">
+<h2 class="text-5xl font-extrabold text-slate-900 tracking-tight" id="heroSignWord">HELLO</h2>
+<div class="w-12 h-12 rounded-full bg-[#FF5A2A]/10 flex items-center justify-center text-[#FF5A2A]">
+<span class="material-symbols-outlined text-[24px]">volume_up</span>
+</div>
+</div>
+<p class="text-lg text-stone-600 font-normal mt-2 leading-relaxed" id="heroInterpretation">
+    “Hello, how are you?”
+  </p>
+</div>
+<!-- Action Controls: Solid Vibrant Orange Speak Button -->
+<div class="flex flex-wrap items-center gap-2.5 mt-5">
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF5A2A] hover:bg-[#F04C18] text-white text-sm font-semibold shadow-md shadow-[#FF5A2A]/25 transition active:scale-95" id="speakCurrentBtn" type="button">
+<span class="material-symbols-outlined text-[18px]">record_voice_over</span>
+<span class="">Speak</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#F5EFE6] hover:bg-[#ECE4D8] text-slate-800 text-sm font-medium transition active:scale-95" type="button">
+<span class="material-symbols-outlined text-[17px] text-stone-500">edit</span>
+<span class="">Edit</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#F5EFE6] hover:bg-[#ECE4D8] text-slate-800 text-sm font-medium transition active:scale-95" type="button">
+<span class="material-symbols-outlined text-[17px] text-stone-500">undo</span>
+<span class="">Undo</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#F5EFE6] hover:bg-[#ECE4D8] text-slate-800 text-sm font-medium transition active:scale-95 ml-auto" id="clearCurrentBtn" title="Clear translation" type="button">
+<span class="material-symbols-outlined text-[17px] text-stone-500">delete</span>
+<span class="">Clear</span>
+</button>
+</div>
+</div>
+<!-- Not Quite? Quick Alternatives: Active HELLO highlighted with crisp Orange Border -->
+<div class="pt-5 mt-4 border-t border-stone-200/60">
+<div class="mb-3">
+<span class="text-sm font-bold text-slate-900 block">Not quite?</span>
+<span class="text-xs text-stone-500">Select another interpretation.</span>
+</div>
+<div class="grid grid-cols-5 gap-2" id="quickAlternatives">
+<!-- Active Card: HELLO (border-2 border-[#FF5A2A] + soft warm orange tint) -->
+<button class="alt-chip flex flex-col items-center justify-center p-2 rounded-xl border-2 border-[#FF5A2A] bg-[#FFF5F0] text-[#FF5A2A] transition shadow-xs" type="button">
+<span class="text-2xl mb-1">👋</span>
+<span class="text-[11px] font-bold tracking-tight">HELLO</span>
+</button>
+<button class="alt-chip flex flex-col items-center justify-center p-2 rounded-xl border border-stone-200 bg-[#FBF9F5] hover:border-stone-300 text-slate-700 transition" type="button">
+<span class="text-2xl mb-1">🙏</span>
+<span class="text-[11px] font-medium tracking-tight">THANK YOU</span>
+</button>
+<button class="alt-chip flex flex-col items-center justify-center p-2 rounded-xl border border-stone-200 bg-[#FBF9F5] hover:border-stone-300 text-slate-700 transition" type="button">
+<span class="text-2xl mb-1">👍</span>
+<span class="text-[11px] font-medium tracking-tight">YES</span>
+</button>
+<button class="alt-chip flex flex-col items-center justify-center p-2 rounded-xl border border-stone-200 bg-[#FBF9F5] hover:border-stone-300 text-slate-700 transition" type="button">
+<span class="text-2xl mb-1">👎</span>
+<span class="text-[11px] font-medium tracking-tight">NO</span>
+</button>
+<button class="alt-chip flex flex-col items-center justify-center p-2 rounded-xl border border-stone-200 bg-[#FBF9F5] hover:border-stone-300 text-slate-700 transition" type="button">
+<span class="text-2xl mb-1">🤝</span>
+<span class="text-[11px] font-medium tracking-tight">PLEASE</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Recognized Sign Timeline: Glowing Orange Dot & Vibrant Orange Waveform Connectors -->
+<section class="w-full bg-[#FFFDF8] rounded-2xl p-6 shadow-sm border border-[#EFEAE1]">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+<div class="flex items-center gap-2.5">
+<!-- Glowing Orange Dot Indicator -->
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF5A2A] opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#FF5A2A]"></span>
+</span>
+<h3 class="text-base font-bold text-slate-900 tracking-tight">Recognized Signs</h3>
+<span class="text-xs text-stone-500 hidden sm:inline">Live continuous sign stream with temporal rhythm</span>
+</div>
+<div class="flex items-center gap-4 text-xs">
+<div class="flex items-center gap-2 text-stone-600 font-medium">
+<span class="">Timeline View</span>
+<!-- Active Orange Toggle Switch -->
+<div class="w-9 h-5 bg-[#FF5A2A] rounded-full p-0.5 cursor-pointer flex items-center justify-end shadow-inner">
+<div class="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+</div>
+</div>
+<button class="flex items-center gap-1 text-[#FF5A2A] hover:text-[#F04C18] font-semibold transition" id="clearTimelineBtn" type="button">
+<span class="material-symbols-outlined text-[15px]">delete</span>
+<span class="">Clear Timeline</span>
+</button>
+</div>
+</div>
+<!-- Flowing sequence cards with vibrant orange rhythm connectors -->
+<div class="flex items-center gap-4 overflow-x-auto pb-2 pt-1 no-scrollbar" id="timelineStream">
+<!-- Card 1: Active HELLO with crisp orange border & soft warm tint -->
+<div class="flex-shrink-0 flex items-center gap-4">
+<div class="px-5 py-3 rounded-2xl bg-[#FFF5F0] border-2 border-[#FF5A2A] flex flex-col items-center justify-center min-w-[90px] shadow-sm">
+<span class="text-2xl mb-1">👋</span>
+<span class="text-xs font-extrabold text-[#FF5A2A] tracking-wider">HELLO</span>
+<span class="text-[10px] text-stone-500 font-medium">0:02</span>
+</div>
+<!-- Vibrant Orange Waveform Connector -->
+<div class="flex items-center gap-1 px-1">
+<span class="w-1 h-1.5 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-3 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-5 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-3 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-1.5 rounded-full bg-[#FF5A2A]"></span>
+</div>
+</div>
+<!-- Card 2: HOW -->
+<div class="flex-shrink-0 flex items-center gap-4">
+<div class="px-5 py-3 rounded-2xl bg-[#F7F3EB] border border-stone-200/80 flex flex-col items-center justify-center min-w-[90px]">
+<span class="text-2xl mb-1">👉</span>
+<span class="text-xs font-bold text-slate-800 tracking-wider">HOW</span>
+<span class="text-[10px] text-stone-500 font-medium">0:04</span>
+</div>
+<!-- Vibrant Orange Waveform Connector -->
+<div class="flex items-center gap-1 px-1">
+<span class="w-1 h-1.5 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-3 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-5 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-3 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-1.5 rounded-full bg-[#FF5A2A]"></span>
+</div>
+</div>
+<!-- Card 3: ARE -->
+<div class="flex-shrink-0 flex items-center gap-4">
+<div class="px-5 py-3 rounded-2xl bg-[#F7F3EB] border border-stone-200/80 flex flex-col items-center justify-center min-w-[90px]">
+<span class="text-2xl mb-1">🙏</span>
+<span class="text-xs font-bold text-slate-800 tracking-wider">ARE</span>
+<span class="text-[10px] text-stone-500 font-medium">0:05</span>
+</div>
+<!-- Vibrant Orange Waveform Connector -->
+<div class="flex items-center gap-1 px-1">
+<span class="w-1 h-1.5 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-3 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-5 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-3 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-1.5 rounded-full bg-[#FF5A2A]"></span>
+</div>
+</div>
+<!-- Card 4: YOU -->
+<div class="flex-shrink-0 flex items-center gap-4">
+<div class="px-5 py-3 rounded-2xl bg-[#F7F3EB] border border-stone-200/80 flex flex-col items-center justify-center min-w-[90px]">
+<span class="text-2xl mb-1">👉</span>
+<span class="text-xs font-bold text-slate-800 tracking-wider">YOU</span>
+<span class="text-[10px] text-stone-500 font-medium">0:07</span>
+</div>
+<!-- Vibrant Orange Waveform Connector -->
+<div class="flex items-center gap-1 px-1">
+<span class="w-1 h-1.5 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-3 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-5 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-3 rounded-full bg-[#FF5A2A]"></span>
+<span class="w-1 h-1.5 rounded-full bg-[#FF5A2A]"></span>
+</div>
+</div>
+<!-- In-progress listening pill -->
+<div class="flex-shrink-0 flex items-center">
+<div class="px-4 py-3 rounded-2xl border-2 border-dashed border-stone-300 text-stone-400 flex flex-col items-center justify-center min-w-[100px] text-xs">
+<span class="material-symbols-outlined text-[20px] mb-0.5">add</span>
+<span class="font-medium text-[11px]">Add to sentence</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Sentence Builder Dock -->
+<section class="w-full bg-[#FFFDF8] rounded-2xl p-5 shadow-sm border border-[#EFEAE1]">
+<div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+<!-- Interactive tokenized phrase input container -->
+<div class="flex-1 flex flex-col md:flex-row md:items-center gap-3 min-w-0">
+<!-- Warm Orange Sentence Builder Section Icon -->
+<div class="flex items-center gap-2 flex-shrink-0">
+<div class="w-8 h-8 rounded-lg bg-[#FF5A2A]/10 flex items-center justify-center text-[#FF5A2A]">
+<span class="material-symbols-outlined text-[19px]">chat</span>
+</div>
+<div>
+<span class="text-sm font-bold text-slate-900 block leading-tight">Sentence Builder</span>
+<span class="text-[11px] text-stone-500">Build your message naturally.</span>
+</div>
+</div>
+<!-- Token chip composer with subtle orange border & active orange cursor -->
+<div class="flex-1 flex flex-wrap items-center gap-2 px-3 py-2 rounded-xl bg-[#F7F3EB] min-h-[48px] border border-[#FF5A2A]/40 shadow-inner" id="tokenWorkspace">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FFFDF8] text-slate-800 text-sm shadow-xs font-medium border border-stone-200/60">
+        Hello
+        <button aria-label="Remove Hello" class="token-remove text-stone-400 hover:text-red-500 transition text-base leading-none" type="button">×</button>
+</span>
+<span class="text-stone-400 font-semibold">,</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FFFDF8] text-slate-800 text-sm shadow-xs font-medium border border-stone-200/60">
+        how
+        <button aria-label="Remove how" class="token-remove text-stone-400 hover:text-red-500 transition text-base leading-none" type="button">×</button>
+</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FFFDF8] text-slate-800 text-sm shadow-xs font-medium border border-stone-200/60">
+        are
+        <button aria-label="Remove are" class="token-remove text-stone-400 hover:text-red-500 transition text-base leading-none" type="button">×</button>
+</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FFFDF8] text-slate-800 text-sm shadow-xs font-medium border border-stone-200/60">
+        you
+        <button aria-label="Remove you" class="token-remove text-stone-400 hover:text-red-500 transition text-base leading-none" type="button">×</button>
+</span>
+<!-- Active Orange Blinking Insertion Cursor -->
+<span class="w-[2.5px] h-5 bg-[#FF5A2A] animate-pulse rounded-full my-auto ml-0.5"></span>
+</div>
+</div>
+<!-- Primary Bold High-Contrast Brand Orange CTA Button -->
+<div class="flex items-center gap-3 flex-shrink-0 self-end lg:self-center">
+<button class="p-2.5 rounded-xl bg-[#F7F3EB] hover:bg-[#ECE4D8] text-slate-700 transition active:scale-95 border border-stone-200/80" id="copySentenceBtn" title="Copy Sentence" type="button">
+<span class="material-symbols-outlined text-[20px]">content_copy</span>
+</button>
+<button class="flex items-center justify-center gap-2.5 px-6 h-12 rounded-xl bg-[#FF5A2A] hover:bg-[#F04C18] text-white text-sm font-bold shadow-md shadow-[#FF5A2A]/30 transition active:scale-95" id="speakFullSentenceBtn" type="button">
+<span class="material-symbols-outlined text-[20px]">volume_up</span>
+<span class="">Speak Sentence</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+<script>
+  (function initLiveTranslateInteractions() {
+    const heroWord = document.getElementById('heroSignWord');
+    const heroInterp = document.getElementById('heroInterpretation');
+    const speakCurrentBtn = document.getElementById('speakCurrentBtn');
+    const speakFullSentenceBtn = document.getElementById('speakFullSentenceBtn');
+    const altChips = document.querySelectorAll('.alt-chip');
+    const tokenWorkspace = document.getElementById('tokenWorkspace');
+    const clearTimelineBtn = document.getElementById('clearTimelineBtn');
+    const timelineStream = document.getElementById('timelineStream');
+    const pauseTranslateBtn = document.getElementById('pauseTranslateBtn');
+
+    // Quick alternative click interaction
+    altChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        altChips.forEach(c => {
+          c.classList.remove('border-2', 'border-[#FF5A2A]', 'bg-[#FFF5F0]', 'text-[#FF5A2A]');
+          c.classList.add('border', 'border-stone-200', 'bg-[#FBF9F5]', 'text-slate-700');
+        });
+        chip.classList.add('border-2', 'border-[#FF5A2A]', 'bg-[#FFF5F0]', 'text-[#FF5A2A]');
+        chip.classList.remove('border-stone-200', 'bg-[#FBF9F5]', 'text-slate-700');
+
+        const label = chip.querySelector('span:last-child').textContent.trim();
+        if (heroWord) heroWord.textContent = label;
+        if (heroInterp) heroInterp.textContent = `"${label.charAt(0) + label.slice(1).toLowerCase()}."`;
+      });
+    });
+
+    // Remove token chip on clicking 'x'
+    if (tokenWorkspace) {
+      tokenWorkspace.addEventListener('click', (e) => {
+        if (e.target.classList.contains('token-remove')) {
+          const parentChip = e.target.closest('span');
+          if (parentChip) parentChip.remove();
+        }
+      });
+    }
+
+    // Timeline clear action
+    if (clearTimelineBtn && timelineStream) {
+      clearTimelineBtn.addEventListener('click', () => {
+        timelineStream.innerHTML = `
+          <div class="px-4 py-2.5 rounded-xl bg-[#F7F3EB] border border-stone-200 text-stone-500 text-xs">
+            Timeline cleared
+          </div>
+        `;
+      });
+    }
+
+    // Toggle pause translation
+    let isPaused = false;
+    if (pauseTranslateBtn) {
+      pauseTranslateBtn.addEventListener('click', () => {
+        isPaused = !isPaused;
+        const iconSpan = pauseTranslateBtn.querySelector('span');
+        const labelSpan = pauseTranslateBtn.nextElementSibling;
+        if (isPaused) {
+          pauseTranslateBtn.classList.remove('bg-[#FF5A2A]', 'hover:bg-[#F04C18]');
+          pauseTranslateBtn.classList.add('bg-neutral-700', 'hover:bg-neutral-600');
+          if (iconSpan) iconSpan.className = 'w-0 h-0 border-y-8 border-y-transparent border-l-[14px] border-l-white ml-0.5';
+          if (labelSpan) labelSpan.textContent = 'Resume';
+        } else {
+          pauseTranslateBtn.classList.add('bg-[#FF5A2A]', 'hover:bg-[#F04C18]');
+          pauseTranslateBtn.classList.remove('bg-neutral-700', 'hover:bg-neutral-600');
+          if (iconSpan) iconSpan.className = 'w-4 h-4 rounded-sm bg-white';
+          if (labelSpan) labelSpan.textContent = 'Stop Translation';
+        }
+      });
+    }
+
+    // Speech synthesis triggers
+    function speakText(msg) {
+      if ('speechSynthesis' in window && msg) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(msg);
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    if (speakCurrentBtn && heroWord) {
+      speakCurrentBtn.addEventListener('click', () => {
+        speakText(heroInterp ? heroInterp.textContent.replace(/[""]/g, '') : heroWord.textContent);
+      });
+    }
+
+    if (speakFullSentenceBtn) {
+      speakFullSentenceBtn.addEventListener('click', () => {
+        speakText("Hello, how are you?");
+      });
+    }
+  })();
+</script>
+</main>
+<!-- END: Main Page Content Area -->
+
+
+</body></html>

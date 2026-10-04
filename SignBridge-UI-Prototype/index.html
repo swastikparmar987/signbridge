@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SignBridge — Different Signs. Same Human Connection.</title>
+<meta name="description" content="SignBridge is an AI-assisted sign-language communication and learning companion.">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* OD-LAYOUT-PRIMITIVES v1 — structure only: display, flex/grid, overflow, wrapping, ratio.
+   Put this @layer first; product CSS outside the layer always wins. */
+@layer od-layout {
+  :where(.od-stack,.od-row,.od-row-top,.od-cluster,.od-grid,.od-field,.od-stat,.od-cell,.od-tile) > :where(*) { min-width: 0; }
+
+  /* containers */
+  .od-stack   { display: flex; flex-direction: column; gap: var(--od-gap, 8px); }
+  .od-row     { display: flex; align-items: center; gap: var(--od-gap, 8px); }
+  .od-row-top { display: flex; align-items: flex-start; gap: var(--od-gap, 8px); }
+  .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
+  .od-fill    { flex: 1 1 0; min-width: 0; }
+  .od-fixed   { flex: none; }
+  .od-grid    { display: grid; gap: var(--od-gap, 12px); grid-template-columns: repeat(var(--od-cols, 3), minmax(0, 1fr)); }
+
+  /* stacked information: each piece is its own line — never sibling inline spans */
+  .od-stat, .od-field, .od-cell { display: grid; gap: var(--od-gap, 2px); }
+  :where(.od-stat,.od-field,.od-cell) > :where(*) { display: block; }
+  .od-tile { display: grid; grid-template-rows: auto 1fr; }
+  :where(.od-tile) > :where(*) { display: block; }
+
+  /* media keeps its intrinsic ratio by default; never a distorted or cropped
+     cover by accident. height:auto lets the ratio win over an <img height="…">
+     attribute. Cropping to a uniform box is an explicit opt-in: set --od-ratio
+     AND add .od-media-cover together (per the core rule, only where a crop is
+     deliberate — tile thumbs, decorative fills — never on full-frame content). */
+  .od-media { display: block; width: 100%; height: auto; aspect-ratio: var(--od-ratio, auto); }
+  .od-media-cover { object-fit: cover; }
+
+  /* data text only — authored copy is rewritten to its budget instead */
+  .od-truncate { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .od-clamp-2, .od-clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .od-clamp-2 { -webkit-line-clamp: 2; }
+  .od-clamp-3 { -webkit-line-clamp: 3; }
+  .od-lines-2 { min-height: calc(2 * 1.4em); }   /* block-level reservation for a shared baseline */
+  .od-nowrap  { white-space: nowrap; }           /* 数字+单位 · 价格+起 · 日期+星期 */
+  .od-keep    { word-break: keep-all; overflow-wrap: anywhere; } /* CJK labels break at spaces / <wbr> first */
+
+  /* screen skeleton (optional): bars take their own space, the middle scrolls — no padding guessed for chrome */
+  .od-screen { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; }
+  .od-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+
+  /* horizontal rail: the next item peeks at the edge; trailing room survives overflow */
+  .od-rail { display: flex; gap: var(--od-gap, 8px); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
+             padding-inline: var(--od-rail-pad, 16px); scroll-padding-inline: var(--od-rail-pad, 16px); }
+  .od-rail::-webkit-scrollbar { display: none; }
+  :where(.od-rail) > :where(*) { flex: none; scroll-snap-align: start; }
+  :where(.od-rail) > :where(:last-child) { margin-inline-end: var(--od-rail-pad, 16px); }
+
+  .od-spacer { flex: none; visibility: hidden; pointer-events: none; }
+  .od-touch  { min-width: 44px; min-height: 44px; }
+}
+/* /OD-LAYOUT-PRIMITIVES v1 */
+
+/* onboarding shell takes over the viewport */
+.app.is-onboarding{grid-template-columns:minmax(0,1fr)}
+.app.is-onboarding .sidebar,
+.app.is-onboarding .topbar{display:none}
+.app.is-onboarding .view{padding:0}
+</style>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip" href="#view">Skip to main content</a>
+
+<!-- ============ icon family: single-weight line glyphs, 24px grid ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+<symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.5 20v-6h5v6"/></symbol>
+<symbol id="i-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="13" height="11" rx="3"/><path d="M15.5 11.2 21.5 8v8l-6-3.2z"/></symbol>
+<symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M10 9.2v5.6l4.8-2.8z"/></symbol>
+<symbol id="i-teach" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10"/><path d="M11 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M14 10V6a1.5 1.5 0 0 1 3 0v8.5a6 6 0 0 1-6 6h-1.2a5 5 0 0 1-4-2L4 15.5a1.6 1.6 0 0 1 2.6-1.9L8 15"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5C4.7 20 4 19.3 4 18.5z"/><path d="M20 5.5C20 4.7 19.3 4 18.5 4H13v16h5.5c.8 0 1.5-.7 1.5-1.5z"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9"/><path d="M17 7h3"/><path d="M4 17h3"/><path d="M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 4 1.5 5.5 1.5 5.5H5S6.5 14 6.5 10z"/><path d="M10 18.5a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6.5v11l8.5-5.5z"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6v12M14.5 6v12"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3.5" width="6" height="10" rx="3"/><path d="M6 11.5a6 6 0 0 0 12 0"/><path d="M12 17.5V21"/></symbol>
+<symbol id="i-speaker" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3l4.5-3.5v12L7 14.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.8a7.5 7.5 0 0 1 0 10.4"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M15 6.5A2.5 2.5 0 0 0 12.5 4H6.5A2.5 2.5 0 0 0 4 6.5v6A2.5 2.5 0 0 0 6.5 15"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="m14 6 4 4"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8H5V4"/><path d="M5 8.5A8 8 0 1 1 4 15"/></symbol>
+<symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+<symbol id="i-chev-l" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></symbol>
+<symbol id="i-arrow-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5"/><path d="m11 6-6 6 6 6"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s4.5 4 4.5 8.5a4.5 4.5 0 0 1-9 0c0-1.6.8-3 .8-3S7 9 7 10.5"/><path d="M12 21a6 6 0 0 0 6-6c0-3-2-5.5-3.5-7"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.4 5 5.6.6-4.2 3.8 1.2 5.6L12 16.4 6.9 19l1.2-5.6L4 9.6 9.6 9z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 16v3.5h14V16"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 1.9V16h5v-.2c0-.7.4-1.4 1-1.9A6 6 0 0 0 12 3z"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 19 6v6c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5V6z"/></symbol>
+<symbol id="i-device" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3.5" width="8" height="17" rx="2.5"/><path d="M11 18h2"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.8 9.5A2.3 2.3 0 0 1 14.2 10c0 1.5-2.2 2-2.2 3.5"/><path d="M12 16.5h.01"/></symbol>
+<symbol id="i-access" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.8"/><path d="M5 9h14"/><path d="M12 9v6"/><path d="m8 20 4-5 4 5"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></symbol>
+<symbol id="i-handsign" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12V6a1.4 1.4 0 0 1 2.8 0v5"/><path d="M10.8 11V4.8a1.4 1.4 0 0 1 2.8 0V11"/><path d="M13.6 11V6.5a1.4 1.4 0 0 1 2.8 0v8.5a6 6 0 0 1-6 6h-.8a5 5 0 0 1-4-2L3.9 16.6a1.5 1.5 0 0 1 2.5-1.7L8 16.2"/></symbol>
+<symbol id="i-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 13.7 9l5.5 1.7L13.7 12.4 12 18l-1.7-5.6L4.8 10.7 10.3 9z"/></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11v16l-5.5-3.5L6.5 20z"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3.2 3.2 0 0 1 0 6.3"/><path d="M17 13.4a5.5 5.5 0 0 1 3.5 5.1"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M4 12h16"/><path d="M12 3.5c2.5 3 2.5 14 0 17-2.5-3-2.5-14 0-17z"/></symbol>
+<symbol id="i-ruler" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14 14 4l6 6L10 20z"/><path d="m8 10 2 2M11 7l2 2M11 13l2 2"/></symbol>
+<symbol id="i-model" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M12 7.2V12M12 12 6.9 16.2M12 12l5.1 4.2"/></symbol>
+</defs>
+</svg>
+
+<div class="app" id="app">
+
+  <!-- ================= sidebar ================= -->
+  <aside class="sidebar">
+    <a class="brand" href="#/home" aria-label="SignBridge home">
+      <img src="assets/logo.png" alt="">
+      <span class="txt"><b>SignBridge</b><span>Different Signs. Same Human Connection.</span></span>
+    </a>
+    <nav class="nav" aria-label="Primary navigation">
+      <button class="nav-item" data-route="home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span class="label">Home</span></button>
+      <button class="nav-item" data-route="live"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg><span class="label">Live Translate</span></button>
+      <button class="nav-item" data-route="video"><svg class="ic" aria-hidden="true"><use href="#i-video"/></svg><span class="label">Video Translate</span></button>
+      <button class="nav-item" data-route="teach"><svg class="ic" aria-hidden="true"><use href="#i-teach"/></svg><span class="label">Teach SignBridge</span></button>
+      <button class="nav-item" data-route="learn"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg><span class="label">Learn</span></button>
+      <button class="nav-item" data-route="practice"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><span class="label">Practice</span></button>
+      <button class="nav-item" data-route="communication"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span class="label">Communication</span></button>
+      <div class="nav-sep" role="presentation"></div>
+      <button class="nav-item" data-route="settings"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg><span class="label">Settings</span></button>
+      <button class="nav-item" data-route="profile"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="label">Profile</span></button>
+    </nav>
+    <div class="side-foot">
+      <h3>A more inclusive world, together.</h3>
+      <p>Learning, practice and two-way connection — in one place.</p>
+      <a class="tour" href="#/onboarding/welcome"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-sparkle"/></svg>New here? Take the tour</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <!-- ================= top bar ================= -->
+    <header class="topbar">
+      <div class="search">
+        <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+        <input id="globalSearch" type="search" placeholder="Search signs, lessons, or features…" aria-label="Search signs, lessons, or features" aria-controls="searchResults" autocomplete="off">
+        <div class="search-results" id="searchResults" hidden></div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeToggle" aria-label="Switch to dark theme" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
+        <div class="popover-wrap">
+          <button class="icon-btn" id="notifBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><span class="dot" aria-hidden="true"></span></button>
+          <div class="popover" id="notifPop" hidden>
+            <h4>Notifications</h4>
+            <div class="note"><svg class="ic" aria-hidden="true"><use href="#i-flame"/></svg><div><b>18-day streak</b><p>Practice today to keep it going.</p></div></div>
+            <div class="note"><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg><div><b>New lesson unlocked</b><p>“Family &amp; People” is ready.</p></div></div>
+            <div class="note"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><div><b>Sign approved</b><p>Your personal sign for FRIEND was added.</p></div></div>
+          </div>
+        </div>
+        <button class="user" data-route="profile" aria-label="Open profile">
+          <img src="assets/avatar.jpg" alt="">
+          <span class="who"><b>H. Swastik</b><span>Keep learning!</span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= views ================= -->
+    <main class="view" id="view" tabindex="-1">
+
+      <!-- ============ HOME ============ -->
+      <section class="page" id="screen-home" data-screen="home" data-title="Home" hidden>
+        <div class="hero">
+          <div class="hero-copy">
+            <p class="kicker">SignBridge</p>
+            <h1>Communication has no boundaries</h1>
+            <p class="lede">Use AI to understand, learn, and share sign language — for a more inclusive world.</p>
+            <div class="hero-cta">
+              <button class="btn btn-primary" data-route="live"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg>Start Live Translate</button>
+              <button class="btn btn-secondary" data-route="video"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg>Upload a Video</button>
+            </div>
+            <a class="hero-tour" href="#/onboarding/welcome"><svg class="ic" style="width:15px;height:15px" aria-hidden="true"><use href="#i-sparkle"/></svg>New here? Take the 2-minute tour</a>
+          </div>
+          <div class="hero-art"><img src="assets/hero.jpg" alt="A painted evening landscape with two hands reaching toward each other below the words “Different signs, same human connection”." width="490" height="320"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Quick Actions</h2><a class="link" href="#/learn">See all<svg class="ic" style="width:15px;height:15px" aria-hidden="true"><use href="#i-arrow-r"/></svg></a></div>
+          <div class="quick-grid">
+            <button class="quick" data-route="live"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg></span><span><b>Live Translate</b><p>Sign in real time</p></span></button>
+            <button class="quick" data-route="video"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-video"/></svg></span><span><b>Video Translate</b><p>Upload &amp; convert</p></span></button>
+            <button class="quick" data-route="teach"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-teach"/></svg></span><span><b>Teach SignBridge</b><p>Add your own signs</p></span></button>
+            <button class="quick" data-route="learn"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span><span><b>Learn</b><p>Explore 2,731 signs</p></span></button>
+            <button class="quick" data-route="practice"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg></span><span><b>Practice</b><p>Sharpen your skills</p></span></button>
+            <button class="quick" data-route="communication"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg></span><span><b>Communication</b><p>Two-way conversations</p></span></button>
+          </div>
+        </div>
+
+        <div class="cols-2">
+          <div class="card">
+            <div class="card-head"><h2>Your Progress</h2><a class="link" href="#/profile">View details<svg class="ic" style="width:15px;height:15px" aria-hidden="true"><use href="#i-arrow-r"/></svg></a></div>
+            <div class="stat-strip">
+              <div class="stat"><span class="n" data-count="182">182</span><span class="l">Signs learned</span></div>
+              <div class="stat"><span class="n" data-count="42">42</span><span class="l">Practice sessions</span></div>
+              <div class="stat"><span class="n" data-count="12">12</span><span class="l">Personal signs</span></div>
+              <div class="stat"><span class="n"><span data-count="92">92</span><em>%</em></span><span class="l">Accuracy</span></div>
+            </div>
+            <div class="divider mt-2" style="margin:18px 0"></div>
+            <div class="card-head"><h3 style="font-size:15px">Recent Activity</h3><span class="muted" style="font-size:12.5px">Today</span></div>
+            <ul class="activity">
+              <li><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></span><div><b>Translated “HELLO, HOW ARE YOU”</b><p>Live Translate · <span class="ok">Correct</span></p></div><time>2 min ago</time></li>
+              <li><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-teach"/></svg></span><div><b>Added a personal sign for “THANK YOU”</b><p>Teach SignBridge</p></div><time>1 hour ago</time></li>
+              <li><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span><div><b>Completed lesson “Greetings”</b><p>Learn · <span class="ok">3 of 9</span></p></div><time>4 hours ago</time></li>
+            </ul>
+          </div>
+          <div class="card feature-sign">
+            <div class="card-head"><h3>Featured Sign</h3><a class="link" href="#/learn">Learn sign</a></div>
+            <div class="media">
+              <img src="assets/featured-sign.jpg" alt="A person forming the ASL sign for “hello” with one hand raised near the chest." width="145" height="96">
+              <button class="nav-arrow prev" aria-label="Previous featured sign"><svg class="ic" aria-hidden="true"><use href="#i-chev-l"/></svg></button>
+              <button class="nav-arrow next" aria-label="Next featured sign"><svg class="ic" aria-hidden="true"><use href="#i-chev-r"/></svg></button>
+            </div>
+            <div class="meta"><b>HELLO</b><span>A common greeting</span></div>
+          </div>
+        </div>
+
+        <div class="mission">
+          <div>
+            <p class="mark">A more inclusive world, together</p>
+            <h2>Communication has no barriers.</h2>
+            <p>SignBridge helps you break down barriers between signers and hearing people — through real-time translation, learning, and shared understanding.</p>
+          </div>
+          <button class="btn btn-primary" data-route="communication">Let’s Connect<svg class="ic" aria-hidden="true"><use href="#i-arrow-r"/></svg></button>
+        </div>
+      </section>
+
+      <!-- ============ LIVE TRANSLATE ============ -->
+      <section class="page" id="screen-live" data-screen="live" data-title="Live Translate" hidden>
+        <div class="page-head">
+          <div><h1>Live Translate</h1><p class="lede">Point your camera at a signing hand and SignBridge turns it into natural, spoken text.</p></div>
+          <span class="badge ok"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-check"/></svg>Camera ready</span>
+        </div>
+
+        <div class="translate-grid">
+          <div class="card flat" style="padding:0;overflow:hidden">
+            <div class="cam cam-tall">
+              <img src="assets/feed-live.jpg" alt="A person smiling and signing the word “hello” to the camera, with gentle hand-tracking highlights." width="620" height="565">
+              <div class="cam-overlay">
+                <button class="cam-btn" data-toast="Settings opened" aria-label="Recognition settings"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg></button>
+                <button class="cam-btn" aria-label="Expand camera view"><svg class="ic" aria-hidden="true"><use href="#i-expand"/></svg></button>
+              </div>
+              <div class="cam-caption">
+                <span class="rec-pill"><span class="rec-dot live" aria-hidden="true"></span>Recognizing</span>
+                <button class="cam-btn" data-toast="Camera paused" aria-label="Pause camera"><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card recognized-card">
+            <div class="row-between"><span class="kicker">Recognized</span><span class="muted" style="font-size:12.5px">2 min ago</span></div>
+            <div class="recognized-hero">
+              <div><div class="word" id="liveWord">HELLO</div><div class="sub" id="liveSub">Hello · Common Greeting</div></div>
+              <button class="replay" data-toast="Replaying the sign" aria-label="Replay this sign"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg></button>
+            </div>
+            <div class="divider"></div>
+            <div>
+              <p style="font-size:13px;font-weight:600">Not what you meant?</p>
+              <p class="hint" style="font-size:12.5px;margin-bottom:8px">Choose the correct sign.</p>
+              <div class="correction-row" id="correctionRow" role="radiogroup" aria-label="Choose the correct sign">
+                <button class="sign-tile is-active" role="radio" aria-checked="true" data-word="HELLO" data-sub="Hello · Common Greeting"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HELLO</b><span>Hello</span></button>
+                <button class="sign-tile" role="radio" aria-checked="false" data-word="HI" data-sub="Hi · Casual Greeting"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HI</b><span>Hi</span></button>
+                <button class="sign-tile" role="radio" aria-checked="false" data-word="GOOD" data-sub="Good · Positive"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>GOOD</b><span>Good</span></button>
+                <button class="sign-tile" role="radio" aria-checked="false" data-word="HOW" data-sub="How · Question"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HOW</b><span>How</span></button>
+                <button class="sign-tile" role="radio" aria-checked="false" data-word="PLEASE" data-sub="Please · Polite request"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>PLEASE</b><span>Please</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card caption-card">
+          <div class="card-head" style="margin:0">
+            <div><h2>Translated Sentence</h2><p class="hint" style="font-size:12.5px">Your recognized signs are converted into natural, grammatically correct text.</p></div>
+            <button class="btn btn-ghost" data-toast="Cleared — listening again" aria-label="Clear translation"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>Clear</button>
+          </div>
+          <p class="caption-text" id="liveCaption">Hello, how are you?</p>
+          <div class="caption-actions">
+            <button class="btn btn-ghost" id="liveUndo"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg>Undo</button>
+            <button class="btn btn-secondary" id="liveEdit"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg>Edit</button>
+            <button class="btn btn-secondary" id="liveCopy"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg>Copy</button>
+            <button class="btn btn-primary" style="margin-left:auto" id="liveSpeak"><svg class="ic" aria-hidden="true"><use href="#i-speaker"/></svg>Speak</button>
+          </div>
+        </div>
+
+        <div class="grid-auto">
+          <div class="card">
+            <div class="card-head"><h3>Sign History</h3><span class="muted" style="font-size:12.5px">This session</span></div>
+            <div class="rail">
+              <button class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HELLO</b><span>Hello</span></button>
+              <button class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HOW</b><span>How</span></button>
+              <button class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>ARE</b><span>Are</span></button>
+              <button class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>YOU</b><span>You</span></button>
+              <button class="sign-tile" data-route="teach"><svg class="glyph" aria-hidden="true"><use href="#i-plus"/></svg><b>Add</b><span>New sign</span></button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Quick Phrases</h3><a class="link" href="#/communication">See all</a></div>
+            <div class="rail" id="quickPhrases">
+              <button class="chip phrase">Hello</button>
+              <button class="chip phrase">Thank you</button>
+              <button class="chip phrase">Please</button>
+              <button class="chip phrase">Yes</button>
+              <button class="chip phrase">No</button>
+              <button class="chip phrase">Nice to meet you</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Session Stats</h3><button class="link" data-toast="Session reset">Reset</button></div>
+            <div class="stat-strip">
+              <div class="stat"><span class="n" data-count="12">12</span><span class="l">Signs this session</span></div>
+              <div class="stat"><span class="n" data-count="1">1</span><span class="l">Sentences</span></div>
+              <div class="stat"><span class="n"><span data-count="95">95</span><em>%</em></span><span class="l">Avg. confidence</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VIDEO TRANSLATE ============ -->
+      <section class="page" id="screen-video" data-screen="video" data-title="Video Translate" hidden>
+        <div class="page-head">
+          <div><h1>Video Translate</h1><p class="lede">Upload a video and let SignBridge recognize the signs and convert them into natural text.</p></div>
+          <div class="od-cluster" style="--od-gap:10px">
+            <span class="badge"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-upload"/></svg>Supports MP4, MOV, WEBM</span>
+            <button class="btn btn-primary" data-toast="Choose a video to upload"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg>Upload Another Video</button>
+          </div>
+        </div>
+
+        <div class="translate-grid">
+          <div class="card flat" style="padding:0;overflow:hidden">
+            <div class="cam">
+              <img src="assets/feed-video.jpg" alt="A video frame of a person signing while a translation progress bar runs along the bottom." width="720" height="405">
+              <div class="cam-overlay"><button class="cam-btn" aria-label="Expand video"><svg class="ic" aria-hidden="true"><use href="#i-expand"/></svg></button></div>
+            </div>
+          </div>
+
+          <div class="od-stack" style="--od-gap:16px">
+            <div class="card caption-card">
+              <div class="card-head" style="margin:0"><h2>Translated Sentence</h2><button class="btn btn-ghost" id="videoCopy"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg>Copy</button></div>
+              <p class="caption-text" id="videoCaption">Hello, my name is _____. Nice to meet you.</p>
+              <div class="caption-actions">
+                <button class="btn btn-secondary" id="videoEdit"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg>Edit Text</button>
+                <button class="btn btn-primary" style="margin-left:auto" id="videoSpeak"><svg class="ic" aria-hidden="true"><use href="#i-speaker"/></svg>Speak</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Video Information</h3><span class="badge">sample_sign_video.mp4</span></div>
+              <div class="ref-card">
+                <div class="kv"><span>Duration</span><b>00:18</b></div>
+                <div class="kv"><span>Resolution</span><b>1920 × 1080</b></div>
+                <div class="kv"><span>Frame rate</span><b>30 FPS</b></div>
+                <div class="kv"><span>File size</span><b>12.4 MB</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Detected Signs Timeline</h2><span class="muted" style="font-size:12.5px">4 of 18 signs detected</span></div>
+          <div class="filmstrip" id="videoTimeline">
+            <button class="frame is-active" data-caption="Hello, my name is _____. Nice to meet you."><span class="thumb"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg></span><b>HELLO</b><span>00:00 – 00:02</span></button>
+            <button class="frame" data-caption="My name is _____. Nice to meet you."><span class="thumb"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg></span><b>MY</b><span>00:02 – 00:04</span></button>
+            <button class="frame" data-caption="Name is _____. Nice to meet you."><span class="thumb"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg></span><b>NAME</b><span>00:04 – 00:06</span></button>
+            <button class="frame" data-caption="Is _____. Nice to meet you."><span class="thumb"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg></span><b>IS</b><span>00:06 – 00:08</span></button>
+            <button class="frame" data-caption="Nice to meet you."><span class="thumb"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg></span><b>NICE</b><span>00:08 – 00:12</span></button>
+            <button class="frame" data-caption="To meet you."><span class="thumb"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg></span><b>TO MEET YOU</b><span>00:12 – 00:14</span></button>
+          </div>
+          <div class="card-head mt-2" style="margin-bottom:8px"><h3 style="font-size:15px">Sign Sequence</h3><span class="muted" style="font-size:12.5px">Confidence shown as a word</span></div>
+          <ul class="rail" style="--od-gap:10px">
+            <li><div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HELLO</b><span>92% confident</span></div></li>
+            <li><div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>MY</b><span>87% confident</span></div></li>
+            <li><div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>NAME</b><span>85% confident</span></div></li>
+            <li><div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>IS</b><span>78% confident</span></div></li>
+            <li><div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>NICE</b><span>82% confident</span></div></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ TEACH ============ -->
+      <section class="page" id="screen-teach" data-screen="teach" data-title="Teach SignBridge" hidden>
+        <div class="page-head">
+          <div><h1>Teach SignBridge</h1><p class="lede">Help SignBridge learn new signs from you. Teach, improve, and make communication better for everyone.</p></div>
+          <span class="badge ok"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-users"/></svg>You’re making a difference!</span>
+        </div>
+
+        <div class="card flat stepper">
+          <div class="step is-active"><span class="n">1</span>Record</div><div class="step-line"></div>
+          <div class="step"><span class="n">2</span>Review</div><div class="step-line"></div>
+          <div class="step"><span class="n">3</span>Train</div><div class="step-line"></div>
+          <div class="step"><span class="n">4</span>Done</div>
+        </div>
+
+        <div class="cols-2" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)">
+          <div class="card flat" style="padding:0;overflow:hidden">
+            <div class="cam cam-tall">
+              <img src="assets/feed-live.jpg" alt="A person smiling while demonstrating a hand sign to the camera." width="620" height="565">
+              <div class="cam-caption">
+                <span class="rec-pill"><span class="rec-dot live" id="teachDot" aria-hidden="true"></span><span id="teachRecLabel">Recording · 00:03</span></span>
+                <button class="cam-btn" data-toast="Camera switched" aria-label="Switch camera"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="od-stack" style="--od-gap:16px">
+            <div class="card">
+              <div class="card-head"><h2>Sign Details</h2><span class="badge">Step 2 of 3</span></div>
+              <div class="od-stack" style="--od-gap:14px">
+                <div class="field"><label for="teachName">Sign name <span aria-hidden="true">*</span></label><input id="teachName" value="FRIEND"><p class="help">10/50 characters</p></div>
+                <div class="field"><label for="teachCat">Category</label>
+                  <select id="teachCat"><option>People &amp; Relationships</option><option>Greetings</option><option>Emotions</option><option>Numbers</option></select>
+                  <p class="help">Groups your sign with related vocabulary.</p>
+                </div>
+                <div class="field"><label for="teachDesc">Description (optional)</label><textarea id="teachDesc">A sign for the word “friend”.</textarea><p class="help">Describe how the sign is made.</p></div>
+                <div class="field"><label for="teachEx">Example sentence (optional)</label><textarea id="teachEx">You are a good friend.</textarea></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Recording Progress</h3><span class="badge" id="teachCountBadge">3/10</span></div>
+              <div class="progress-ring-wrap">
+                <div class="ring" style="--p:30;--size:118px"><div><span class="big">3/10</span><span class="sub">examples</span></div></div>
+                <ul class="checklist">
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Good lighting</li>
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Hand clearly visible</li>
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Keep a consistent pose</li>
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Capture different angles</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Captured Examples <span class="muted" style="font-size:14px;font-weight:500">(3)</span></h2><button class="btn btn-ghost" data-toast="Examples cleared"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>Clear all</button></div>
+          <div class="gallery" id="teachGallery">
+            <div class="shot"><img src="assets/feed-live.jpg" alt="Captured example of the sign for friend, angle one."><button class="rm" data-remove aria-label="Remove example"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+            <div class="shot"><img src="assets/feed-live.jpg" alt="Captured example of the sign for friend, angle two." style="object-position:35% 45%"><button class="rm" data-remove aria-label="Remove example"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+            <div class="shot"><img src="assets/feed-live.jpg" alt="Captured example of the sign for friend, angle three." style="object-position:60% 40%"><button class="rm" data-remove aria-label="Remove example"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+            <button class="shot add" id="teachAdd"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Add more</button>
+          </div>
+          <div class="row-between mt-2" style="margin-top:18px">
+            <button class="btn btn-secondary" data-route="home"><svg class="ic" aria-hidden="true"><use href="#i-arrow-l"/></svg>Back</button>
+            <button class="btn btn-primary" id="teachNext">Next<svg class="ic" aria-hidden="true"><use href="#i-arrow-r"/></svg></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ LEARN ============ -->
+      <section class="page" id="screen-learn" data-screen="learn" data-title="Learn" hidden>
+        <div class="page-head">
+          <div><h1>Learn</h1><p class="lede">Step-by-step lessons to learn sign language at your own pace.</p></div>
+          <span class="badge ok"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-sparkle"/></svg>Small signs. Big connections.</span>
+        </div>
+
+        <div class="rail" id="learnChips">
+          <button class="chip is-active">All Lessons</button>
+          <button class="chip">Basics</button>
+          <button class="chip">Greetings</button>
+          <button class="chip">People</button>
+          <button class="chip">Daily Life</button>
+          <button class="chip">Emotions</button>
+          <button class="chip">Numbers</button>
+          <button class="chip">Alphabet</button>
+        </div>
+
+        <div class="learn-grid">
+          <div class="card">
+            <div class="card-head"><h3>Greetings</h3><span class="muted" style="font-size:12.5px">1 of 8</span></div>
+            <div class="lesson-list" id="lessonList">
+              <button class="lesson-item is-active"><span class="idx">1</span>Hello<span class="done"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></span></button>
+              <button class="lesson-item"><span class="idx">2</span>Goodbye</button>
+              <button class="lesson-item"><span class="idx">3</span>Thank you</button>
+              <button class="lesson-item"><span class="idx">4</span>Please</button>
+              <button class="lesson-item"><span class="idx">5</span>Yes</button>
+              <button class="lesson-item"><span class="idx">6</span>No</button>
+              <button class="lesson-item"><span class="idx">7</span>How are you</button>
+              <button class="lesson-item"><span class="idx">8</span>Nice to meet you</button>
+            </div>
+          </div>
+
+          <div class="lesson-stage">
+            <div class="card">
+              <div class="card-head"><div><span class="kicker">Lesson 1</span><h2 style="margin-top:4px">Hello</h2></div><span class="badge"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-star"/></svg>Beginner</span></div>
+              <div class="video-frame">
+                <img src="assets/feed-live.jpg" alt="An instructional video of a person signing “hello”." width="620" height="565">
+                <div class="video-bar">
+                  <button class="cam-btn" data-toast="Lesson video playing" aria-label="Play lesson video"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg></button>
+                  <span class="track"><i></i></span>
+                  <time>01:02 / 02:48</time>
+                  <button class="cam-btn" aria-label="Watch full screen"><svg class="ic" aria-hidden="true"><use href="#i-expand"/></svg></button>
+                </div>
+              </div>
+              <p class="hint" style="margin-top:14px;font-size:14px">A common greeting used to start a conversation. Raise your hand near your forehead with a gentle wave.</p>
+            </div>
+
+            <div class="try-card">
+              <div class="card-head" style="margin:0"><div><h3>Try it yourself</h3><p class="hint" style="font-size:12.5px">Turn on your camera and get real-time feedback.</p></div><span class="badge ok" id="learnTryBadge"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-check"/></svg>Good</span></div>
+              <div class="cols-2" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center">
+                <div class="cam" style="border-radius:var(--r)"><img src="assets/feed-live.jpg" alt="Camera preview while practising the sign for hello." width="620" height="565" style="aspect-ratio:16/10"></div>
+                <ul class="checklist">
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Hand clearly visible</li>
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Correct hand shape</li>
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Good position</li>
+                  <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Keep steady for 1 second</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="learn-side od-stack" style="--od-gap:16px">
+            <div class="card">
+              <div class="card-head"><h3>Your Progress</h3><a class="link" href="#/profile">View all</a></div>
+              <div class="progress-ring-wrap">
+                <div class="ring" style="--p:38;--size:118px"><div><span class="big">3/8</span><span class="sub">Lessons completed</span></div></div>
+                <div class="od-stack" style="--od-gap:10px">
+                  <div class="row-between"><span class="muted" style="font-size:12.5px"><svg class="ic" style="width:14px;height:14px;vertical-align:-2px;color:var(--orange)" aria-hidden="true"><use href="#i-flame"/></svg> Streak</span><b class="num">2 days</b></div>
+                  <div class="row-between"><span class="muted" style="font-size:12.5px"><svg class="ic" style="width:14px;height:14px;vertical-align:-2px;color:var(--orange)" aria-hidden="true"><use href="#i-check"/></svg> Signs learned</span><b class="num">12</b></div>
+                  <div class="row-between"><span class="muted" style="font-size:12.5px"><svg class="ic" style="width:14px;height:14px;vertical-align:-2px;color:var(--orange)" aria-hidden="true"><use href="#i-star"/></svg> Badges</span><b class="num">1</b></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Related Signs</h3><a class="link" href="#/practice">See more</a></div>
+              <div class="rail">
+                <div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HI</b><span>Hi</span></div>
+                <div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>GOOD</b><span>Good</span></div>
+                <div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HOW</b><span>How</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Example Usage</h3></div>
+              <ul class="history">
+                <li>Hello, how are you?<time>Formal</time></li>
+                <li>Hi, nice to meet you!<time>Casual</time></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PRACTICE ============ -->
+      <section class="page" id="screen-practice" data-screen="practice" data-title="Practice" hidden>
+        <div class="page-head">
+          <div><h1>Practice</h1><p class="lede">Sharpen your skills with interactive exercises and real-time feedback.</p></div>
+          <span class="badge ok"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-target"/></svg>Practice today for a more inclusive tomorrow</span>
+        </div>
+
+        <div class="rail" id="practiceModes">
+          <button class="chip is-active"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg>Recognize Signs</button>
+          <button class="chip"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg>Build Sentences</button>
+          <button class="chip"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>Timed Challenge</button>
+          <button class="chip"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Mixed Mode</button>
+        </div>
+
+        <div class="practice-grid">
+          <div class="card">
+            <div class="card-head"><h3>Select Practice Set</h3></div>
+            <div class="set-list" id="setList">
+              <button class="set-item is-active"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg><span><b>Common Words</b><p>Everyday essential signs</p></span><span class="check"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></span></button>
+              <button class="set-item"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span><b>Greetings</b><p>Start a conversation</p></span></button>
+              <button class="set-item"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span><b>People</b><p>Family, friends and others</p></span></button>
+              <button class="set-item"><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg><span><b>Emotions</b><p>Express how you feel</p></span></button>
+              <button class="set-item"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg><span><b>Numbers</b><p>1 to 100</p></span></button>
+              <button class="set-item"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg><span><b>Alphabet</b><p>A to Z</p></span></button>
+              <button class="set-item"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span><b>Custom Set</b><p>Create your own set</p></span></button>
+            </div>
+          </div>
+
+          <div class="lesson-stage">
+            <div class="card flat" style="padding:0;overflow:hidden">
+              <div class="cam cam-tall">
+                <img src="assets/feed-live.jpg" alt="Practice camera view with a person signing while being recognized." width="620" height="565">
+                <div class="cam-overlay"><button class="cam-btn" data-toast="Exited practice" aria-label="Exit practice"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+                <div class="cam-caption"><span class="rec-pill"><span class="rec-dot live" aria-hidden="true"></span>Recognizing</span><span class="rec-pill">Sign 3 of 10</span></div>
+              </div>
+            </div>
+            <div class="progress-bar-row"><span class="muted" style="font-size:12.5px">Progress</span><span class="bar" style="flex:1"><i style="width:30%"></i></span><b class="num" style="font-size:13px">3/10</b></div>
+            <div class="feedback ok" id="practiceFeedback">
+              <span class="mark"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></span>
+              <div><div class="word" id="practiceWord">HELLO</div><p class="hint" style="font-size:13px">Nice work — clear hand shape and steady position.</p></div>
+              <span class="badge ok" style="margin-left:auto"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-check"/></svg>Confident</span>
+            </div>
+            <div class="row-between">
+              <button class="btn btn-secondary" id="practiceRetry"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg>Try Again</button>
+              <button class="btn btn-primary" id="practiceNext">Next Sign<svg class="ic" aria-hidden="true"><use href="#i-arrow-r"/></svg></button>
+            </div>
+          </div>
+
+          <div class="practice-side od-stack" style="--od-gap:16px">
+            <div class="card">
+              <div class="card-head"><h3>Your Progress</h3><a class="link" href="#/profile">View all</a></div>
+              <div class="progress-ring-wrap">
+                <div class="ring" style="--p:30;--size:118px"><div><span class="big">30%</span><span class="sub">Great start!</span></div></div>
+                <div class="od-stack" style="--od-gap:8px">
+                  <div class="row-between"><span class="muted" style="font-size:12.5px">Day streak</span><b class="num">5</b></div>
+                  <div class="row-between"><span class="muted" style="font-size:12.5px">Signs practiced</span><b class="num">18</b></div>
+                  <div class="row-between"><span class="muted" style="font-size:12.5px">Best streak</span><b class="num">12</b></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Current Set</h3><button class="link" data-toast="Change practice set">Change</button></div>
+              <div class="list-row"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg></span><span><b>Common Words</b><p>10 signs</p></span></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Tips</h3><div style="display:flex;gap:6px"><button class="icon-btn" data-toast="Previous tip" aria-label="Previous tip"><svg class="ic" aria-hidden="true"><use href="#i-chev-l"/></svg></button><button class="icon-btn" data-toast="Next tip" aria-label="Next tip"><svg class="ic" aria-hidden="true"><use href="#i-chev-r"/></svg></button></div></div>
+              <div class="benefit" style="background:transparent;border:0;padding:0">
+                <span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg></span>
+                <div><b>Keep your hand clearly in frame</b><p>Good lighting and a steady, natural pose help SignBridge recognize you faster.</p></div>
+              </div>
+              <p class="badge ok" style="margin-top:12px">It’s okay to make mistakes. Practice builds progress!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ COMMUNICATION ============ -->
+      <section class="page" id="screen-communication" data-screen="communication" data-title="Communication Hub" hidden>
+        <div class="page-head">
+          <div><h1>Communication Hub</h1><p class="lede">Multiple ways to communicate. One inclusive space.</p></div>
+          <span class="badge ok"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-users"/></svg>Signs bring us closer</span>
+        </div>
+
+        <div class="mode-grid" id="commModes" role="tablist" aria-label="Communication modes">
+          <button class="mode is-active" role="tab" aria-selected="true" data-mode="Sign → Text"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-handsign"/></svg></span><span><b>Sign → Text</b><p>Make signs, get text instantly</p></span></button>
+          <button class="mode" role="tab" aria-selected="false" data-mode="Text → Speech"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg></span><span><b>Text → Speech</b><p>Type, and let it be spoken aloud</p></span></button>
+          <button class="mode" role="tab" aria-selected="false" data-mode="Speech → Text"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-speaker"/></svg></span><span><b>Speech → Text</b><p>Speak, and read it as captions</p></span></button>
+          <button class="mode" role="tab" aria-selected="false" data-mode="Conversation"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg></span><span><b>Conversation</b><p>Real-time, two-way mode</p></span></button>
+        </div>
+
+        <div class="translate-grid">
+          <div class="card flat" style="padding:0;overflow:hidden">
+            <div class="cam cam-tall">
+              <img src="assets/feed-live.jpg" alt="A person signing toward the camera during a two-way conversation." width="620" height="565">
+              <div class="cam-caption">
+                <span class="rec-pill"><span class="rec-dot live" aria-hidden="true"></span><span id="commModeLabel">Listening for signs</span></span>
+                <button class="cam-btn" data-toast="Camera flipped" aria-label="Flip camera"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="od-stack" style="--od-gap:16px">
+            <div class="card chat">
+              <div class="card-head" style="margin:0"><h2>Translation</h2><span class="badge ok">Live</span></div>
+              <div class="bubble them"><span class="chat-meta">Signer · just now</span><p style="margin-top:6px">Hello, how are you?</p></div>
+              <div class="bubble me"><span class="chat-meta" style="color:rgba(17,19,24,.6)">You · spoken</span><p style="margin-top:6px">I’m good, thank you!</p></div>
+              <div class="caption-actions">
+                <button class="btn btn-secondary" id="commSpeak"><svg class="ic" aria-hidden="true"><use href="#i-speaker"/></svg>Speak</button>
+                <button class="btn btn-ghost" data-toast="Translation copied" aria-label="Copy translation"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg>Copy</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Detected Signs</h3><span class="muted" style="font-size:12.5px">Supporting evidence</span></div>
+              <div class="rail">
+                <div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HELLO</b><span>Hello</span></div>
+                <div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>HOW</b><span>How</span></div>
+                <div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>ARE</b><span>Are</span></div>
+                <div class="sign-tile"><svg class="glyph" aria-hidden="true"><use href="#i-handsign"/></svg><b>YOU</b><span>You</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-auto">
+          <div class="card">
+            <div class="card-head"><h3>Sentence History</h3><button class="link" data-toast="History cleared">Clear history</button></div>
+            <ul class="history">
+              <li>Hello, how are you?<time>10:24 AM</time></li>
+              <li>Nice to meet you!<time>10:22 AM</time></li>
+              <li>Thank you!<time>10:20 AM</time></li>
+              <li>See you later!<time>10:18 AM</time></li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Other Ways to Communicate</h3></div>
+            <button class="list-row" data-toast="Type a message mode"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg></span><span><b>Type a Message</b><p>Convert text to speech</p></span><svg class="ic" style="width:16px;height:16px;margin-left:auto" aria-hidden="true"><use href="#i-chev-r"/></svg></button>
+            <div style="height:8px"></div>
+            <button class="list-row" data-toast="Speak to text mode"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg></span><span><b>Speak to Text</b><p>Use your microphone</p></span><svg class="ic" style="width:16px;height:16px;margin-left:auto" aria-hidden="true"><use href="#i-chev-r"/></svg></button>
+            <div style="height:8px"></div>
+            <button class="list-row" data-toast="Starting conversation mode"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></span><span><b>Start a Conversation</b><p>Two-way real-time mode</p></span><svg class="ic" style="width:16px;height:16px;margin-left:auto" aria-hidden="true"><use href="#i-chev-r"/></svg></button>
+            <div class="field mt-2" style="margin-top:16px"><label for="commVoice">Choose Voice</label><select id="commVoice"><option>Natural (Default)</option><option>Warm</option><option>Clear</option></select></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Quick Phrases</h3><a class="link" href="#/live">See all</a></div>
+            <div class="rail" id="commPhrases">
+              <button class="chip phrase">Hello</button>
+              <button class="chip phrase">Thank you</button>
+              <button class="chip phrase">Please</button>
+              <button class="chip phrase">I need help</button>
+              <button class="chip phrase">Nice to meet you</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mission">
+          <div>
+            <p class="mark">Communication has no barriers</p>
+            <h2>Different signs. Same human connection.</h2>
+            <p>Every conversation you make a little easier brings us closer to a world where everyone is understood.</p>
+          </div>
+          <button class="btn btn-primary" id="commConnect">Let’s Connect<svg class="ic" aria-hidden="true"><use href="#i-arrow-r"/></svg></button>
+        </div>
+      </section>
+
+      <!-- ============ PROFILE ============ -->
+      <section class="page" id="screen-profile" data-screen="profile" data-title="My Profile" hidden>
+        <div class="page-head">
+          <div><h1>My Profile</h1><p class="lede">Track your progress, achievements, and personal learning journey.</p></div>
+          <span class="badge"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-sparkle"/></svg>Every sign you learn builds a more inclusive world.</span>
+        </div>
+
+        <div class="card identity">
+          <img class="avatar avatar-lg" src="assets/avatar.jpg" alt="Portrait of H. Swastik.">
+          <div class="who">
+            <b>H. Swastik <span class="badge" style="vertical-align:middle">Learner</span></b>
+            <div class="line"><span>@swastik</span><span>·</span><span>Computer Science Student</span><span>·</span><span>India</span></div>
+            <p class="hint" style="margin-top:8px;max-width:52ch">Learning, practising, and building a more inclusive world with SignBridge.</p>
+            <div class="tags"><span class="badge">Learning</span><span class="badge">Community</span><span class="badge">Daily practice</span></div>
+          </div>
+          <button class="btn btn-secondary" style="margin-left:auto" data-toast="Edit profile"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg>Edit Profile</button>
+        </div>
+
+        <div class="cols-2" style="grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)">
+          <div class="goal-banner">
+            <span class="flame"><svg class="ic" aria-hidden="true"><use href="#i-flame"/></svg></span>
+            <div><b>18 <span style="font-size:14px;font-weight:500">day streak</span></b><p>Keep it going!</p></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>This Week</h3><span class="muted" style="font-size:12.5px">3 of 7 days active</span></div>
+            <div class="week">
+              <div class="d on"><span class="mono">M</span>Mon</div>
+              <div class="d on"><span class="mono">T</span>Tue</div>
+              <div class="d on"><span class="mono">W</span>Wed</div>
+              <div class="d today"><span class="mono">T</span>Thu</div>
+              <div class="d"><span class="mono">F</span>Fri</div>
+              <div class="d"><span class="mono">S</span>Sat</div>
+              <div class="d"><span class="mono">S</span>Sun</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-strip">
+          <div class="stat"><span class="n" data-count="182">182</span><span class="l">Signs learned</span></div>
+          <div class="stat"><span class="n" data-count="42">42</span><span class="l">Practice sessions</span></div>
+          <div class="stat"><span class="n" data-count="12">12</span><span class="l">Lessons completed</span></div>
+          <div class="stat"><span class="n"><span data-count="92">92</span><em>%</em></span><span class="l">Recognition accuracy</span></div>
+        </div>
+
+        <div class="cols-2">
+          <div class="card">
+            <div class="card-head"><h2>Learning Progress</h2><a class="link" href="#/learn">All categories</a></div>
+            <div class="progress-cat">
+              <div class="cat"><div class="row-between"><b>Common Words</b><span>28 / 30</span></div><span class="bar"><i style="width:93%"></i></span></div>
+              <div class="cat"><div class="row-between"><b>Greetings &amp; Conversations</b><span>16 / 25</span></div><span class="bar"><i style="width:64%"></i></span></div>
+              <div class="cat"><div class="row-between"><b>People &amp; Family</b><span>12 / 20</span></div><span class="bar"><i style="width:60%"></i></span></div>
+              <div class="cat"><div class="row-between"><b>Emotions</b><span>8 / 15</span></div><span class="bar"><i style="width:53%"></i></span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Recent Activity</h2><a class="link" href="#/home">See all</a></div>
+            <ul class="activity">
+              <li><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></span><div><b>Practiced “Hello”</b><p class="muted">Today, 10:24 AM · <span class="ok">Correct</span></p></div></li>
+              <li><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></span><div><b>Practiced “Thank You”</b><p class="muted">Today, 10:18 AM · <span class="ok">Correct</span></p></div></li>
+              <li><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span><div><b>Completed lesson: Greetings</b><p class="muted">Yesterday, 7:40 PM</p></div></li>
+              <li><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-teach"/></svg></span><div><b>Trained a new sign</b><p class="muted">Yesterday, 6:12 PM</p></div></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Achievements</h2><a class="link" href="#/practice">See all</a></div>
+          <div class="badges">
+            <div class="badge-item"><span class="disc"><svg class="ic" aria-hidden="true"><use href="#i-flame"/></svg></span><b>7 Day Streak</b><span>Earned</span></div>
+            <div class="badge-item"><span class="disc"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></span><b>50 Signs Learned</b><span>Earned</span></div>
+            <div class="badge-item"><span class="disc"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg></span><b>First Practice Session</b><span>Earned</span></div>
+            <div class="badge-item"><span class="disc"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span><b>10 Lessons Completed</b><span>Earned</span></div>
+            <div class="badge-item locked"><span class="disc"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></span><b>100 Signs Learned</b><span>Locked</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Your Goals</h2><button class="link" data-toast="Edit goals">Edit</button></div>
+          <div class="progress-cat">
+            <div class="cat"><div class="row-between"><b>Learn 5 new signs</b><span>3 / 5</span></div><span class="bar"><i style="width:60%"></i></span></div>
+            <div class="cat"><div class="row-between"><b>Practice for 30 minutes</b><span>20 / 30</span></div><span class="bar"><i style="width:66%"></i></span></div>
+            <div class="cat"><div class="row-between"><b>Maintain 7 day streak</b><span>3 / 7</span></div><span class="bar"><i style="width:43%"></i></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section class="page" id="screen-settings" data-screen="settings" data-title="Settings" hidden>
+        <div class="page-head">
+          <div><h1>Settings</h1><p class="lede">Customize your SignBridge experience.</p></div>
+          <span class="badge ok"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-sparkle"/></svg>Your preferences. A more inclusive tomorrow.</span>
+        </div>
+
+        <div class="settings-grid">
+          <div class="card">
+            <div class="cat-list" id="settingsCats" role="tablist" aria-label="Settings categories">
+              <button class="cat-item is-active" role="tab" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg><span><b>General</b><span>Language, theme, units</span></span></button>
+              <button class="cat-item" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg><span><b>Camera</b><span>Video input settings</span></span></button>
+              <button class="cat-item" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg><span><b>Audio</b><span>Microphone and speech</span></span></button>
+              <button class="cat-item" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-model"/></svg><span><b>AI Model</b><span>Recognition preferences</span></span></button>
+              <button class="cat-item" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-access"/></svg><span><b>Accessibility</b><span>Make it yours</span></span></button>
+              <button class="cat-item" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><span><b>Notifications</b><span>Alerts and updates</span></span></button>
+              <button class="cat-item" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg><span><b>Privacy &amp; Data</b><span>Control your data</span></span></button>
+              <button class="cat-item" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-device"/></svg><span><b>Devices</b><span>Connected devices</span></span></button>
+              <button class="cat-item" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span><b>Help &amp; Support</b><span>Get assistance</span></span></button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="setting-group">
+              <h3>General Settings</h3>
+              <p>Basic preferences for your SignBridge experience.</p>
+              <div class="od-grid" style="--od-cols:2;--od-gap:18px">
+                <div class="field"><label for="setLang">App Language</label><select id="setLang"><option>English</option><option>हिन्दी</option><option>Español</option><option>Français</option></select><p class="help">Choose your preferred language for the interface.</p></div>
+                <div class="field"><label for="setSign">Sign Language</label><select id="setSign"><option>American Sign Language (ASL)</option><option>British Sign Language (BSL)</option><option>Indian Sign Language (ISL)</option><option>Other</option></select><p class="help">Select the sign language you want to use.</p></div>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <h3>Theme</h3>
+              <p>Choose how SignBridge looks on your device.</p>
+              <div class="radio-row" id="themeChoice" role="radiogroup" aria-label="Theme">
+                <button class="chip" role="radio" aria-checked="false" data-theme-set="light"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg>Light</button>
+                <button class="chip" role="radio" aria-checked="false" data-theme-set="dark"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg>Dark</button>
+                <button class="chip is-active" role="radio" aria-checked="true" data-theme-set="system"><svg class="ic" aria-hidden="true"><use href="#i-device"/></svg>System</button>
+              </div>
+            </div>
+
+            <div class="setting-group" style="margin-bottom:0">
+              <h3>Units &amp; Display</h3>
+              <p>Choose your preferred measurement units.</p>
+              <div class="od-grid" style="--od-cols:2;--od-gap:18px">
+                <div class="field"><label for="setUnits">Units</label><select id="setUnits"><option>Metric (km, kg, °C)</option><option>Imperial (mi, ft, °F)</option></select></div>
+                <div class="field"><label for="setSpeed">Caption speed</label><select id="setSpeed"><option>Natural</option><option>Relaxed</option><option>Fast</option></select></div>
+              </div>
+            </div>
+
+            <div class="divider" style="margin:24px 0"></div>
+
+            <div class="setting-group" style="margin-bottom:0">
+              <h3>App Preferences</h3>
+              <p>Customize your experience.</p>
+              <div class="setting-row"><div class="meta"><b>Auto-play translations</b><p>Automatically speak translated text aloud.</p></div><label class="switch"><input type="checkbox" checked aria-label="Auto-play translations"><span class="track"></span></label></div>
+              <div class="setting-row"><div class="meta"><b>Show confidence cues</b><p>Display a simple recognition cue for each prediction.</p></div><label class="switch"><input type="checkbox" checked aria-label="Show confidence cues"><span class="track"></span></label></div>
+              <div class="setting-row"><div class="meta"><b>Save translation history</b><p>Keep a history of your translations.</p></div><label class="switch"><input type="checkbox" checked aria-label="Save translation history"><span class="track"></span></label></div>
+              <div class="setting-row"><div class="meta"><b>Enable haptic feedback</b><p>Get gentle vibrations on successful recognition.</p></div><label class="switch"><input type="checkbox" aria-label="Enable haptic feedback"><span class="track"></span></label></div>
+              <div class="setting-row"><div class="meta"><b>Reduce motion</b><p>Minimize animations for a calmer experience.</p></div><label class="switch"><input type="checkbox" id="reduceMotion" aria-label="Reduce motion"><span class="track"></span></label></div>
+            </div>
+          </div>
+
+          <div class="settings-side od-stack" style="--od-gap:16px">
+            <div class="card">
+              <div class="card-head"><h3>Camera Preview</h3><button class="btn btn-ghost" data-toast="Camera test complete">Test</button></div>
+              <div class="preview-card"><img src="assets/feed-live.jpg" alt="Live preview of the front camera."></div>
+              <p class="badge ok" style="margin-top:12px"><svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-check"/></svg>Camera ready</p>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Microphone</h3><button class="btn btn-ghost" data-toast="Microphone test complete">Test</button></div>
+              <div class="field"><label for="setMic" class="sr-only">Microphone</label><select id="setMic"><option>MacBook Pro Microphone (Built-in)</option><option>External Microphone</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>AI Model</h3><span class="badge ok">Active</span></div>
+              <div class="ref-card">
+                <div class="kv"><span>Model</span><b>SignNet v3.1</b></div>
+                <div class="kv"><span>Signs</span><b>2,731 classes</b></div>
+                <div class="kv"><span>Version</span><b>v3.1.0 (102 MB)</b></div>
+                <div class="kv"><span>Last updated</span><b>Real-time</b></div>
+              </div>
+              <p class="hint" style="font-size:12px;margin-top:10px">Recognition runs on your device. Model details live here, out of your way.</p>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Account &amp; Data</h3></div>
+              <button class="list-row" data-toast="Manage saved data"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg></span><span><b>Manage saved data</b><p>Control what SignBridge keeps</p></span><svg class="ic" style="width:16px;height:16px;margin-left:auto" aria-hidden="true"><use href="#i-chev-r"/></svg></button>
+              <div style="height:8px"></div>
+              <button class="list-row" data-toast="Export requested"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg></span><span><b>Export my data</b><p>Download a copy of your activity</p></span><svg class="ic" style="width:16px;height:16px;margin-left:auto" aria-hidden="true"><use href="#i-chev-r"/></svg></button>
+              <button class="btn btn-danger btn-block" style="margin-top:16px" id="signOutBtn"><svg class="ic" aria-hidden="true"><use href="#i-arrow-r"/></svg>Sign Out</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ONBOARDING ============ -->
+      <section class="onb" id="screen-onb-welcome" data-screen="onboarding/welcome" data-title="Welcome" hidden>
+        <div class="onb-top">
+          <a class="brand" href="#/home"><img src="assets/logo.png" alt=""><span class="txt"><b>SignBridge</b><span>Different Signs. Same Human Connection.</span></span></a>
+          <div class="onb-progress" aria-label="Setup progress">
+            <span class="step is-active"><span class="n">1</span>Welcome</span><span class="step-line"></span>
+            <span class="step"><span class="n">2</span>Camera</span><span class="step-line"></span>
+            <span class="step"><span class="n">3</span>Preferences</span><span class="step-line"></span>
+            <span class="step"><span class="n">4</span>You’re Ready</span>
+          </div>
+          <a class="skip-btn" href="#/home">Skip for now<svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-arrow-r"/></svg></a>
+        </div>
+        <div class="onb-body split">
+          <div class="onb-copy">
+            <p class="kicker">Step 1 of 4</p>
+            <h1>Welcome to SignBridge</h1>
+            <p class="lede">Let’s get your camera and preferences ready so SignBridge can help you communicate, learn, and connect with confidence.</p>
+            <ul class="checklist" style="margin-top:6px">
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Translate signs in real time</li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Learn and practise at your own pace</li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Have two-way conversations</li>
+            </ul>
+            <div class="onb-actions"><button class="btn btn-primary" data-route="onboarding/camera">Get started<svg class="ic" aria-hidden="true"><use href="#i-arrow-r"/></svg></button><a class="btn btn-ghost" href="#/home">Explore on my own</a></div>
+          </div>
+          <div class="onb-art"><img src="assets/hero.jpg" alt="An illustration of two hands reaching toward each other beneath the words “Different signs, same human connection”." width="490" height="320"></div>
+        </div>
+        <div class="onb-foot"><span>LEARN · PRACTICE · CONNECT · INCLUDE</span><span>A MORE INCLUSIVE WORLD, TOGETHER.</span></div>
+      </section>
+
+      <section class="onb" id="screen-onb-camera" data-screen="onboarding/camera" data-title="Set up your camera" hidden>
+        <div class="onb-top">
+          <a class="brand" href="#/home"><img src="assets/logo.png" alt=""><span class="txt"><b>SignBridge</b><span>Different Signs. Same Human Connection.</span></span></a>
+          <div class="onb-progress" aria-label="Setup progress">
+            <span class="step is-done"><span class="n">1</span>Welcome</span><span class="step-line"></span>
+            <span class="step is-active"><span class="n">2</span>Camera</span><span class="step-line"></span>
+            <span class="step"><span class="n">3</span>Preferences</span><span class="step-line"></span>
+            <span class="step"><span class="n">4</span>You’re Ready</span>
+          </div>
+          <a class="skip-btn" href="#/home">Skip for now<svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-arrow-r"/></svg></a>
+        </div>
+        <div class="onb-body split">
+          <div class="onb-copy">
+            <p class="kicker">Step 2 of 4</p>
+            <h1>Set up your camera</h1>
+            <p class="lede">We’ll use your camera to recognize sign language in real-time. Make sure your face and hands are clearly visible.</p>
+            <div class="od-stack" style="--od-gap:12px">
+              <div class="benefit"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg></span><div><b>Allow Camera Access</b><p>SignBridge needs access to your camera for real-time sign recognition.</p></div><svg class="ic" style="width:18px;height:18px;color:var(--ok);margin-left:auto" aria-hidden="true"><use href="#i-check"/></svg></div>
+              <div class="benefit"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg></span><div><b>Good Lighting</b><p>Sit in a well-lit area so your hands are clearly visible.</p></div><svg class="ic" style="width:18px;height:18px;color:var(--ok);margin-left:auto" aria-hidden="true"><use href="#i-check"/></svg></div>
+              <div class="benefit"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-access"/></svg></span><div><b>Position Yourself</b><p>Keep your upper body and hands within the frame, similar to the example.</p></div><svg class="ic" style="width:18px;height:18px;color:var(--ok);margin-left:auto" aria-hidden="true"><use href="#i-check"/></svg></div>
+            </div>
+            <div class="onb-actions"><a class="btn btn-secondary" href="#/onboarding/welcome"><svg class="ic" aria-hidden="true"><use href="#i-arrow-l"/></svg>Back</a><button class="btn btn-primary" data-route="onboarding/preferences">Continue<svg class="ic" aria-hidden="true"><use href="#i-arrow-r"/></svg></button></div>
+          </div>
+          <div class="onb-panel">
+            <div class="cam" style="border-radius:var(--r-lg)"><img src="assets/feed-live.jpg" alt="Camera preview showing correct positioning for signing." width="620" height="565" style="aspect-ratio:620/565"><div class="cam-caption"><span class="rec-pill"><span class="rec-dot" aria-hidden="true"></span>Camera is ready</span></div></div>
+            <div class="example-tiles">
+              <figure><div class="ph"><img src="assets/feed-live.jpg" alt="Example: good position."></div><figcaption><svg class="ic" style="color:var(--ok)" aria-hidden="true"><use href="#i-check"/></svg>Good position</figcaption></figure>
+              <figure><div class="ph"><img src="assets/feed-live.jpg" alt="Example: too close to the camera." style="transform:scale(1.5)"></div><figcaption><svg class="ic" style="color:var(--warn)" aria-hidden="true"><use href="#i-info"/></svg>Too close</figcaption></figure>
+              <figure><div class="ph"><img src="assets/feed-live.jpg" alt="Example: hands not visible." style="object-position:70% 10%;filter:brightness(.82)"></div><figcaption><svg class="ic" style="color:var(--bad)" aria-hidden="true"><use href="#i-x"/></svg>Hands not visible</figcaption></figure>
+            </div>
+          </div>
+        </div>
+        <div class="onb-foot"><span>“JUST YOU, AS YOU ARE.”</span><span>A MORE INCLUSIVE WORLD, TOGETHER.</span></div>
+      </section>
+
+      <section class="onb" id="screen-onb-preferences" data-screen="onboarding/preferences" data-title="Set your preferences" hidden>
+        <div class="onb-top">
+          <a class="brand" href="#/home"><img src="assets/logo.png" alt=""><span class="txt"><b>SignBridge</b><span>Different Signs. Same Human Connection.</span></span></a>
+          <div class="onb-progress" aria-label="Setup progress">
+            <span class="step is-done"><span class="n">1</span>Welcome</span><span class="step-line"></span>
+            <span class="step is-done"><span class="n">2</span>Camera</span><span class="step-line"></span>
+            <span class="step is-active"><span class="n">3</span>Preferences</span><span class="step-line"></span>
+            <span class="step"><span class="n">4</span>You’re Ready</span>
+          </div>
+          <a class="skip-btn" href="#/home">Skip for now<svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-arrow-r"/></svg></a>
+        </div>
+        <div class="onb-body split">
+          <div class="onb-copy">
+            <p class="kicker">Step 3 of 4</p>
+            <h1>Set your preferences</h1>
+            <p class="lede">Customize SignBridge to match your needs. You can always change these later in settings.</p>
+            <div class="onb-panel">
+              <div class="field"><label for="onbLang"><svg class="ic" style="width:16px;height:16px;vertical-align:-3px;color:var(--orange)" aria-hidden="true"><use href="#i-globe"/></svg> Interface Language</label><select id="onbLang"><option>English</option><option>हिन्दी</option><option>Español</option></select><p class="help">Choose the language for the app interface.</p></div>
+              <div>
+                <p style="font-size:13px;font-weight:600;margin-bottom:8px"><svg class="ic" style="width:16px;height:16px;vertical-align:-3px;color:var(--orange)" aria-hidden="true"><use href="#i-handsign"/></svg> Sign Language</p>
+                <div class="radio-row" id="onbSign" role="radiogroup" aria-label="Sign language">
+                  <button class="chip is-active" role="radio" aria-checked="true">American Sign Language (ASL)</button>
+                  <button class="chip" role="radio" aria-checked="false">British Sign Language (BSL)</button>
+                  <button class="chip" role="radio" aria-checked="false">Indian Sign Language (ISL)</button>
+                  <button class="chip" role="radio" aria-checked="false">Other</button>
+                </div>
+              </div>
+              <div class="od-grid" style="--od-cols:2;--od-gap:14px">
+                <div class="field"><label for="onbUnits"><svg class="ic" style="width:16px;height:16px;vertical-align:-3px;color:var(--orange)" aria-hidden="true"><use href="#i-ruler"/></svg> Units</label><select id="onbUnits"><option>Metric (km, kg, °C)</option><option>Imperial (mi, ft, °F)</option></select></div>
+                <div class="field"><label>Appearance</label><div class="radio-row" id="onbTheme" role="radiogroup" aria-label="Appearance"><button class="chip" role="radio" aria-checked="false" data-theme-set="light"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg>Light</button><button class="chip" role="radio" aria-checked="false" data-theme-set="dark"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg>Dark</button><button class="chip is-active" role="radio" aria-checked="true" data-theme-set="system"><svg class="ic" aria-hidden="true"><use href="#i-device"/></svg>System</button></div></div>
+              </div>
+              <div class="setting-row" style="border-top:1px solid var(--line-2);padding-top:14px"><div class="meta"><b><svg class="ic" style="width:16px;height:16px;vertical-align:-3px;color:var(--orange)" aria-hidden="true"><use href="#i-bell"/></svg> Notifications</b><p>Get reminders, practice streaks and new lessons.</p></div><label class="switch"><input type="checkbox" checked aria-label="Notifications"><span class="track"></span></label></div>
+            </div>
+            <div class="onb-actions"><a class="btn btn-secondary" href="#/onboarding/camera"><svg class="ic" aria-hidden="true"><use href="#i-arrow-l"/></svg>Back</a><button class="btn btn-primary" data-route="onboarding/ready">Continue<svg class="ic" aria-hidden="true"><use href="#i-arrow-r"/></svg></button></div>
+          </div>
+          <div class="onb-art"><img src="assets/feed-video.jpg" alt="A person smiling and signing while seated at a laptop." width="720" height="405"></div>
+        </div>
+        <div class="onb-foot"><span>BUILT FOR REAL PEOPLE, REAL IMPACT.</span><span>DIFFERENT SIGNS, SAME HUMAN CONNECTION.</span></div>
+      </section>
+
+      <section class="onb" id="screen-onb-ready" data-screen="onboarding/ready" data-title="You’re all set" hidden>
+        <div class="onb-top">
+          <a class="brand" href="#/home"><img src="assets/logo.png" alt=""><span class="txt"><b>SignBridge</b><span>Different Signs. Same Human Connection.</span></span></a>
+          <div class="onb-progress" aria-label="Setup progress">
+            <span class="step is-done"><span class="n">1</span>Welcome</span><span class="step-line"></span>
+            <span class="step is-done"><span class="n">2</span>Camera</span><span class="step-line"></span>
+            <span class="step is-done"><span class="n">3</span>Preferences</span><span class="step-line"></span>
+            <span class="step is-active"><span class="n">4</span>You’re Ready</span>
+          </div>
+          <a class="skip-btn" href="#/home">Skip for now<svg class="ic" style="width:14px;height:14px" aria-hidden="true"><use href="#i-arrow-r"/></svg></a>
+        </div>
+        <div class="onb-body split">
+          <div class="onb-copy">
+            <p class="kicker">Step 4 of 4</p>
+            <h1>You’re all set!</h1>
+            <p class="lede">SignBridge is ready to help you translate, learn, and communicate with sign language.</p>
+            <div class="od-stack" style="--od-gap:12px">
+              <div class="benefit"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg></span><div><b>Translate in Real-Time</b><p>Turn signs, speech, or text into meaningful conversations.</p></div></div>
+              <div class="benefit"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span><div><b>Learn and Practice</b><p>Explore interactive lessons to improve your skills.</p></div></div>
+              <div class="benefit"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-teach"/></svg></span><div><b>Teach and Contribute</b><p>Help SignBridge learn new signs from your gestures.</p></div></div>
+              <div class="benefit"><span class="ic-wrap"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></span><div><b>Build a More Inclusive World</b><p>Be a part of a community that makes communication accessible for everyone.</p></div></div>
+            </div>
+            <div class="onb-actions"><a class="btn btn-secondary" href="#/onboarding/preferences"><svg class="ic" aria-hidden="true"><use href="#i-arrow-l"/></svg>Back</a><button class="btn btn-primary" id="onbFinish">Start Exploring<svg class="ic" aria-hidden="true"><use href="#i-arrow-r"/></svg></button></div>
+          </div>
+          <div class="onb-art"><img src="assets/feed-video.jpg" alt="A person signing beside a laptop showing the SignBridge mark." width="720" height="405"></div>
+        </div>
+        <div class="onb-foot"><span>LEARN · PRACTICE · CONNECT · INCLUDE</span><span>TOGETHER FOR A MORE INCLUSIVE WORLD.</span></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts" aria-live="polite" aria-atomic="false"></div>
+<div id="modalRoot"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

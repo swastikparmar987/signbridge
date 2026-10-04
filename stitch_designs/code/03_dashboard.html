@@ -1,0 +1,541 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SignBridge Dashboard</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter & Plus Jakarta Sans & Permanent Marker -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Permanent+Marker&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            marker: ['"Permanent Marker"', 'cursive'],
+          },
+          colors: {
+            brand: {
+              orange: '#f25822',
+              'orange-dark': '#dd430e',
+              'orange-light': '#fff3ed',
+              peach: '#fed8c3',
+              dark: '#14161d',
+              darker: '#0e1015',
+              gray: '#8f95a3',
+              cardbg: '#ffffff',
+              pagebg: '#f8f7f4'
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-layout">
+    body {
+      background-color: #f8f7f4;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #1e2430;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    /* Scrollbar customization */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e2dfd9;
+      border-radius: 9999px;
+    }
+
+    /* Hand badge tilt */
+    .brush-badge {
+      transform: rotate(-7deg);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex bg-[#f8f7f4]">
+<!-- BEGIN: LeftSidebar -->
+<aside class="w-64 bg-[#13151b] text-white flex flex-col justify-between shrink-0 min-h-screen py-6 px-4 select-none" data-purpose="sidebar-navigation">
+<!-- Top Branding & Navigation Links -->
+<div class="space-y-6">
+<!-- Brand Logo Header -->
+<div class="flex items-center gap-3 px-2">
+<img alt="SignBridge Logo" class="w-9 h-9 object-contain drop-shadow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMd4A49o9fefafWzowCEqQQma9l5zyDq8nttE5WCvj4ZjWviq7b1G_ecFD8w68uNbbbGgS9CuAa7XIIl8GaSCZ5jMg3UxXYb_jrjDCZgk-2sx6qH4SZlx4gpEToegTIcZXK32zS94I7uzA9FithTx1JfdACBYjz8QmfmePIM9BSN74dJFLbaOmR5UM2w3e0IwcCBWVlJX-Rd8k4iu0jlNYlWsXXTaRD-PEMqXkt2zum_rL19hNdQe13RmUoPdscwOlMf0">
+<div class="leading-tight">
+<h1 class="text-lg font-bold tracking-tight text-white flex items-center">SignBridge</h1>
+<p class="text-[10px] text-gray-400 font-medium leading-none mt-0.5">Different Signs.<br><span class="text-gray-400">Same Human Connection.</span></p>
+</div>
+</div>
+<!-- Main Navigation Menu -->
+<nav aria-label="Main Navigation" class="space-y-1.5 pt-2">
+<!-- Home (Active State) -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f25924] to-[#f4783b] text-white font-semibold shadow-md shadow-orange-950/20 text-sm" href="#">
+<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path>
+</svg>
+<span class="">Home</span>
+</a>
+<!-- Live Translate -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-white/5 transition font-medium text-sm" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Live Translate</span>
+</a>
+<!-- Video Translate -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-white/5 transition font-medium text-sm" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<rect height="16" rx="3" width="20" x="2" y="4"></rect>
+<polygon fill="currentColor" points="10 8 16 12 10 16 10 8" stroke="none"></polygon>
+</svg>
+<span class="">Video Translate</span>
+</a>
+<!-- Teach SignBridge -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-white/5 transition font-medium text-sm" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Teach SignBridge</span>
+</a>
+<!-- Learn -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-white/5 transition font-medium text-sm" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Learn</span>
+</a>
+<!-- Practice -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-white/5 transition font-medium text-sm" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="9"></circle>
+<circle cx="12" cy="12" r="5"></circle>
+<circle cx="12" cy="12" fill="currentColor" r="1.5"></circle>
+</svg>
+<span class="">Practice</span>
+</a>
+<!-- Communication -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-white/5 transition font-medium text-sm" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Communication</span>
+</a>
+</nav>
+<!-- Secondary Divider Navigation -->
+<div class="pt-5 border-t border-gray-800/80 space-y-1.5">
+<a class="flex items-center gap-3.5 px-4 py-2 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-white/5 transition font-medium text-sm" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Settings</span>
+</a>
+<a class="flex items-center gap-3.5 px-4 py-2 rounded-xl text-gray-400 hover:text-gray-200 hover:bg-white/5 transition font-medium text-sm" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Profile</span>
+</a>
+</div>
+</div>
+<!-- Bottom Promo Banner Card inside Sidebar -->
+<div class="mt-6 rounded-2xl overflow-hidden border border-white/10 relative shadow-lg group" data-purpose="sidebar-promo"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNMdhwkaqmF3EhgnqQlIa7ramMm6UxVq9o8JQRdvU5X8GjUozP82C-Fj0e7UCZRN0Yk-Slk70mPtheRJl8vueJaK3NGupspEBRvN3CvOIqHrQn1Kds9UQGJWNc4Mp-AFv5lT1GIGmyYek_w_SyNDHbPKyR6Jht0aLmOFGM14IfCbU44Cm3coLzjcUHqoskB8jfniw8rgqyXKf9P0bor2gKJ0UgsUcvky-EAGqucge_c0gDowjTzm6FcUWzk6fcwglDaE4" alt="A more inclusive world, together" class="w-full h-auto object-cover block rounded-2xl"></div>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- BEGIN: MainContent -->
+<main class="flex-1 px-8 py-6 max-w-[1240px] mx-auto overflow-y-auto">
+<!-- BEGIN: TopBar -->
+<header class="flex items-center justify-between gap-6 mb-7" data-purpose="top-navigation-bar">
+<!-- Search Input -->
+<div class="flex-1 max-w-2xl relative">
+<span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<circle cx="11" cy="11" r="8"></circle>
+<line x1="21" x2="16.65" y1="21" y2="16.65"></line>
+</svg>
+</span>
+<input class="w-full pl-11 pr-4 py-2.5 bg-[#eceae3] hover:bg-[#eae8e0] focus:bg-white text-sm text-gray-800 placeholder-gray-500 rounded-xl border-none focus:ring-2 focus:ring-orange-500/40 transition duration-150" placeholder="Search signs, lessons, people, or anything..." type="text">
+</div>
+<!-- Right Utility Actions -->
+<div class="flex items-center gap-3 shrink-0">
+<!-- Day/Light Theme Toggle -->
+<button class="w-10 h-10 rounded-full bg-white border border-gray-200/80 flex items-center justify-center text-gray-700 hover:text-black shadow-sm transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="5"></circle>
+<line x1="12" x2="12" y1="1" y2="3"></line>
+<line x1="12" x2="12" y1="21" y2="23"></line>
+<line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line>
+<line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line>
+<line x1="1" x2="3" y1="12" y2="12"></line>
+<line x1="21" x2="23" y1="12" y2="12"></line>
+<line x1="4.22" x2="5.64" y1="19.78" y2="18.36"></line>
+<line x1="18.36" x2="19.78" y1="5.64" y2="4.22"></line>
+</svg>
+</button>
+<!-- Notification Bell -->
+<button class="w-10 h-10 rounded-full bg-white border border-gray-200/80 flex items-center justify-center text-gray-700 hover:text-black shadow-sm relative transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="w-2 h-2 rounded-full bg-orange-500 absolute top-2.5 right-2.5"></span>
+</button>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2.5 pl-2 cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-[#181a20] text-white flex items-center justify-center font-bold text-sm shadow">
+            S
+          </div>
+<div class="text-left text-xs leading-snug">
+<div class="font-bold text-gray-900 flex items-center gap-1.5">
+<span class="">Hi, Swastik</span>
+<svg class="w-3.5 h-3.5 text-gray-600 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div class="text-gray-500 font-medium">Keep learning!</div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: TopBar -->
+<!-- BEGIN: HeroBanner -->
+<section class="relative rounded-3xl overflow-hidden bg-[#faeee5] border border-orange-100 shadow-sm mb-7 flex items-center min-h-[300px]" data-purpose="hero-banner">
+<!-- Left Content Column -->
+<div class="w-[58%] pl-10 pr-4 py-8 z-10">
+<span class="text-[11px] font-extrabold tracking-widest text-[#f25822] uppercase">
+          SIGNBRIDGE
+        </span>
+<h2 class="text-4xl font-extrabold text-[#111317] tracking-tight leading-[1.12] mt-1.5 mb-3">
+          Communication<br>has no boundaries
+        </h2>
+<p class="text-gray-600 text-sm max-w-md font-medium leading-relaxed mb-6">
+          Use AI to understand, learn, and share sign language for a more inclusive world.
+        </p>
+<!-- CTA Buttons -->
+<div class="flex items-center gap-3">
+<!-- Start Live Translate -->
+<button class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#f25822] to-[#f47231] hover:brightness-105 active:scale-[0.99] text-white font-semibold text-xs shadow-md shadow-orange-500/20 transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">Start Live Translate</span>
+<span class="text-sm">→</span>
+</button>
+<!-- Upload a Video -->
+<button class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/80 hover:bg-white border border-[#f25822] text-[#f25822] font-semibold text-xs transition">
+<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"></path>
+</svg>
+<span class="">Upload a Video</span>
+</button>
+</div>
+</div>
+<!-- Right Artwork Column -->
+<div class="absolute right-0 top-0 bottom-0 w-[50%] overflow-hidden pointer-events-none flex items-center justify-end">
+<!-- Reaching Hands Image cropped to top aesthetic -->
+<img alt="Hands connecting with sun background" class="w-full h-full object-cover object-top scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvS4Xt39nN2drlfCGQmKsphdcX5Ma1BZYqKN1cWa_7jbCOKvwgKwFAw7vN7IIo_jRO9aL1XDqSDnz53FVA2GhpqDtMWnS3-0tqzYiGGMWNTf8OCh4_pVI9JdYgHunJ6UTrQdRMGDjnFG0aoIM-9Y4T4_XOLaUg6LUWFzyIxbAXtsFUN_Psmio5prT5OyjU8RFxCQHEv8bug1GJYJR9BGx3faXgMXKIuNriv1Pk4FeixDwiuOcDQNQeEHOOl8oA4rjOFw8">
+<!-- Angular Brush Text overlay -->
+<div class="absolute right-8 top-10 brush-badge select-none text-right">
+<div class="font-marker text-xl md:text-2xl text-[#1e232a] tracking-tight leading-none uppercase">
+            DIFFERENT<br>SIGNS
+          </div>
+<div class="font-marker text-xs text-[#1e232a] tracking-wider leading-none mt-1 uppercase">
+            SAME HUMAN
+          </div>
+<div class="font-marker text-sm text-[#f25822] tracking-wider uppercase">
+            CONNECTION
+          </div>
+</div>
+</div>
+</section>
+<!-- END: HeroBanner -->
+<!-- BEGIN: QuickActions -->
+<section class="mb-7" data-purpose="quick-actions-section">
+<!-- Section Title & Link -->
+<div class="flex items-center justify-between mb-3.5">
+<h3 class="text-base font-bold text-gray-900 tracking-tight">Quick Actions</h3>
+<a class="text-xs font-bold text-[#f25822] hover:underline flex items-center gap-1" href="#">
+<span class="">See All</span>
+<span class="">→</span>
+</a>
+</div>
+<!-- 6 Grid Cards -->
+<div class="grid grid-cols-2 md:grid-cols-6 gap-3.5">
+<!-- Card 1: Live Translate -->
+<div class="bg-white rounded-2xl p-4 border border-gray-100/90 shadow-sm hover:shadow transition cursor-pointer text-left">
+<div class="w-10 h-10 rounded-xl bg-[#fff2ec] flex items-center justify-center text-[#f25822] mb-3">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h4 class="text-xs font-bold text-gray-900 leading-tight">Live Translate</h4>
+<p class="text-[11px] text-gray-500 font-medium mt-1">Use your webcam</p>
+</div>
+<!-- Card 2: Video Translate -->
+<div class="bg-white rounded-2xl p-4 border border-gray-100/90 shadow-sm hover:shadow transition cursor-pointer text-left">
+<div class="w-10 h-10 rounded-xl bg-[#fff2ec] flex items-center justify-center text-[#f25822] mb-3">
+<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"></path>
+</svg>
+</div>
+<h4 class="text-xs font-bold text-gray-900 leading-tight">Video Translate</h4>
+<p class="text-[11px] text-gray-500 font-medium mt-1">Upload &amp; analyze</p>
+</div>
+<!-- Card 3: Teach SignBridge -->
+<div class="bg-white rounded-2xl p-4 border border-gray-100/90 shadow-sm hover:shadow transition cursor-pointer text-left">
+<div class="w-10 h-10 rounded-xl bg-[#fff2ec] flex items-center justify-center text-[#f25822] mb-3">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 14l9-5-9-5-9 5 9 5z"></path>
+<path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+</svg>
+</div>
+<h4 class="text-xs font-bold text-gray-900 leading-tight">Teach SignBridge</h4>
+<p class="text-[11px] text-gray-500 font-medium mt-1">Personalize for you</p>
+</div>
+<!-- Card 4: Learn -->
+<div class="bg-white rounded-2xl p-4 border border-gray-100/90 shadow-sm hover:shadow transition cursor-pointer text-left">
+<div class="w-10 h-10 rounded-xl bg-[#fff2ec] flex items-center justify-center text-[#f25822] mb-3">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h4 class="text-xs font-bold text-gray-900 leading-tight">Learn</h4>
+<p class="text-[11px] text-gray-500 font-medium mt-1">Explore 2,731 signs</p>
+</div>
+<!-- Card 5: Practice -->
+<div class="bg-white rounded-2xl p-4 border border-gray-100/90 shadow-sm hover:shadow transition cursor-pointer text-left">
+<div class="w-10 h-10 rounded-xl bg-[#fff2ec] flex items-center justify-center text-[#f25822] mb-3">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="9"></circle>
+<circle cx="12" cy="12" r="5"></circle>
+<circle cx="12" cy="12" fill="currentColor" r="1.5"></circle>
+</svg>
+</div>
+<h4 class="text-xs font-bold text-gray-900 leading-tight">Practice</h4>
+<p class="text-[11px] text-gray-500 font-medium mt-1">Improve your skills</p>
+</div>
+<!-- Card 6: Communication -->
+<div class="bg-white rounded-2xl p-4 border border-gray-100/90 shadow-sm hover:shadow transition cursor-pointer text-left">
+<div class="w-10 h-10 rounded-xl bg-[#fff2ec] flex items-center justify-center text-[#f25822] mb-3">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h4 class="text-xs font-bold text-gray-900 leading-tight">Communication</h4>
+<p class="text-[11px] text-gray-500 font-medium mt-1">Have a conversation</p>
+</div>
+</div>
+</section>
+<!-- END: QuickActions -->
+<!-- BEGIN: MiddleTripleColumns -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-7" data-purpose="stats-and-highlights">
+<!-- Column 1: Your Progress -->
+<section class="lg:col-span-5 bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between" data-purpose="your-progress-card">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-base font-bold text-gray-900">Your Progress</h3>
+<a class="text-xs font-bold text-[#f25822] hover:underline flex items-center gap-0.5" href="#">
+<span class="">View Details</span>
+<span class="">→</span>
+</a>
+</div>
+<!-- 4 Metrics with Circular Progress Style -->
+<div class="grid grid-cols-4 gap-2 text-center py-2">
+<!-- Metric 1: Signs Learned -->
+<div class="flex flex-col items-center">
+<div class="relative w-14 h-14 flex items-center justify-center mb-2">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+<path class="text-gray-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-orange-500" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="60, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center text-orange-500">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<span class="text-base font-extrabold text-gray-900 leading-tight">48</span>
+<span class="text-[10px] text-gray-500 font-medium leading-tight mt-0.5">Signs Learned</span>
+</div>
+<!-- Metric 2: Practice Sessions -->
+<div class="flex flex-col items-center">
+<div class="relative w-14 h-14 flex items-center justify-center mb-2">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+<path class="text-gray-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-orange-500" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="85, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center text-orange-500">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="9"></circle>
+<circle cx="12" cy="12" r="5"></circle>
+<circle cx="12" cy="12" fill="currentColor" r="1.5"></circle>
+</svg>
+</div>
+</div>
+<span class="text-base font-extrabold text-gray-900 leading-tight">127</span>
+<span class="text-[10px] text-gray-500 font-medium leading-tight mt-0.5">Practice Sessions</span>
+</div>
+<!-- Metric 3: Personalized Signs -->
+<div class="flex flex-col items-center">
+<div class="relative w-14 h-14 flex items-center justify-center mb-2">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+<path class="text-gray-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-orange-500" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="40, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center text-orange-500">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 14l9-5-9-5-9 5 9 5z"></path>
+<path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+</svg>
+</div>
+</div>
+<span class="text-base font-extrabold text-gray-900 leading-tight">12</span>
+<span class="text-[10px] text-gray-500 font-medium leading-tight mt-0.5">Personalized Signs</span>
+</div>
+<!-- Metric 4: Avg. Accuracy -->
+<div class="flex flex-col items-center">
+<div class="relative w-14 h-14 flex items-center justify-center mb-2">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+<path class="text-gray-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-orange-500" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="78, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center text-orange-500">
+<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
+</svg>
+</div>
+</div>
+<span class="text-base font-extrabold text-gray-900 leading-tight">78%</span>
+<span class="text-[10px] text-gray-500 font-medium leading-tight mt-0.5">Avg. Accuracy</span>
+</div>
+</div>
+</section>
+<!-- Column 2: Recent Activity -->
+<section class="lg:col-span-4 bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between" data-purpose="recent-activity-card">
+<div class="flex items-center justify-between mb-3">
+<h3 class="text-base font-bold text-gray-900">Recent Activity</h3>
+<a class="text-xs font-bold text-[#f25822] hover:underline flex items-center gap-0.5" href="#">
+<span class="">See All</span>
+<span class="">→</span>
+</a>
+</div>
+<!-- Activity Feed List -->
+<div class="space-y-3.5 my-auto">
+<!-- Item 1 -->
+<div class="flex items-center justify-between text-xs">
+<div class="flex items-center gap-2.5">
+<span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</span>
+<span class="font-semibold text-gray-800">Translated 5 signs</span>
+</div>
+<span class="text-[11px] text-gray-400">2 minutes ago</span>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between text-xs">
+<div class="flex items-center gap-2.5">
+<span class="w-6 h-6 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</span>
+<span class="font-semibold text-gray-800">Added personalized sign: THANK YOU</span>
+</div>
+<span class="text-[11px] text-gray-400">1 hour ago</span>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center justify-between text-xs">
+<div class="flex items-center gap-2.5">
+<span class="w-6 h-6 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="9"></circle>
+<circle cx="12" cy="12" r="5"></circle>
+<circle cx="12" cy="12" fill="currentColor" r="1.5"></circle>
+</svg>
+</span>
+<span class="font-semibold text-gray-800">Completed practice: Everyday Signs</span>
+</div>
+<span class="text-[11px] text-gray-400">3 hours ago</span>
+</div>
+<!-- Item 4 -->
+<div class="flex items-center justify-between text-xs">
+<div class="flex items-center gap-2.5">
+<span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</span>
+<span class="font-semibold text-gray-800">Learned new sign: HELP</span>
+</div>
+<span class="text-[11px] text-gray-400">5 hours ago</span>
+</div>
+</div>
+</section>
+<!-- Column 3: Featured Sign -->
+<section class="lg:col-span-3 bg-gradient-to-b from-[#fbeee4] via-[#f7e3d2] to-[#edd0bc] rounded-3xl p-5 border border-orange-100/80 shadow-sm flex flex-col justify-between relative overflow-hidden" data-purpose="featured-sign-card">
+<!-- Header -->
+<div class="flex items-center justify-between z-10">
+<span class="text-xs font-bold text-gray-700">Featured Sign</span>
+<button class="w-6 h-6 rounded-full bg-white/80 shadow flex items-center justify-center text-gray-600 hover:text-black">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- Featured Sign Details -->
+<div class="my-3 z-10">
+<h2 class="text-2xl font-black text-gray-900 tracking-tight leading-none mb-1">HELLO</h2>
+<p class="text-xs text-gray-600 font-medium">A common greeting</p>
+</div>
+<!-- CTA Button -->
+<div class="z-10">
+<button class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#f25822] to-[#f47231] hover:brightness-105 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20 transition">
+<span class="">Learn This Sign</span>
+<span class="">→</span>
+</button>
+</div>
+<!-- Background Mountain Horizon Wave -->
+<div class="absolute -bottom-2 -left-2 -right-2 h-16 opacity-30 bg-gradient-to-t from-orange-400 to-transparent pointer-events-none rounded-b-3xl"></div>
+</section>
+</div>
+<!-- END: MiddleTripleColumns -->
+<!-- BEGIN: BottomBanner -->
+<footer class="relative rounded-3xl overflow-hidden bg-[#fdfaf7] border border-orange-100 shadow-sm px-8 py-7 flex items-center justify-between" data-purpose="bottom-landscape-banner">
+<!-- Full-bleed lower landscape from Image 12 -->
+<div class="absolute inset-0 pointer-events-none opacity-90 overflow-hidden flex items-end">
+<img alt="Sunset mountains landscape panorama" class="w-full h-full object-cover object-bottom" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDE0yzSkFClhaW9_Bv4MA2zdj5MNCdl1yoo6UnhAx8QYGMF7G1d1yqix0VB79m15fPA4S4QIXClB2F7N2nmmWvED9XmCACFOrNFHEooCzju8XGn7HaoKf4yyCdh1xqqn_Hiiky2knTo_4Un6Kf8oh422QobUVSdzUGw-hQFLCceIDseGpdcQX9Y4WrnA1WXV72hbVdMSn-4nhzXXRWVjNUrTivHxjBtiep4_Vlm2HyheIv-A9JC6tHPK9S_SUfy7GmPJfg">
+<div class="absolute inset-0 bg-gradient-to-r from-[#fff9f4]/95 via-[#fff9f4]/85 to-[#fff9f4]/60"></div>
+</div>
+<!-- Center-Left Text Information -->
+<div class="relative z-10 max-w-xl">
+<h3 class="text-lg font-bold text-gray-900 tracking-tight leading-snug">
+          Together for a more inclusive tomorrow
+        </h3>
+<p class="text-xs text-gray-600 font-medium mt-1 leading-relaxed">
+          SignBridge uses AI to break communication barriers amd create a more connected, accessible world.
+        </p>
+</div>
+<!-- Right Nav Keywords -->
+<div class="relative z-10 text-right shrink-0">
+<div class="text-[10px] tracking-wider font-extrabold text-gray-800 space-y-0.5 uppercase">
+<div class="">LEARN</div>
+<div class="">PRACTICE</div>
+<div class="">CONNECT</div>
+<div class="">INCLUDE</div>
+</div>
+<div class="w-8 h-0.5 bg-[#f25822] ml-auto mt-1 rounded-full"></div>
+</div>
+</footer>
+<!-- END: BottomBanner -->
+</main>
+<!-- END: MainContent -->
+
+
+</body></html>

@@ -46,7 +46,13 @@ class LandmarkAugmentor:
         # 2. Small spatial scaling (per active hand, slight anisotropic scaling)
         seq = self.apply_spatial_scaling(seq)
 
-        # 3. Small Gaussian noise (applied ONLY to non-zero landmarks)
+        # 3. Small in-plane rotation around each wrist.
+        seq = self.apply_rotation(seq)
+
+        # 4. Simulate occasional tracking loss without changing zero structure
+        seq = self.apply_tracking_dropout(seq)
+
+        # 5. Small Gaussian noise (applied ONLY to non-zero landmarks)
         seq = self.add_gaussian_noise(seq)
 
         return seq.astype(np.float32)
@@ -102,6 +108,44 @@ class LandmarkAugmentor:
                 scaled_hand = wrist + (frame_hand - wrist) * scale[0]
                 seq[f, h_start:h_end, :] = scaled_hand
 
+        return seq
+
+    def apply_rotation(self, seq: np.ndarray) -> np.ndarray:
+        """Rotate each active hand mildly around its wrist in the camera plane."""
+        max_degrees = float(self.config.rotation_degrees)
+        if max_degrees <= 0:
+            return seq
+
+        angle = np.deg2rad(np.random.uniform(-max_degrees, max_degrees))
+        cos_a, sin_a = np.cos(angle), np.sin(angle)
+        rotation = np.array([[cos_a, -sin_a], [sin_a, cos_a]], dtype=np.float32)
+        for h_start in (0, 21):
+            hand = seq[:, h_start:h_start + 21]
+            active = np.linalg.norm(hand, axis=(1, 2)) > 1e-4
+            for frame_idx in np.where(active)[0]:
+                wrist = hand[frame_idx, 0].copy()
+                xy = hand[frame_idx, :, :2] - wrist[:2]
+                hand[frame_idx, :, :2] = xy @ rotation.T + wrist[:2]
+        return seq
+
+    def apply_tracking_dropout(self, seq: np.ndarray) -> np.ndarray:
+        """Drop complete frames or landmarks only when explicitly configured."""
+        frame_probability = float(self.config.frame_dropout_probability)
+        landmark_probability = float(self.config.landmark_dropout_probability)
+        if frame_probability <= 0 and landmark_probability <= 0:
+            return seq
+
+        active_frames = np.where(np.linalg.norm(seq, axis=(1, 2)) > 1e-4)[0]
+        for frame_idx in active_frames:
+            if frame_probability > 0 and np.random.random() < frame_probability:
+                neighbors = active_frames[active_frames != frame_idx]
+                if len(neighbors):
+                    source_idx = neighbors[np.argmin(np.abs(neighbors - frame_idx))]
+                    seq[frame_idx] = seq[source_idx]
+            if landmark_probability > 0:
+                active_landmarks = np.linalg.norm(seq[frame_idx], axis=1) > 1e-4
+                drop = (np.random.random(42) < landmark_probability) & active_landmarks
+                seq[frame_idx, drop] = 0.0
         return seq
 
     def add_gaussian_noise(self, seq: np.ndarray) -> np.ndarray:

@@ -20,7 +20,7 @@ cmd = [
     "--use-fake-ui-for-media-stream",
     f"--use-file-for-fake-video-capture={y4m_path}",
     "--autoplay-policy=no-user-gesture-required",
-    "http://127.0.0.1:8000/",
+    "http://127.0.0.1:8080/",
 ]
 
 proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

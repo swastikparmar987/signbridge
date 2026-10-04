@@ -1,0 +1,44 @@
+{
+  "production_checkpoint": "trained_models/production/best_model.pth",
+  "source_experiment": "exp5_label_smoothing_cosine",
+  "source_checkpoint": "trained_models/full_2731/exp5_label_smoothing_cosine/best_model.pth",
+  "architecture": "BiGRUAttentionPoolingClassifier",
+  "total_parameters": 6038956,
+  "input_dimensions": [32, 126],
+  "input_features_per_frame": 126,
+  "sequence_length": 32,
+  "number_of_classes": 2731,
+  "preprocessing": {
+    "feature_representation": "2 hands x 21 MediaPipe keypoints x 3 coordinates (x,y,z)",
+    "wrist_relative_centering": true,
+    "palm_scale_normalization": true,
+    "missing_hands": "zeros",
+    "temporal_resampling": 32
+  },
+  "training_parameters": {
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "scheduler": "CosineAnnealingLR (T_max=35, eta_min=1e-5)",
+    "loss": "CrossEntropyLoss(label_smoothing=0.1)",
+    "batch_size": 128,
+    "best_epoch": 34
+  },
+  "test_metrics": {
+    "test_top1_accuracy": 48.62,
+    "test_top3_accuracy": 66.92,
+    "test_top5_accuracy": 72.89,
+    "macro_f1": 48.43,
+    "weighted_f1": 48.51,
+    "val_top1_accuracy": 60.68,
+    "test_samples": 32941
+  },
+  "benchmark_progression": {
+    "original_baseline": 34.84,
+    "exp1_augmented_finetune": 36.56,
+    "exp2_bigru_attention_pooling": 47.47,
+    "exp3_velocity": 45.69,
+    "exp4_masked_temporal": 43.05,
+    "exp5_label_smoothing_cosine": 48.62
+  }
+}

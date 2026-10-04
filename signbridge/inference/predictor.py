@@ -27,6 +27,28 @@ class SignBridgePredictor:
         )
         self.input_size = self.metadata["input_size"]
 
+    def _prepare_tensor(self, sequence: np.ndarray, is_normalized: bool = False) -> torch.Tensor:
+        sequence = np.nan_to_num(sequence, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+        if not is_normalized:
+            sequence = normalize_sequence(sequence)
+        if sequence.ndim == 3 and sequence.shape[1:] == (42, 3):
+            sequence = sequence.reshape(sequence.shape[0], 126)
+        if sequence.shape[1] != self.input_size:
+            raise ValueError(
+                f"Feature dimension mismatch: expected feature size {self.input_size}, got {sequence.shape[1]}"
+            )
+        return torch.tensor(sequence, dtype=torch.float32).unsqueeze(0).to(self.device)
+
+    def extract_embedding(
+        self,
+        sequence: np.ndarray,
+        is_normalized: bool = False,
+    ) -> np.ndarray:
+        tensor_input = self._prepare_tensor(sequence, is_normalized)
+        with torch.no_grad():
+            embedding = self.model.extract_embedding(tensor_input)
+        return embedding[0].cpu().numpy()
+
     def predict_sequence(
         self,
         sequence: np.ndarray,
@@ -44,24 +66,11 @@ class SignBridgePredictor:
         Returns:
             Dict containing top prediction gloss, confidence %, and list of top_k predictions.
         """
-        sequence = np.nan_to_num(sequence, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
-
-        if not is_normalized:
-            sequence = normalize_sequence(sequence)
-
-        # Flatten sequence to (T, 126) if (T, 42, 3)
-        if sequence.ndim == 3 and sequence.shape[1:] == (42, 3):
-            sequence = sequence.reshape(sequence.shape[0], 126)
-
-        if sequence.shape[1] != self.input_size:
-            raise ValueError(
-                f"Feature dimension mismatch: expected feature size {self.input_size}, got {sequence.shape[1]}"
-            )
-
-        tensor_input = torch.tensor(sequence, dtype=torch.float32).unsqueeze(0).to(self.device)
+        tensor_input = self._prepare_tensor(sequence, is_normalized)
 
         with torch.no_grad():
             logits = self.model(tensor_input)
+            embedding = self.model.extract_embedding(tensor_input)[0].cpu().numpy() if hasattr(self.model, 'extract_embedding') else None
             probs = F.softmax(logits, dim=1)[0]
             top_probs, top_indices = torch.topk(probs, k=min(top_k, len(self.class_names)))
 
@@ -79,6 +88,7 @@ class SignBridgePredictor:
             "predicted_gloss": predictions[0]["gloss"],
             "confidence": predictions[0]["confidence"],
             "top_k": predictions,
+            "embedding": embedding.astype(np.float32).tolist() if embedding is not None else [],
         }
 
     def predict_cache(
@@ -127,4 +137,3 @@ class SignBridgePredictor:
         result = self.predict_sequence(raw_sequence, is_normalized=False, top_k=top_k)
         result["video_path"] = str(video_path)
         return result
-

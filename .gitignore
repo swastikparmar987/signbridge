@@ -24,10 +24,29 @@ landmark_interpolation_cache/
 landmark_pose_cache/
 landmark_cache_full/
 
-# Model checkpoints - KEEP LOCAL (per user request)
+# Local user personalization data (never upload by default)
+data/personalization/
+
+# Model checkpoints - Ignore training runs & heavy external TTS weights
 trained_models/demo_50/
-trained_models/full_2731/
-trained_models/production/
+trained_models/full_2731/*
+!trained_models/full_2731/exp9_true_arcface/
+trained_models/tts/
+
+# Whitelist best integrated models for production deployment
+!trained_models/production/
+!trained_models/production/best_model.pth
+!trained_models/production/model_metadata.json
+!trained_models/best_gru_normalized.pth
+!trained_models/full_2731/exp9_true_arcface/best_model.pth
+
+# Generated speech cache
+signbridge/web/static/audio/*.wav
+!signbridge/web/static/audio/.gitkeep
+
+# Internal agent caches & symlinks
+.kilo/
+signbridge_p
 
 # Environment variables & secrets
 .env
@@ -65,6 +84,9 @@ debug.log
 # PyTorch / ML artifacts
 *.pth
 *.pt
+!trained_models/production/best_model.pth
+!trained_models/best_gru_normalized.pth
+!trained_models/full_2731/exp9_true_arcface/best_model.pth
 *.h5
 *.keras
 *.npy
@@ -128,5 +150,12 @@ _site/
 *.webm
 *.y4m
 
+# Cookie files & credentials
+*.cookie
+*.cookies
+cookies.txt
+*.cookies.txt
+
 # Large CSV files (keep small metadata files)
 *.csv
+

@@ -38,10 +38,10 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-PYTHONPATH=. python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8000
+PYTHONPATH=. python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8080
 ```
 
-👉 Then open [http://localhost:8000](http://localhost:8000) in your browser.
+👉 Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
 > **🖥️ System requirements**: Python 3.10+. CPU-only inference works out of the box; Apple Silicon uses Metal (`mps`) automatically; NVIDIA GPUs use CUDA if PyTorch with cuDNN is installed.
 

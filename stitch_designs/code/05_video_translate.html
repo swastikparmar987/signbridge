@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Translate Sign Language Videos - SignBridge</title>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF5A2A',
+              'orange-hover': '#F24E1E',
+              'orange-light': '#FFF0EB',
+              'orange-secondary': '#FF7A45',
+              dark: '#111318',
+              'sidebar-dark': '#111318',
+              surface: '#FFFFFF',
+              'soft-surface': '#F2E9DC',
+              bg: '#FAF8F5',
+              muted: '#6F7074',
+              border: '#E6DED3',
+              'border-subtle': '#EFE8DE'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-layout">
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #FAF8F5;
+      color: #111318;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    /* Scrollbar refinement */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.03);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.18);
+      border-radius: 9999px;
+    }
+    .custom-dashed-border {
+      background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='14' ry='14' stroke='%23F4C8B8FF' stroke-width='2' stroke-dasharray='6%2c6' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+      border-radius: 14px;
+    }
+  </style>
+</head>
+<body class="w-[1280px] h-[1024px] max-h-[1024px] overflow-hidden flex flex-row bg-[#FAF8F5] text-[#111318] antialiased selection:bg-[#FF5A2A] selection:text-white mx-auto">
+<!-- BEGIN: LeftSidebar (fixed 230px, complete stack + visual asset) -->
+<aside class="w-[230px] shrink-0 h-full bg-[#111318] text-white flex flex-col justify-between p-3.5 border-r border-[#1C1F26] overflow-y-auto select-none" data-purpose="sidebar-navigation">
+<div>
+<!-- Brand Logo & Identity -->
+<div class="flex items-center gap-2.5 mb-5 px-1 pt-1">
+<div class="w-9 h-9 shrink-0 flex items-center justify-center">
+<img alt="SignBridge Logo" class="w-9 h-9 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALrdSq_Qwzpxm9ZxKl8CdGQBC853eeVmskWXBqy4fBRBf4u3rvjlxw7v_9_dW1v8Gz3rUXBAU-XlZHzpP177zGHPO47-riuBRpZ6rDbmKU2pbFMYLb3GnO_fwk82Kknrr0iDK8tXKI-nW-OJiuxmqnakp17YcsKYiRc_E2sliZ6L3f43dCdMYBp3F8DuHMnmRxfaKAGVw-3VtVdwMJsS8LwY5y6XjraPDdmFdW6c067YHOr6XaJiIc2xv2TZxpxFpWxYo"/>
+</div>
+<div class="min-w-0">
+<h1 class="text-lg font-bold tracking-tight text-white leading-tight">SignBridge</h1>
+<p class="text-[10px] text-[#9CA3AF] leading-tight mt-0.5">Different Signs.<br/>Same Human Connection.</p>
+</div>
+</div>
+<!-- Navigation Links Stack -->
+<nav aria-label="Main Navigation" class="space-y-1">
+<!-- Home -->
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#B0B3B8] hover:text-white hover:bg-[#1A1D24] transition-all text-xs font-medium" href="#">
+<svg class="w-4 h-4 stroke-current shrink-0" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Home</span>
+</a>
+<!-- Live Translate -->
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#B0B3B8] hover:text-white hover:bg-[#1A1D24] transition-all text-xs font-medium" href="#">
+<svg class="w-4 h-4 stroke-current shrink-0" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Live Translate</span>
+</a>
+<!-- Video Translate (ACTIVE) -->
+<a aria-current="page" class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#FF5A2A] text-white shadow-sm font-semibold text-xs transition-all" href="#">
+<div class="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+<svg class="w-2.5 h-2.5 fill-current ml-0.5" viewbox="0 0 24 24">
+<path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"></path>
+</svg>
+</div>
+<span>Video Translate</span>
+</a>
+<!-- Teach SignBridge -->
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#B0B3B8] hover:text-white hover:bg-[#1A1D24] transition-all text-xs font-medium" href="#">
+<svg class="w-4 h-4 stroke-current shrink-0" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Teach SignBridge</span>
+</a>
+<!-- Learn -->
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#B0B3B8] hover:text-white hover:bg-[#1A1D24] transition-all text-xs font-medium" href="#">
+<svg class="w-4 h-4 stroke-current shrink-0" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Learn</span>
+</a>
+<!-- Practice -->
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#B0B3B8] hover:text-white hover:bg-[#1A1D24] transition-all text-xs font-medium" href="#">
+<svg class="w-4 h-4 stroke-current shrink-0" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round"></circle>
+<circle cx="12" cy="12" r="5" stroke-linecap="round" stroke-linejoin="round"></circle>
+<circle cx="12" cy="12" fill="currentColor" r="1.5"></circle>
+</svg>
+<span>Practice</span>
+</a>
+<!-- Communication -->
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#B0B3B8] hover:text-white hover:bg-[#1A1D24] transition-all text-xs font-medium" href="#">
+<svg class="w-4 h-4 stroke-current shrink-0" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.974-.948l.609-2.028A7.857 7.857 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Communication</span>
+</a>
+<!-- Divider line -->
+<div class="pt-2 pb-1">
+<div class="border-t border-white/10"></div>
+</div>
+<!-- Settings -->
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#B0B3B8] hover:text-white hover:bg-[#1A1D24] transition-all text-xs font-medium" href="#">
+<svg class="w-4 h-4 stroke-current shrink-0" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" stroke-linecap="round" stroke-linejoin="round"></path>
+<circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"></circle>
+</svg>
+<span>Settings</span>
+</a>
+<!-- Profile -->
+<a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#B0B3B8] hover:text-white hover:bg-[#1A1D24] transition-all text-xs font-medium" href="#">
+<svg class="w-4 h-4 stroke-current shrink-0" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Profile</span>
+</a>
+</nav>
+</div>
+<!-- Bottom Mountain Card -->
+<div class="mt-3" data-purpose="sidebar-mission-card">
+<div class="relative rounded-xl border border-white/10 overflow-hidden shadow-lg bg-[#181a20]">
+<img alt="A more inclusive world, together." class="w-full h-auto object-cover block" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAE8abql3xn6I3yFQQcvLwkSmGok5nRUOzNtiSA30UKyM5VzV-vrkvxxW3LKRR6IQLNm0ilSi3wCm3VnZG3l1gL9pCn01RmQk2NWUy__XhBtFbj75M41lMcq_8QmgdZbuPQgmrfnYnBy_aVwyJT1SJQDKhEQuz6UUXEglbBhmv1ECAqY_-VNwDYIFqWNxErQBmnuaHf678HfvX0_dvV6Lsh3HXn2g1kXJIM1TKsf_GmE70YfwKoAvOexYEC9y2wmOSzaPY"/>
+</div>
+</div>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- BEGIN: MainContentArea (1050px workspace, fitting 1024px height smoothly) -->
+<main class="flex-1 h-full overflow-y-auto p-5 flex flex-col gap-4 min-w-0" data-purpose="video-translate-dashboard">
+<!-- Top Action Bar / Page Header -->
+<header class="flex items-center justify-between gap-4 shrink-0">
+<div>
+<span class="text-[11px] font-bold text-[#FF5A2A] tracking-wider uppercase">VIDEO TRANSLATE</span>
+<h2 class="text-2xl font-bold text-[#111318] tracking-tight leading-tight">Translate Sign Language Videos</h2>
+<p class="text-xs text-[#6F7074] mt-0.5 font-normal">Upload a video or paste a link and let SignBridge translate the signs into natural text.</p>
+</div>
+<div class="flex items-center gap-2.5 shrink-0">
+<!-- History circular icon button -->
+<button aria-label="History" class="w-9 h-9 rounded-xl bg-white border border-[#E6DED3] flex items-center justify-center text-[#111318] hover:bg-[#F2E9DC] transition shadow-xs" title="History" type="button">
+<svg class="w-4 h-4 text-[#FF5A2A]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<!-- Upload Video Primary Button -->
+<button class="flex items-center gap-2 bg-[#FF5A2A] hover:bg-[#F24E1E] text-white px-4 py-2 rounded-xl font-semibold text-xs transition shadow-sm" type="button">
+<svg class="w-3.5 h-3.5 stroke-current stroke-[3]" fill="none" viewbox="0 0 24 24">
+<path d="M12 4.5v15m7.5-7.5h-15" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Upload Video</span>
+</button>
+<!-- Paste Link Secondary Button -->
+<button class="flex items-center gap-2 bg-white hover:bg-neutral-50 border border-[#E6DED3] text-[#111318] px-3.5 py-2 rounded-xl font-medium text-xs transition shadow-xs" type="button">
+<svg class="w-3.5 h-3.5 text-[#111318]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Paste Link</span>
+</button>
+</div>
+</header>
+<!-- Hero Two Column Grid: Upload Dropzone & Video Preview -->
+<div class="grid grid-cols-12 gap-4 shrink-0">
+<!-- LEFT COLUMN: Drag and Drop Upload Card -->
+<section class="col-span-7 bg-white rounded-2xl p-4 border border-[#E6DED3] shadow-xs flex flex-col justify-between" data-purpose="upload-card">
+<div class="custom-dashed-border p-5 flex flex-col items-center justify-center text-center bg-[#FFFCF9]/60 min-h-[200px]">
+<!-- Orange File Badge -->
+<div class="w-12 h-12 rounded-full bg-[#FFF0EB] flex items-center justify-center mb-2.5">
+<div class="w-7 h-7 text-[#FF5A2A]">
+<svg class="w-full h-full" fill="currentColor" viewbox="0 0 24 24">
+<path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V7.875A1.875 1.875 0 0018.375 6H15a1.5 1.5 0 01-1.5-1.5V1.5H5.625z"></path>
+<path d="M12.97 1.63a1.5 1.5 0 01.905.44l4.055 4.055a1.5 1.5 0 01.44.905V7.5H15a.75.75 0 01-.75-.75V1.63z"></path>
+<polygon fill="#FFF0EB" points="10,11 15,14 10,17"></polygon>
+</svg>
+</div>
+</div>
+<h3 class="text-sm font-semibold text-[#111318]">Drag and drop a video here</h3>
+<p class="text-[11px] text-[#6F7074] mt-0.5 mb-2.5">Supports MP4, MOV, WEBM (max 500 MB)</p>
+<!-- Divider with 'or' -->
+<div class="w-full max-w-[160px] flex items-center gap-2 my-1">
+<div class="flex-1 h-[1px] bg-[#EFE8DE]"></div>
+<span class="text-[10px] text-[#8E8E93] uppercase font-semibold">or</span>
+<div class="flex-1 h-[1px] bg-[#EFE8DE]"></div>
+</div>
+<!-- Choose File Button -->
+<button class="mt-2 flex items-center gap-2 bg-[#FF5A2A] hover:bg-[#F24E1E] text-white px-5 py-2 rounded-xl font-medium text-xs transition shadow-sm" type="button">
+<svg class="w-3.5 h-3.5 fill-white" viewbox="0 0 24 24">
+<path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-1.5V9a3 3 0 00-3-3h-3.379a3 3 0 01-2.12-.879L8.378 4.001A3 3 0 006.257 3.12H4.5A3 3 0 001.5 6.122v11.878A3 3 0 004.5 21h15z"></path>
+</svg>
+<span>Choose File</span>
+</button>
+</div>
+<!-- 4 Feature Highlights -->
+<div class="grid grid-cols-4 gap-2 pt-3 mt-3 border-t border-[#F2E9DC] text-center">
+<div class="flex flex-col items-center">
+<div class="text-[#111318] mb-0.5">
+<svg class="w-4 h-4 stroke-current" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[10px] text-[#6F7074] font-medium leading-tight">MP4, MOV,<br/>WEBM</span>
+</div>
+<div class="flex flex-col items-center">
+<div class="text-[#111318] mb-0.5">
+<svg class="w-4 h-4 stroke-current" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="9"></circle>
+<path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[10px] text-[#6F7074] font-medium leading-tight">Max 500 MB</span>
+</div>
+<div class="flex flex-col items-center">
+<div class="text-[#111318] mb-0.5">
+<svg class="w-4 h-4 stroke-current" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[10px] text-[#6F7074] font-medium leading-tight">Best results<br/>with clear video</span>
+</div>
+<div class="flex flex-col items-center">
+<div class="text-[#111318] mb-0.5">
+<svg class="w-4 h-4 stroke-current" fill="none" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[10px] text-[#6F7074] font-medium leading-tight">Supports single<br/>or multiple people</span>
+</div>
+</div>
+</section>
+<!-- RIGHT COLUMN: Video Preview & Controls Card -->
+<section class="col-span-5 bg-white rounded-2xl p-4 border border-[#E6DED3] shadow-xs flex flex-col justify-between" data-purpose="video-preview-card">
+<div>
+<div class="flex items-center gap-1.5 mb-2 text-[11px] font-bold text-[#111318] tracking-wider uppercase">
+<svg class="w-3.5 h-3.5 text-[#111318]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>VIDEO PREVIEW</span>
+</div>
+<!-- Dark Video Screen Container -->
+<div class="w-full bg-[#18191E] rounded-xl overflow-hidden aspect-[16/9.5] relative flex flex-col justify-between p-3 shadow-inner">
+<div class="m-auto flex flex-col items-center justify-center text-center">
+<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mb-2">
+<svg class="w-4 h-4 fill-white/80 ml-0.5" viewbox="0 0 24 24">
+<path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"></path>
+</svg>
+</div>
+<h4 class="text-xs font-semibold text-white/90">No video selected</h4>
+<p class="text-[11px] text-white/50 mt-0.5">Upload a video to start translation</p>
+</div>
+<!-- In-Player Minimal Controls Bar -->
+<div class="flex items-center justify-between text-white/70 text-xs pt-1">
+<div class="flex items-center gap-2">
+<button aria-label="Play Video" class="hover:text-white" type="button">
+<svg class="w-3.5 h-3.5 fill-current" viewbox="0 0 24 24">
+<path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"></path>
+</svg>
+</button>
+<span class="font-mono text-[10px] tracking-tight text-white/80">0:00 / 0:00</span>
+<div class="w-20 h-1 bg-white/20 rounded-full">
+<div class="w-0 h-full bg-[#FF5A2A] rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="Audio Volume" class="hover:text-white" type="button">
+<svg class="w-3.5 h-3.5 fill-current" viewbox="0 0 24 24">
+<path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.5A2.25 2.25 0 002.25 9.75v4.5A2.25 2.25 0 004.5 16.5h1.94l4.5 4.5c.944.945 2.56.276 2.56-1.06V4.06zM18.584 5.106a.75.75 0 011.06 0c3.808 3.807 3.808 9.98 0 13.788a.75.75 0 01-1.06-1.06 8.25 8.25 0 000-11.668.75.75 0 010-1.06z"></path>
+</svg>
+</button>
+<button aria-label="Fullscreen" class="hover:text-white" type="button">
+<svg class="w-3.5 h-3.5 stroke-current" fill="none" stroke-width="2" viewbox="0 0 24 24">
+<path d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15m11.25-11.25v4.5m0-4.5h-4.5m4.5 0L15 9m0 6l5.25 5.25m0-5.25v5.25m0 0h-4.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Video Controls Outside Player -->
+<div class="mt-3 pt-2.5 border-t border-[#F2E9DC]">
+<h5 class="text-[11px] font-semibold text-[#111318] mb-2">Video Controls</h5>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<button aria-label="Play/Pause" class="w-8 h-8 bg-[#FF5A2A] hover:bg-[#F24E1E] text-white rounded-lg flex items-center justify-center transition shadow-xs" type="button">
+<svg class="w-3.5 h-3.5 fill-white ml-0.5" viewbox="0 0 24 24">
+<path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"></path>
+</svg>
+</button>
+<button aria-label="Previous Frame" class="w-8 h-8 bg-white hover:bg-neutral-50 border border-[#E6DED3] text-[#111318] rounded-lg flex items-center justify-center transition shadow-xs" type="button">
+<svg class="w-3.5 h-3.5 fill-current" viewbox="0 0 24 24">
+<path d="M9 19.5h-1.5a.75.75 0 01-.75-.75V5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5A.75.75 0 019 19.5zM17.25 5.25v13.5L10.5 12l6.75-6.75z"></path>
+</svg>
+</button>
+<button aria-label="Next Frame" class="w-8 h-8 bg-white hover:bg-neutral-50 border border-[#E6DED3] text-[#111318] rounded-lg flex items-center justify-center transition shadow-xs" type="button">
+<svg class="w-3.5 h-3.5 fill-current" viewbox="0 0 24 24">
+<path d="M15 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25a.75.75 0 01.75-.75zM6.75 18.75V5.25L13.5 12l-6.75 6.75z"></path>
+</svg>
+</button>
+</div>
+<button class="flex items-center gap-1.5 bg-white hover:bg-neutral-50 border border-[#E6DED3] text-[#111318] px-2.5 py-1.5 rounded-lg text-xs font-semibold transition shadow-xs" type="button">
+<span>1.0x</span>
+<svg class="w-3 h-3 text-[#6F7074]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19.5 8.25l-7.5 7.5-7.5-7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Section Tabs -->
+<div class="flex items-center gap-2 shrink-0" data-purpose="section-tabs">
+<button class="flex items-center gap-2 bg-[#FF5A2A] text-white px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition" type="button">
+<svg class="w-3.5 h-3.5 stroke-current" fill="none" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 3v18m-4-14v10m8-8v6m4-4v2M4 11v2" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Translation</span>
+</button>
+<button class="flex items-center gap-2 bg-white hover:bg-neutral-50 border border-[#E6DED3] text-[#111318] px-4 py-1.5 rounded-xl text-xs font-medium transition shadow-xs" type="button">
+<svg class="w-3.5 h-3.5 text-[#6F7074]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Timeline</span>
+</button>
+<button class="flex items-center gap-2 bg-white hover:bg-neutral-50 border border-[#E6DED3] text-[#111318] px-4 py-1.5 rounded-xl text-xs font-medium transition shadow-xs" type="button">
+<svg class="w-3.5 h-3.5 text-[#6F7074]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Key Frames</span>
+</button>
+</div>
+<!-- Translated Text Card -->
+<section class="bg-white rounded-2xl p-4 border border-[#E6DED3] shadow-xs shrink-0" data-purpose="translated-text-card">
+<div class="flex items-center justify-between pb-3 border-b border-[#F2E9DC]">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-lg bg-[#FFF0EB] flex items-center justify-center text-[#FF5A2A]">
+<svg class="w-3.5 h-3.5 fill-current" viewbox="0 0 24 24">
+<path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V7.875A1.875 1.875 0 0018.375 6H15a1.5 1.5 0 01-1.5-1.5V1.5H5.625z"></path>
+</svg>
+</div>
+<h3 class="text-sm font-bold text-[#111318]">Translated Text</h3>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-1.5 bg-[#FF5A2A] hover:bg-[#F24E1E] text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition shadow-sm" type="button">
+<svg class="w-3 h-3 fill-current" viewbox="0 0 24 24">
+<path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z"></path>
+</svg>
+<span>Translate Video</span>
+</button>
+<button class="flex items-center gap-1 bg-white hover:bg-neutral-50 border border-[#E6DED3] text-[#111318] px-2.5 py-1.5 rounded-xl text-xs font-medium transition shadow-xs" type="button">
+<svg class="w-3 h-3 text-[#6F7074]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<rect height="13" rx="2" ry="2" width="13" x="9" y="9"></rect>
+<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+</svg>
+<span>Copy</span>
+</button>
+<button class="flex items-center gap-1 bg-white hover:bg-neutral-50 border border-[#E6DED3] text-[#111318] px-2.5 py-1.5 rounded-xl text-xs font-medium transition shadow-xs" type="button">
+<svg class="w-3 h-3 text-[#6F7074]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Export</span>
+</button>
+</div>
+</div>
+<!-- Empty State Content -->
+<div class="py-6 flex flex-col items-center justify-center text-center">
+<div class="w-8 h-8 text-[#B0B3B8] mb-1.5">
+<svg class="w-full h-full stroke-current" fill="none" stroke-width="1.5" viewbox="0 0 24 24">
+<path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h4 class="text-xs font-bold text-[#6F7074]">No translation yet</h4>
+<p class="text-[11px] text-[#9E9E9E] mt-0.5">Upload a video and click translate to see the results here.</p>
+</div>
+</section>
+<!-- Detected Signs (Timeline) Card -->
+<section class="bg-white rounded-2xl p-4 border border-[#E6DED3] shadow-xs shrink-0" data-purpose="detected-signs-timeline-card">
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-lg bg-[#FFF0EB] flex items-center justify-center text-[#FF5A2A]">
+<svg class="w-3.5 h-3.5 fill-current" viewbox="0 0 24 24">
+<path d="M4.5 4.5a3 3 0 00-3 3v9a3 3 0 003 3h15a3 3 0 003-3v-9a3 3 0 00-3-3h-15zM10.5 8.25l5.25 3.75-5.25 3.75v-7.5z"></path>
+</svg>
+</div>
+<h3 class="text-sm font-bold text-[#111318]">Detected Signs (Timeline)</h3>
+</div>
+<div class="flex items-center gap-2">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-[#E6DED3] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF5A2A]"></div>
+</label>
+<span class="text-xs font-semibold text-[#111318]">Show thumbnails</span>
+</div>
+</div>
+<!-- Timeline Track Container with Playhead & Waveforms -->
+<div class="relative pt-1 pb-2 px-1">
+<div class="relative w-full h-16 bg-[#FAF7F2] rounded-xl border border-[#EFE8DE] flex items-center px-4 overflow-hidden">
+<!-- Orange Scrubber Playhead -->
+<div class="absolute left-6 top-0 bottom-0 z-20 flex flex-col items-center pointer-events-none">
+<div class="w-2 h-2 bg-[#FF5A2A] rounded-full -mt-0.5 shadow-xs"></div>
+<div class="w-[2px] h-full bg-[#FF5A2A]"></div>
+<div class="w-2 h-2 bg-[#FF5A2A] rounded-full -mb-0.5 shadow-xs"></div>
+</div>
+<!-- Alternating Waveforms & Rounded Thumbnail Placeholders -->
+<div class="w-full flex items-center justify-between gap-3">
+<div class="flex items-center gap-0.5 opacity-70">
+<span class="w-0.5 h-2.5 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-4 bg-[#FF7A45] rounded-full"></span>
+<span class="w-0.5 h-6 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-3.5 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-7 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-4 bg-[#FF7A45] rounded-full"></span>
+<span class="w-0.5 h-2 bg-[#C9C2B8] rounded-full"></span>
+</div>
+<div class="w-14 h-10 bg-[#EDE5D8] rounded-lg shadow-inner shrink-0"></div>
+<div class="flex items-center gap-0.5 opacity-70">
+<span class="w-0.5 h-2 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-3.5 bg-[#FF7A45] rounded-full"></span>
+<span class="w-0.5 h-6 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-5 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-7 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-2.5 bg-[#FF7A45] rounded-full"></span>
+</div>
+<div class="w-14 h-10 bg-[#EDE5D8] rounded-lg shadow-inner shrink-0"></div>
+<div class="flex items-center gap-0.5 opacity-70">
+<span class="w-0.5 h-2.5 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-5 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-7 bg-[#FF7A45] rounded-full"></span>
+<span class="w-0.5 h-4 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-6 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-2.5 bg-[#C9C2B8] rounded-full"></span>
+</div>
+<div class="w-14 h-10 bg-[#EDE5D8] rounded-lg shadow-inner shrink-0"></div>
+<div class="flex items-center gap-0.5 opacity-70">
+<span class="w-0.5 h-2 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-4 bg-[#FF7A45] rounded-full"></span>
+<span class="w-0.5 h-6 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-5 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-3.5 bg-[#FF5A2A] rounded-full"></span>
+</div>
+<div class="w-14 h-10 bg-[#EDE5D8] rounded-lg shadow-inner shrink-0"></div>
+<div class="flex items-center gap-0.5 opacity-70">
+<span class="w-0.5 h-2.5 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-5 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-7 bg-[#FF7A45] rounded-full"></span>
+<span class="w-0.5 h-3.5 bg-[#C9C2B8] rounded-full"></span>
+<span class="w-0.5 h-6 bg-[#FF5A2A] rounded-full"></span>
+</div>
+</div>
+</div>
+<!-- Timestamp Ruler with Tick Marks -->
+<div class="w-full flex justify-between text-[10px] font-medium text-[#8E8E93] pt-1.5 px-1">
+<div class="flex flex-col items-center">
+<span class="w-[1px] h-1 bg-[#C9C2B8] mb-0.5"></span>
+<span>0:00</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-[1px] h-1 bg-[#C9C2B8] mb-0.5"></span>
+<span>0:05</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-[1px] h-1 bg-[#C9C2B8] mb-0.5"></span>
+<span>0:10</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-[1px] h-1 bg-[#C9C2B8] mb-0.5"></span>
+<span>0:15</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-[1px] h-1 bg-[#C9C2B8] mb-0.5"></span>
+<span>0:20</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-[1px] h-1 bg-[#C9C2B8] mb-0.5"></span>
+<span>0:25</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="w-[1px] h-1 bg-[#C9C2B8] mb-0.5"></span>
+<span>0:30</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- END: MainContentArea -->
+</body></html>

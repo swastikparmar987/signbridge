@@ -22,7 +22,7 @@ async def run_cdp_fake_camera_test(y4m_path, wait_before_capture=2.5, capture_wa
         "--use-fake-ui-for-media-stream",
         f"--use-file-for-fake-video-capture={y4m_path}",
         "--autoplay-policy=no-user-gesture-required",
-        "http://127.0.0.1:8000/",
+        "http://127.0.0.1:8080/",
     ]
 
     proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -79,46 +79,44 @@ async def run_cdp_fake_camera_test(y4m_path, wait_before_capture=2.5, capture_wa
             await send_command("Runtime.enable")
 
             # 1. Wait for page load
-            await asyncio.sleep(2.0)
+            await asyncio.sleep(1.5)
 
-            # 2. Click "Enable Camera"
-            print("Clicking enable camera...")
+            # 2. Navigate to Live Translate view
+            print("Switching to Live Translate view...")
             await send_command("Runtime.evaluate", {
-                "expression": "document.getElementById('btn-start-camera').click()"
+                "expression": "document.querySelector('[data-nav=\"live\"]').click()"
             })
-            print("Clicked enable camera.")
+            await asyncio.sleep(1.0)
 
-            # 3. Allow camera stream & MediaPipe to start
-            await asyncio.sleep(wait_before_capture)
-
-            # 4. Click "Sign Now"
-            print("Clicking sign now...")
+            # 3. Click "Start Camera" if overlay visible
+            print("Starting camera...")
             await send_command("Runtime.evaluate", {
-                "expression": "document.getElementById('btn-capture-sign').click()"
+                "expression": "document.getElementById('btn-start-camera')?.click()"
             })
-            print("Clicked sign now.")
+            print("Camera started.")
 
-            # 5. Wait for 2.0s capture + network roundtrip
-            await asyncio.sleep(capture_wait)
+            # 4. Wait for fake webcam feed, MediaPipe hand tracking, and continuous inference
+            print(f"Waiting {capture_wait + 3.0}s for continuous real-time sliding window inference...")
+            await asyncio.sleep(capture_wait + 3.0)
 
-            # 6. Read prediction state from DOM
+            # 5. Read prediction state from v5.0 DOM
             eval_expr = """
             (() => {
-              const primary = document.getElementById('primary-gloss')?.textContent || '—';
-              const conf = document.getElementById('primary-confidence')?.textContent || '0.0%';
-              const badge = document.getElementById('confidence-badge')?.textContent || '';
-              const assessment = document.getElementById('confidence-assessment')?.textContent || '';
-              const top5Els = document.querySelectorAll('#top5-list .ranking-item:not(.empty)');
-              const top5 = Array.from(top5Els).map(el => ({
-                gloss: el.querySelector('.rank-gloss')?.textContent || '',
-                confidence: el.querySelector('.rank-prob')?.textContent || ''
+              const primary = document.getElementById('primary-gloss')?.textContent?.trim() || '—';
+              const conf = document.getElementById('primary-confidence')?.textContent?.trim() || '0%';
+              const altEls = document.querySelectorAll('#alt-candidates-grid .alt-chip');
+              const top5 = Array.from(altEls).map(el => ({
+                gloss: el.getAttribute('data-gloss') || el.querySelector('span:first-child')?.textContent?.trim() || '',
+                confidence: el.querySelector('span:last-child')?.textContent?.trim() || ''
               }));
+              const sentence = Array.from(document.querySelectorAll('#tokenWorkspace span.inline-flex')).map(s => s.textContent.replace('×', '').trim());
+              const heroText = document.getElementById('heroInterpretation')?.textContent?.trim() || '';
               return JSON.stringify({
                 primary_gloss: primary,
                 confidence: conf,
-                badge: badge,
-                assessment: assessment,
-                top5: top5
+                top5: top5,
+                sentence: sentence,
+                interpretation: heroText
               });
             })()
             """

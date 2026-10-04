@@ -2,10 +2,17 @@ import os
 import random
 import shutil
 import tempfile
+import json
+import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 
+logger = logging.getLogger(__name__)
+
+import numpy as np
 import pandas as pd
+import re
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -13,9 +20,15 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from signbridge.inference.predictor import SignBridgePredictor
+from signbridge.personalization.manager import PersonalizationManager
+from signbridge.personalization.router import PersonalizationRouter
+from signbridge.language.qwen_service import QwenLanguageService
+from signbridge.language.groq_service import GroqLanguageService
+from signbridge.tts.service import KokoroTTSService
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 PRODUCTION_CHECKPOINT = PROJECT_ROOT / "trained_models" / "production" / "best_model.pth"
+EXP9_CHECKPOINT = PROJECT_ROOT / "trained_models" / "full_2731" / "exp9_true_arcface" / "best_model.pth"
 FALLBACK_CHECKPOINT = PROJECT_ROOT / "trained_models" / "best_gru_normalized.pth"
 DEFAULT_CHECKPOINT = PRODUCTION_CHECKPOINT if PRODUCTION_CHECKPOINT.exists() else FALLBACK_CHECKPOINT
 VIDEOS_DIR = PROJECT_ROOT / "dataset" / "ASL_Citizen" / "videos"
@@ -26,7 +39,7 @@ TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 app = FastAPI(
     title="SignBridge API & Application",
     description="Sign Language Recognition & Learning System API",
-    version="2.0.0",
+    version="1.0.0",
 )
 
 app.add_middleware(
@@ -39,21 +52,44 @@ app.add_middleware(
 
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
+ASSETS_DIR = STATIC_DIR / "assets"
+ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
-_predictor: Optional[SignBridgePredictor] = None
+_predictors: Dict[str, SignBridgePredictor] = {}
 _gloss_to_videos: Dict[str, List[str]] = {}
 _demo_ready_glosses: set = set()
 _elite_glosses: set = set()
+_personalization_manager = PersonalizationManager(
+    data_dir=PROJECT_ROOT / "data" / "personalization"
+)
+_personalization_manager.set_config(_personalization_manager.config)
+_personalization_router = PersonalizationRouter(_personalization_manager)
+
+_groq_service = GroqLanguageService()
+_qwen_service = QwenLanguageService()
+_tts_service = KokoroTTSService()
 
 
-def get_predictor() -> SignBridgePredictor:
-    global _predictor
-    if _predictor is None:
-        if not DEFAULT_CHECKPOINT.exists():
-            raise FileNotFoundError(f"Model checkpoint not found at {DEFAULT_CHECKPOINT}")
-        _predictor = SignBridgePredictor(checkpoint_path=DEFAULT_CHECKPOINT)
-    return _predictor
+MODEL_CHECKPOINTS = {
+    "production_exp7": PRODUCTION_CHECKPOINT,
+    "candidate_exp9": EXP9_CHECKPOINT,
+}
+
+
+def get_predictor(model_variant: str = "production_exp7") -> SignBridgePredictor:
+    if model_variant not in MODEL_CHECKPOINTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown model variant '{model_variant}'. Choose from {sorted(MODEL_CHECKPOINTS)}.",
+        )
+    checkpoint = MODEL_CHECKPOINTS[model_variant]
+    if not checkpoint.exists():
+        raise FileNotFoundError(f"Model checkpoint not found at {checkpoint}")
+    if model_variant not in _predictors:
+        _predictors[model_variant] = SignBridgePredictor(checkpoint_path=checkpoint)
+    return _predictors[model_variant]
 
 
 def init_dataset_mappings():
@@ -100,11 +136,57 @@ async def startup_event():
 class SequenceRequest(BaseModel):
     sequence: List[List[List[float]]] = Field(..., description="Shape (T, 42, 3)")
     top_k: Optional[int] = Field(default=5, ge=1, le=20)
+    mode: Optional[str] = Field(default=None, description="Capture mode for diagnostics")
+    window_number: Optional[int] = Field(default=None, ge=1)
+    hand_stats: Dict[str, Any] = Field(default_factory=dict)
+    diagnostic: bool = False
+    model_variant: str = "production_exp7"
+    user_id: str = "default"
+    personalization_enabled: bool = False
 
 
 class FlatSequenceRequest(BaseModel):
     sequence: List[List[float]] = Field(..., description="Shape (T, 126)")
     top_k: Optional[int] = Field(default=5, ge=1, le=20)
+    mode: Optional[str] = Field(default=None, description="Capture mode for diagnostics")
+    window_number: Optional[int] = Field(default=None, ge=1)
+    hand_stats: Dict[str, Any] = Field(default_factory=dict)
+    diagnostic: bool = False
+    model_variant: str = "production_exp7"
+    user_id: str = "default"
+    personalization_enabled: bool = False
+
+
+class PersonalizationSampleRequest(BaseModel):
+    sequence: List[List[List[float]]] = Field(..., description="Shape (32, 42, 3)")
+    gloss: str = Field(..., min_length=1, max_length=100)
+    user_id: str = Field(default="default", min_length=1, max_length=64)
+    model_variant: str = "candidate_exp9"
+
+
+class PersonalizationUserRequest(BaseModel):
+    user_id: str = Field(default="default", min_length=1, max_length=64)
+
+
+def _safe_user_id(user_id: str) -> str:
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", user_id):
+        raise HTTPException(status_code=400, detail="user_id may contain only letters, numbers, '_' and '-'.")
+    return user_id
+
+
+def _personalized_result(result: Dict[str, Any], user_id: str, enabled: bool) -> Dict[str, Any]:
+    uid = _safe_user_id(user_id)
+    if not enabled:
+        return _personalization_router._no_personalization(result.get("top_k", []))
+    prototypes = _personalization_manager.get_all_prototypes(uid)
+    if not prototypes:
+        return _personalization_router._no_personalization(result.get("top_k", []))
+    return _personalization_router.route_prediction(
+        result.get("top_k", []),
+        np.asarray(result.get("embedding"), dtype=np.float32),
+        prototypes,
+        user_id=uid,
+    )
 
 
 # -------------------------------------------------------------------
@@ -130,6 +212,9 @@ async def health_check():
         "device": str(predictor.device),
         "num_classes": len(predictor.class_names),
         "total_videos_mapped": len(_gloss_to_videos),
+        "model_variants": {
+            name: path.exists() for name, path in MODEL_CHECKPOINTS.items()
+        },
     }
 
 
@@ -151,7 +236,7 @@ async def get_vocabulary(
     category: Optional[str] = Query(None, description="Filter by category (elite, demo, all)"),
 ):
     """Browse or search supported sign vocabulary."""
-    predictor = get_predictor()
+    predictor = get_predictor("production_exp7")
     init_dataset_mappings()
 
     glosses = predictor.class_names
@@ -251,7 +336,7 @@ async def predict_sequence_endpoint(request: Union[SequenceRequest, FlatSequence
     Sequence is validated, normalized via official normalize_sequence(), and classified.
     """
     try:
-        predictor = get_predictor()
+        predictor = get_predictor(request.model_variant)
         import numpy as np
 
         sequence_np = np.array(request.sequence, dtype=np.float32)
@@ -271,12 +356,93 @@ async def predict_sequence_endpoint(request: Union[SequenceRequest, FlatSequence
             )
 
         result = predictor.predict_sequence(sequence_np, is_normalized=False, top_k=top_k)
+        result["personalization"] = _personalized_result(
+            result, request.user_id, request.personalization_enabled
+        )
+        if request.diagnostic:
+            result["diagnostics"] = build_prediction_diagnostics(
+                sequence_np,
+                result,
+                mode=request.mode,
+                window_number=request.window_number,
+                hand_stats=request.hand_stats,
+                model_variant=request.model_variant,
+            )
         return JSONResponse(content=result)
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sequence prediction error: {str(e)}")
+
+
+@app.get("/api/personalization/profile")
+async def personalization_profile(user_id: str = Query("default")):
+    uid = _safe_user_id(user_id)
+    return {
+        "profile": _personalization_manager.get_profile(uid),
+        "signs": _personalization_manager.list_personalized_signs(uid),
+        "enabled": _personalization_manager.get_model_state(uid).get("enabled", False),
+    }
+
+
+@app.post("/api/personalization/enable")
+async def personalization_enable(request: PersonalizationUserRequest):
+    uid = _safe_user_id(request.user_id)
+    state = _personalization_manager.get_model_state(uid)
+    state["enabled"] = True
+    state["last_updated"] = datetime.now(timezone.utc).isoformat()
+    user_dir = _personalization_manager._user_dir(uid)
+    user_dir.mkdir(parents=True, exist_ok=True)
+    with open(_personalization_manager._model_state_path(uid), "w") as f:
+        json.dump(state, f, indent=2)
+    return {"user_id": uid, "enabled": True}
+
+
+@app.post("/api/personalization/sample")
+async def personalization_sample(request: PersonalizationSampleRequest):
+    uid = _safe_user_id(request.user_id)
+    gloss = request.gloss.strip().upper()
+    predictor = get_predictor("candidate_exp9")
+    sequence_np = np.asarray(request.sequence, dtype=np.float32)
+    if sequence_np.shape != (32, 42, 3):
+        raise HTTPException(status_code=400, detail=f"Expected sequence shape (32, 42, 3), got {sequence_np.shape}.")
+    if gloss not in predictor.class_names:
+        raise HTTPException(status_code=400, detail=f"Gloss '{gloss}' is not in the 2,731-class vocabulary.")
+    quality = _personalization_manager.check_sample_quality(sequence_np)
+    if not quality["valid"]:
+        return JSONResponse(status_code=422, content={"accepted": False, "quality": quality})
+    result = predictor.predict_sequence(sequence_np, is_normalized=False, top_k=5)
+    saved = _personalization_manager.save_sample(
+        gloss=gloss,
+        sequence=sequence_np,
+        embedding=np.asarray(result["embedding"], dtype=np.float32),
+        quality=quality,
+        user_id=uid,
+    )
+    state = _personalization_manager.get_model_state(uid)
+    state["enabled"] = True
+    with open(_personalization_manager._model_state_path(uid), "w") as f:
+        json.dump(state, f, indent=2)
+    return {
+        "accepted": True,
+        "gloss": gloss,
+        "sample": saved,
+        "learned": saved["total_samples"] >= _personalization_manager.config.min_samples_required,
+        "quality": quality,
+    }
+
+
+@app.delete("/api/personalization/sign/{gloss}")
+async def personalization_forget(gloss: str, user_id: str = Query("default")):
+    uid = _safe_user_id(user_id)
+    return _personalization_manager.forget_sign(gloss.strip().upper(), uid)
+
+
+@app.delete("/api/personalization")
+async def personalization_reset(user_id: str = Query("default")):
+    uid = _safe_user_id(user_id)
+    return _personalization_manager.delete_all_personalization(uid)
 
 
 # -------------------------------------------------------------------
@@ -294,6 +460,7 @@ class DiagnosticSequenceRequest(BaseModel):
     mode: str = Field(..., description="'sign_now' or 'continuous_live'")
     window_number: int = Field(..., description="Inference window counter")
     hand_stats: Dict[str, Any] = Field(default_factory=dict)
+    model_variant: str = "production_exp7"
 
 
 @app.post("/api/diagnostic/predict")
@@ -310,7 +477,7 @@ async def diagnostic_predict_endpoint(request: DiagnosticSequenceRequest):
     from datetime import datetime
 
     try:
-        predictor = get_predictor()
+        predictor = get_predictor(request.model_variant)
         seq_np = np.array(request.sequence, dtype=np.float32)
 
         # Basic shape validation
@@ -322,86 +489,26 @@ async def diagnostic_predict_endpoint(request: DiagnosticSequenceRequest):
 
         T = seq_np.shape[0]
 
-        # Calculate active frame statistics
-        hand0_active_frames = np.sum(~np.all(seq_np[:, :21, :] == 0, axis=(1, 2)))
-        hand1_active_frames = np.sum(~np.all(seq_np[:, 21:, :] == 0, axis=(1, 2)))
-        total_active_frames = np.sum(~np.all(seq_np == 0, axis=(1, 2)))
-        zero_frame_percentage = ((T - total_active_frames) / T * 100) if T > 0 else 0
-
         # Run inference to get raw predictions
         result = predictor.predict_sequence(seq_np, is_normalized=False, top_k=5)
-
-        # Extract top predictions
-        top1_class = result["predictions"][0]["gloss"] if result["predictions"] else None
-        top1_confidence = result["predictions"][0]["confidence"] if result["predictions"] else 0
-        top2_class = result["predictions"][1]["gloss"] if len(result["predictions"]) > 1 else None
-        top2_confidence = result["predictions"][1]["confidence"] if len(result["predictions"]) > 1 else 0
-
-        # Calculate margin (confidence difference)
-        margin = top1_confidence - top2_confidence if top2_confidence is not None else 0
-
-        # Get current UI filtering parameters (from environment or config)
-        confidence_threshold = 0.60
-        margin_threshold = 0.04
-        consecutive_threshold = 2
-
-        # Determine if raw prediction would pass filters
-        passes_confidence = top1_confidence >= confidence_threshold
-        passes_margin = margin >= margin_threshold
-        passes_filter = passes_confidence and passes_margin
-
-        # Diagnostic metadata
-        diagnostics = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "window_number": request.window_number,
-            "mode": request.mode,
-
-            # Frame statistics
-            "frame_stats": {
-                "total_frames": T,
-                "hand0_active_frames": int(hand0_active_frames),
-                "hand1_active_frames": int(hand1_active_frames),
-                "total_active_frames": int(total_active_frames),
-                "zero_frame_percentage": round(zero_frame_percentage, 1),
-                "hand_stats": request.hand_stats,
-            },
-
-            # Raw model predictions
-            "raw_predictions": {
-                "top1": {
-                    "class": top1_class,
-                    "confidence": round(top1_confidence, 4)
-                },
-                "top2": {
-                    "class": top2_class,
-                    "confidence": round(top2_confidence, 4) if top2_confidence is not None else 0
-                },
-                "margin": round(margin, 4),
-                "all_predictions": result["predictions"]
-            },
-
-            # Filter analysis
-            "filter_analysis": {
-                "current_thresholds": {
-                    "confidence": confidence_threshold,
-                    "margin": margin_threshold,
-                    "consecutive": consecutive_threshold
-                },
-                "passes_confidence": passes_confidence,
-                "passes_margin": passes_margin,
-                "would_pass_filter": passes_filter,
-                "reason": "both thresholds met" if passes_filter else
-                        f"confidence {'' if passes_confidence else 'NOT '}met, margin {'' if passes_margin else 'NOT '}met"
-            },
-
-            # Hand ordering stability check
-            "hand_stability": analyze_hand_stability(seq_np)
-        }
+        diagnostics = build_prediction_diagnostics(
+            seq_np,
+            result,
+            mode=request.mode,
+            window_number=request.window_number,
+            hand_stats=request.hand_stats,
+            model_variant=request.model_variant,
+        )
+        top1_class = diagnostics["raw_predictions"]["top1"]["class"]
+        top1_confidence = diagnostics["raw_predictions"]["top1"]["confidence"]
+        total_active_frames = diagnostics["frame_stats"]["active_frames"]
+        zero_frame_percentage = diagnostics["frame_stats"]["zero_frame_percentage"]
+        passes_filter = diagnostics["filter_analysis"]["would_pass_filter"]
 
         # Log to console for immediate visibility
         print(f"\n{'='*60}")
         print(f"DIAGNOSTIC [{request.mode}] Window #{request.window_number}")
-        print(f"Raw Top-1: {top1_class} @ {top1_confidence:.2%}")
+        print(f"Raw Top-1: {top1_class} @ {top1_confidence:.2f}%")
         print(f"Active frames: {total_active_frames}/{T} ({zero_frame_percentage:.1f}% zero)")
         print(f"Filter pass: {passes_filter} ({'C+M' if passes_filter else 'C' if passes_confidence else 'M' if passes_margin else 'none'})")
         print(f"{'='*60}\n")
@@ -412,8 +519,82 @@ async def diagnostic_predict_endpoint(request: DiagnosticSequenceRequest):
 
         return JSONResponse(content=combined_result)
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Diagnostic prediction error: {str(e)}")
+
+
+def build_prediction_diagnostics(
+    seq_np: np.ndarray,
+    result: Dict[str, Any],
+    mode: Optional[str] = None,
+    window_number: Optional[int] = None,
+    hand_stats: Optional[Dict[str, Any]] = None,
+    model_variant: str = "production_exp7",
+) -> Dict[str, Any]:
+    """Build raw model telemetry without applying frontend temporal filtering."""
+    from datetime import datetime, timezone
+
+    T = int(seq_np.shape[0])
+    hand0_active = ~np.all(seq_np[:, :21, :] == 0, axis=(1, 2))
+    hand1_active = ~np.all(seq_np[:, 21:, :] == 0, axis=(1, 2))
+    active = hand0_active | hand1_active
+    predictions = result.get("top_k", [])
+    top1 = predictions[0] if predictions else {}
+    top2 = predictions[1] if len(predictions) > 1 else {}
+    top1_confidence = float(top1.get("confidence", 0.0))
+    top2_confidence = float(top2.get("confidence", 0.0))
+    margin = top1_confidence - top2_confidence
+    confidence_threshold = 45.0
+    margin_threshold = 4.0
+    passes_confidence = top1_confidence >= confidence_threshold
+    passes_margin = margin >= margin_threshold
+
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "window_number": window_number,
+        "mode": mode,
+        "model_variant": model_variant,
+        "frame_stats": {
+            "total_frames": T,
+            "active_frames": int(np.sum(active)),
+            "active_frame_percentage": round(float(np.mean(active) * 100) if T else 0.0, 1),
+            "zero_frame_percentage": round(float(np.mean(~active) * 100) if T else 0.0, 1),
+            "hand0_active_frames": int(np.sum(hand0_active)),
+            "hand1_active_frames": int(np.sum(hand1_active)),
+            "hand_stats": hand_stats or {},
+        },
+        "raw_predictions": {
+            "top1": {
+                "class": top1.get("gloss"),
+                "confidence": round(top1_confidence, 4),
+            },
+            "top2": {
+                "class": top2.get("gloss"),
+                "confidence": round(top2_confidence, 4),
+            },
+            "margin": round(margin, 4),
+            "all_predictions": predictions,
+        },
+        "filter_analysis": {
+            "current_thresholds": {
+                "confidence": confidence_threshold,
+                "margin": margin_threshold,
+            },
+            "passes_confidence": passes_confidence,
+            "passes_margin": passes_margin,
+            "would_pass_filter": passes_confidence and passes_margin,
+            "reason": (
+                "both thresholds met"
+                if passes_confidence and passes_margin
+                else "confidence below threshold"
+                if not passes_confidence
+                else "margin below threshold"
+            ),
+        },
+        "hand_stability": analyze_hand_stability(seq_np),
+    }
 
 
 def analyze_hand_stability(seq_np: np.ndarray) -> Dict[str, Any]:
@@ -671,19 +852,43 @@ class NLPSmoothRequest(BaseModel):
     glosses: List[str] = Field(..., description="List of recognized ASL gloss tokens")
 
 
+class TTSRequest(BaseModel):
+    text: str = Field(..., description="English sentence to convert to speech")
+    voice: Optional[str] = Field("af_sarah", description="Kokoro voice name")
+
+
 @app.post("/api/nlp/smooth")
 async def nlp_smooth_endpoint(req: NLPSmoothRequest):
     """
-    NLP Gloss-to-English translation endpoint.
+    NLP Gloss-to-English translation endpoint using local PyTorch Qwen Instruct.
     Converts raw ASL gloss sequence into natural, fluent English.
     """
     raw_glosses = req.glosses
     if not raw_glosses:
-        return JSONResponse(content={"english": "", "glosses": []})
+        return JSONResponse(content={"english": "", "glosses": [], "latency_ms": 0.0, "engine": "None"})
 
     cleaned = [g.strip().upper().rstrip("0123456789").removesuffix("/IT") for g in raw_glosses if g.strip()]
+    if not cleaned:
+        return JSONResponse(content={"english": "", "glosses": [], "latency_ms": 0.0, "engine": "None"})
 
-    # Quick rule matching
+    # Primary: Groq AI Language Service (or local NLP fallback)
+    res = _groq_service.translate_glosses(cleaned)
+    if not res.get("english"):
+        res = _qwen_service.translate_glosses(cleaned)
+
+    if res.get("status") == "success" and res.get("english"):
+        return JSONResponse(content={
+            "english": res["english"],
+            "glosses": cleaned,
+            "latency_ms": res["latency_ms"],
+            "engine": res.get("engine", "Groq AI"),
+            "llm_available": _groq_service.is_available() or _qwen_service.is_available(),
+            "status": "success",
+            "error": None
+        })
+
+    # Fallback to rule assembly only if Qwen is unreachable / error
+    logger.warning(f"Qwen translation failed: {qwen_res.get('error')}. Using rule fallback.")
     idioms = {
         ("NICE", "MEET", "YOU"): "Nice to meet you!",
         ("SEE", "YOU", "LATER"): "See you later!",
@@ -707,28 +912,67 @@ async def nlp_smooth_endpoint(req: NLPSmoothRequest):
 
     key = tuple(cleaned)
     if key in idioms:
-        return JSONResponse(content={"english": idioms[key], "glosses": cleaned, "idiom": True})
-
-    # Basic grammatical assembly
-    pronouns = {"ME": "I", "I": "I", "MY": "my", "YOU": "you", "YOUR": "your", "WE": "we", "THEY": "they"}
-    tokens = [pronouns.get(w, w.lower()) for w in cleaned]
-
-    if len(tokens) >= 2 and tokens[0] in ["I", "you", "we", "they"]:
-        subj = tokens[0]
-        rest = tokens[1:]
-        if rest[0] in ["want", "like", "need", "eat", "have"]:
-            verb = rest[0]
-            obj = " ".join(rest[1:])
-            article = "an" if obj and obj[0] in "aeiou" else "a"
-            if verb == "want":
-                english = f"{subj} would like {article} {obj}." if obj else f"{subj} want that."
-            elif verb == "eat":
-                english = f"{subj} would like to eat {article} {obj}." if obj else f"{subj} am eating."
-            else:
-                english = f"{subj} {verb} {obj}." if obj else f"{subj} {verb} it."
-        else:
-            english = " ".join(tokens).capitalize() + "."
+        english = idioms[key]
     else:
+        pronouns = {"ME": "I", "I": "I", "MY": "my", "YOU": "you", "YOUR": "your", "WE": "we", "THEY": "they"}
+        tokens = [pronouns.get(w, w.lower()) for w in cleaned]
         english = " ".join(tokens).capitalize() + "."
 
-    return JSONResponse(content={"english": english, "glosses": cleaned, "idiom": False})
+    return JSONResponse(content={
+        "english": english,
+        "glosses": cleaned,
+        "latency_ms": qwen_res.get("latency_ms", 0.0),
+        "engine": "Rule Fallback",
+        "llm_available": False,
+        "status": qwen_res.get("status", "fallback"),
+        "error": qwen_res.get("error")
+    })
+
+
+@app.post("/api/tts/speak")
+async def tts_speak_endpoint(req: TTSRequest):
+    """
+    Kokoro ONNX TTS endpoint. Synthesizes input text to speech.
+    """
+    res = _tts_service.speak(req.text, req.voice)
+    return JSONResponse(content=res)
+
+
+@app.get("/api/tts/status")
+async def tts_status_endpoint():
+    """
+    Returns current Kokoro TTS status.
+    """
+    return JSONResponse(content=_tts_service.get_status())
+
+
+@app.post("/api/tts/stop")
+async def tts_stop_endpoint():
+    """
+    Stops active playback and clears pending speech queue.
+    """
+    _tts_service.stop()
+    return JSONResponse(content={"status": "stopped", "message": "Playback stopped and queue cleared"})
+
+
+@app.get("/api/pipeline/status")
+async def pipeline_status_endpoint():
+    """
+    Returns real status of Groq AI, Qwen, and Kokoro TTS services.
+    """
+    return JSONResponse(content={
+        "groq": {
+            "available": _groq_service.is_available(),
+            "model": _groq_service.model_name,
+            "api_key_configured": bool(_groq_service.api_key),
+            "engine": "Groq Cloud AI"
+        },
+        "qwen": {
+            "available": _qwen_service.is_available(),
+            "model": _qwen_service.model_name,
+            "device": _qwen_service.device,
+            "engine": "Direct PyTorch/Transformers"
+        },
+        "tts": _tts_service.get_status()
+    })
+

@@ -1,0 +1,339 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SignBridge — Different Signs. Same Human Connection.</title>
+<!-- Google Fonts for Editorial Humanist Typography and Script Accent -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cream: '#F7F1E7',
+              creamDark: '#EFE6D8',
+              orange: '#F95428',
+              orangeHover: '#E04419',
+              dark: '#141416',
+              muted: '#625E59'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            script: ['"Caveat"', 'cursive']
+          }
+        }
+      }
+    }
+</script>
+<!-- Custom Layout, Keyframe Animations & Visual Enhancements -->
+<style data-purpose="custom-motion-and-layout">
+    /* Base background tone matching #F7F1E7 exactly */
+    body {
+      background-color: #F7F1E7;
+      color: #141416;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Seamless blend for background artwork into #F7F1E7 */
+    .hero-art-blend {
+      mask-image: radial-gradient(circle at 62% 45%, black 48%, rgba(0,0,0,0.85) 65%, transparent 100%),
+                  linear-gradient(to right, transparent 0%, rgba(0,0,0,0.25) 15%, black 40%, black 100%);
+      -webkit-mask-image: radial-gradient(circle at 62% 45%, black 48%, rgba(0,0,0,0.85) 65%, transparent 100%),
+                          linear-gradient(to right, transparent 0%, rgba(0,0,0,0.25) 15%, black 40%, black 100%);
+      mix-blend-mode: multiply;
+    }
+
+    @media (max-width: 1024px) {
+      .hero-art-blend {
+        mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+      }
+    }
+
+    /* Slanted editorial handwriting angle */
+    .script-tilt {
+      transform: rotate(-14deg);
+      line-height: 1.05;
+    }
+
+    /* Keyframe Animations */
+    @keyframes fadeInSlideUp {
+      0% {
+        opacity: 0;
+        transform: translateY(22px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInSlideRight {
+      0% {
+        opacity: 0;
+        transform: translateX(-18px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes floatGentle {
+      0%, 100% {
+        transform: translateY(0) rotate(-14deg);
+      }
+      50% {
+        transform: translateY(-8px) rotate(-13deg);
+      }
+    }
+
+    @keyframes pulseAura {
+      0%, 100% {
+        opacity: 0.35;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.65;
+        transform: scale(1.12);
+      }
+    }
+
+    @keyframes sunRayRotate {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes emberFloat {
+      0% {
+        transform: translate(0, 0) scale(0.8);
+        opacity: 0;
+      }
+      20% {
+        opacity: 0.75;
+      }
+      80% {
+        opacity: 0.85;
+      }
+      100% {
+        transform: translate(70px, -110px) scale(1.2);
+        opacity: 0;
+      }
+    }
+
+    @keyframes buttonShimmer {
+      0% {
+        box-shadow: 0 10px 25px -5px rgba(249, 84, 40, 0.35);
+      }
+      50% {
+        box-shadow: 0 14px 32px -4px rgba(249, 84, 40, 0.55);
+      }
+      100% {
+        box-shadow: 0 10px 25px -5px rgba(249, 84, 40, 0.35);
+      }
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; transform: scale(0.85) rotate(0deg); }
+      50% { opacity: 1; transform: scale(1.15) rotate(15deg); }
+    }
+
+    /* Staggered entrance timing classes */
+    .animate-reveal-header {
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .animate-reveal-h1 {
+      animation: fadeInSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+    }
+    .animate-reveal-body {
+      animation: fadeInSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+    }
+    .animate-reveal-cta {
+      animation: fadeInSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+    }
+    .animate-reveal-pillars {
+      animation: fadeInSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+    }
+    .animate-reveal-script {
+      animation: fadeInSlideRight 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+    }
+
+    /* Continuous animated effects */
+    .floating-script {
+      animation: floatGentle 5.5s ease-in-out infinite;
+    }
+    .sun-glow-ring {
+      animation: pulseAura 7s ease-in-out infinite alternate;
+    }
+    .sun-ray-spin {
+      animation: sunRayRotate 60s linear infinite;
+    }
+    .button-pulse {
+      animation: buttonShimmer 3s ease-in-out infinite;
+    }
+    .sparkle-twinkle {
+      animation: twinkle 3s ease-in-out infinite;
+    }
+
+    /* Floating particles / embers */
+    .ember-1 { animation: emberFloat 6.5s ease-in-out infinite; }
+    .ember-2 { animation: emberFloat 8s ease-in-out 1.8s infinite; }
+    .ember-3 { animation: emberFloat 7.2s ease-in-out 3.2s infinite; }
+    .ember-4 { animation: emberFloat 9s ease-in-out 0.9s infinite; }
+
+    /* Accessibility: Respect Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .hero-art-blend {
+        mix-blend-mode: multiply;
+      }
+    }
+</style>
+</head>
+<body class="min-h-screen relative flex flex-col justify-between selection:bg-brand-orange selection:text-white">
+<!-- BEGIN: HeroBackgroundIllustration -->
+<!-- Panoramic artwork anchored to the right and center with smooth #F7F1E7 blend -->
+<div class="absolute inset-y-0 right-0 w-full lg:w-[70%] xl:w-[66%] h-full pointer-events-none z-0 overflow-hidden" data-purpose="hero-artwork-container">
+<div class="relative w-full h-full">
+<!-- Ambient Animated Sun Aura Glow Rings -->
+<div class="absolute top-[18%] right-[22%] sm:right-[26%] w-72 sm:w-96 h-72 sm:h-96 rounded-full bg-gradient-to-tr from-amber-400/25 via-orange-400/20 to-transparent blur-3xl sun-glow-ring pointer-events-none"></div>
+<div class="absolute top-[14%] right-[18%] sm:right-[22%] w-[380px] sm:w-[480px] h-[380px] sm:h-[480px] rounded-full border border-orange-400/15 sun-ray-spin pointer-events-none"></div>
+<!-- Drifting Sunrise Embers/Particles over the mountain sunlit area -->
+<div class="absolute top-[28%] right-[32%] w-2 h-2 rounded-full bg-amber-300/80 blur-[0.5px] ember-1"></div>
+<div class="absolute top-[35%] right-[24%] w-1.5 h-1.5 rounded-full bg-orange-300/80 blur-[0.5px] ember-2"></div>
+<div class="absolute top-[22%] right-[28%] w-2.5 h-2.5 rounded-full bg-amber-200/90 blur-[1px] ember-3"></div>
+<div class="absolute top-[42%] right-[36%] w-1 h-1 rounded-full bg-orange-400/70 ember-4"></div>
+<!-- Artwork Background image https://lh3.googleusercontent.com/aida-public/AB6AXuCHsA2k0mKavstLIS74nQfSLRru6T9nRaqDUdfg2EONbpARssU7_PJVyEj27slPECRsHyK9NgadEvSUxsU-nk2d5QmJw4wWzDXqMiF2pvfnHmmCd9WUYIXCOUJMrGP9kXse8MQICWnvZyejIesRBF5blkoT1zUdxojfEr8AOjnTfSV3atGt-XNr0LssFfDdlWVrgDznijbrMkEU0ZnmO1pyvbP5PYdkRpQuF6ElP_MsLmleiJ61tDv64QFWf4or9aodzXE -->
+<img alt="Two hands connecting near a radiant sun over mountain ranges with warm sunrise light" class="w-full h-full object-cover object-center lg:object-[left_center] hero-art-blend opacity-95 transition-transform duration-1000 ease-out" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkHikmGsNcrBDOa9GZa4C866Jg4w2a5m-HAmCiZCtGWIxArV3X7EFmHTKj09HN--8bzJmSsY7sCpRP7yUyUmzxFkLFqZ4MzETYoijNpNlVm9AaZHfJy0kCy8AGY-x4OVcP2mfPxJ5eKLZccT9h1-DWWQIVRAWEY7xzq9v7Gr8cqgcd2CKFe2nd-pp-a1JK7zkPyn9s5AqrfS8MNpGoEQ4OMc6-QYX9myPkUrHneX26kwwuZ3EH2tphFoEYyZSbIWFASgw">
+<!-- Seamless soft edge overlays blending seamlessly into #F7F1E7 -->
+<div class="absolute inset-y-0 left-0 bg-gradient-to-r from-[#F7F1E7] via-[#F7F1E7]/70 to-transparent hidden lg:block w-72"></div>
+<div class="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#F7F1E7] to-transparent"></div>
+<div class="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#F7F1E7]/70 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-[#F7F1E7]/90 via-[#F7F1E7]/25 to-transparent lg:hidden"></div>
+</div>
+</div>
+<!-- END: HeroBackgroundIllustration -->
+<!-- BEGIN: MainHeader -->
+<header class="relative z-20 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 pt-8 pb-4 animate-reveal-header" data-purpose="top-navigation-bar">
+<div class="flex items-start justify-between">
+<!-- Brand Identity (Logo https://lh3.googleusercontent.com/aida-public/AB6AXuBe-4CtiYjh8TFll1qG6Tbo83GJrnvhLivQ5atOWF5UEeU772UwdfUMPYImyGOZ0WxOmANa9sdGsPYwbS55s4qxENvg1Wg1-Sww5az9UaIgROf0W9Y__egJ80dy78lz9sg92EBnprXLEcoedr5qh6o42lDHPeRWvqZDaywIypyTZ3O9gMF6m4_ooMICQMZ-5q3jFe7AYct-UxHivnRIzQmldWay1pGKaL5UVL2LQj4b4SFVP-ed_RLQmwm24J7ik-k540c + Name + Tagline) -->
+<a class="flex items-center gap-3.5 group cursor-pointer" data-purpose="brand-identity" href="#">
+<!-- Hand Logo Mark with smooth pulse on hover -->
+<div class="w-20 h-20 flex-shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-2"><img alt="SignBridge Emblem Hand Icon" class="w-full h-full object-contain filter drop-shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjXUKTMW0tsBRy1n5M2XlB9sBcHPAesvG2_1QFcLztjS5XIKKN3JY2w0BPFA7XRZOJ1Hy2KTisntWDu8g2QpzqbOYsWkgIo9DFis2EbsqSm_sK-yiDN7TnVlYCgmURZAkZkPJgxNKUFvG2asSvMG5jt0aaE7lMOQbVxeqgjXbAOyQ_Hj1WFioxBGGOEsDa5N-KWW28ZzZ-JDAoNE1D7cMcX2LD1cvguQvALdkI5XKckcpDrppeCD8fatYaUnXEEmNzQ-8"></div>
+<!-- Logo Typography -->
+<div>
+<span class="text-2xl lg:text-[28px] font-extrabold tracking-tight text-slate-900 block leading-tight transition-colors group-hover:text-slate-800">
+          Sign<span class="text-brand-orange inline-block transition-transform duration-300 group-hover:scale-105 origin-left">Bridge</span>
+</span>
+<p class="text-xs text-[#524E49] font-medium tracking-normal mt-0.5">
+          Different Signs. Same Human Connection.
+        </p>
+</div>
+</a>
+<!-- Center Top Minimal Editorial Nav / Manifesto Words -->
+
+<!-- Top Right Subtle Meta Accent -->
+<div class="text-right flex flex-col items-end" data-purpose="top-right-meta">
+<div class="flex items-center gap-2.5">
+<span class="w-10 h-[1px] bg-[#968F85]/40 hidden sm:inline-block"></span>
+<span class="text-[10px] sm:text-[11px] font-bold tracking-[0.24em] uppercase text-[#47433E]">
+          A More Inclusive Tomorrow
+        </span>
+</div>
+<!-- Tiny accent pill line with animated expansion on hover -->
+<span class="w-4 h-[3px] bg-brand-orange rounded-full mt-1.5 self-end transition-all duration-300 hover:w-8"></span>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainHeroContent -->
+<main class="relative z-10 flex-1 flex flex-col justify-center max-w-[1720px] w-full mx-auto px-6 sm:px-10 lg:px-16 py-6 lg:py-12" data-purpose="hero-main-section">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-4 items-center">
+<!-- Left Column: Copy, CTA and Feature Highlights -->
+<section class="lg:col-span-6 xl:col-span-6 max-w-2xl pt-2 lg:pt-0" data-purpose="hero-copy-column">
+<!-- Main Headline -->
+<h1 class="text-[44px] sm:text-6xl xl:text-[76px] font-extrabold text-[#111113] tracking-[-0.03em] leading-[1.05] animate-reveal-h1">
+        Different Signs.
+        <span class="block text-brand-orange tracking-[-0.03em] mt-1 sm:mt-2 transition-all">
+          Same Human<br>Connection.
+        </span>
+</h1>
+<!-- Subtitle Paragraph -->
+<p class="mt-6 sm:mt-8 text-base sm:text-lg text-[#44403B] font-normal leading-relaxed max-w-xl pr-2 sm:pr-6 animate-reveal-body">
+        SignBridge helps you understand, learn, and communicate using sign language — powered by AI, built for people, and designed for a more inclusive world.
+      </p>
+<!-- Primary CTA Button with interactive magnetic feel and arrow glide -->
+<div class="mt-8 sm:mt-10 flex items-center gap-4 animate-reveal-cta" data-purpose="call-to-action-container">
+<a class="group relative inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white bg-brand-orange rounded-2xl shadow-lg shadow-brand-orange/30 hover:bg-brand-orangeHover hover:shadow-brand-orange/45 hover:-translate-y-1 active:translate-y-0 button-pulse transition-all duration-300" data-purpose="primary-cta-button" href="#get-started">
+<span class="tracking-wide">Get Started</span>
+<svg aria-hidden="true" class="w-5 h-5 ml-2.5 transition-transform duration-300 ease-out group-hover:translate-x-2" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+<path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</a>
+</div>
+<!-- Pillar Badges: Learn, Connect, Grow with micro-interactions & lift -->
+<div class="mt-12 sm:mt-16 pt-8 border-t border-[#E3D9CC]/90 grid grid-cols-3 gap-3 sm:gap-6 max-w-lg animate-reveal-pillars" data-purpose="core-value-pillars">
+<!-- Pillar 1: LEARN -->
+<div class="group flex flex-col items-start p-3 -m-3 rounded-2xl transition-all duration-300 hover:bg-[#EFE6D8]/60 hover:-translate-y-1 cursor-default border border-transparent hover:border-[#E2D5C2]" data-purpose="pillar-learn">
+<div class="w-12 h-12 rounded-2xl bg-[#EFE5D6] flex items-center justify-center text-[#994726] mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:bg-brand-orange group-hover:text-white shadow-sm"><svg class="w-7 h-7 transition-transform duration-300 group-hover:rotate-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<span class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-900 group-hover:text-brand-orange transition-colors">LEARN</span>
+<span class="text-xs text-[#615C55] mt-0.5">New Signs</span>
+</div>
+<!-- Pillar 2: CONNECT -->
+<div class="group flex flex-col items-start p-3 -m-3 rounded-2xl transition-all duration-300 hover:bg-[#EFE6D8]/60 hover:-translate-y-1 cursor-default border border-transparent hover:border-[#E2D5C2]" data-purpose="pillar-connect">
+<div class="w-12 h-12 rounded-2xl bg-[#EFE5D6] flex items-center justify-center text-[#994726] mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:bg-brand-orange group-hover:text-white shadow-sm"><svg class="w-7 h-7 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<span class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-900 group-hover:text-brand-orange transition-colors">CONNECT</span>
+<span class="text-xs text-[#615C55] mt-0.5">Without Barriers</span>
+</div>
+<!-- Pillar 3: GROW -->
+<div class="group flex flex-col items-start p-3 -m-3 rounded-2xl transition-all duration-300 hover:bg-[#EFE6D8]/60 hover:-translate-y-1 cursor-default border border-transparent hover:border-[#E2D5C2]" data-purpose="pillar-grow">
+<div class="w-12 h-12 rounded-2xl bg-[#EFE5D6] flex items-center justify-center text-[#994726] mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:bg-brand-orange group-hover:text-white shadow-sm"><svg class="w-7 h-7 transition-transform duration-300 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<span class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-900 group-hover:text-brand-orange transition-colors">GROW</span>
+<span class="text-xs text-[#615C55] mt-0.5">Together</span>
+</div>
+</div>
+</section>
+<!-- Right Column: Editorial Calligraphy Accent Overlay with Floating Animation & Sparkle -->
+
+</div>
+</main>
+<!-- END: MainHeroContent -->
+<!-- BEGIN: BottomEditorialBar -->
+<footer class="relative z-10 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 py-6" data-purpose="bottom-meta-footer">
+<div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+<!-- Bottom Left Accent -->
+<div class="flex items-center gap-3" data-purpose="footer-left-quote">
+<span class="w-12 h-[1px] bg-[#918A81]/50"></span>
+<span class="text-[10px] sm:text-[11px] font-bold tracking-[0.22em] uppercase text-[#544F49]">
+        Signs Bring Us Closer
+      </span>
+</div>
+<!-- Bottom Right Accent Tagline -->
+<div class="flex flex-col items-end text-right" data-purpose="footer-right-inclusion">
+<span class="text-[10px] sm:text-[11px] font-bold tracking-[0.22em] uppercase text-[#544F49]">
+        Inclusion Through Technology
+      </span>
+<span class="w-5 h-[3px] bg-brand-orange rounded-full mt-1 transition-all duration-300 hover:w-10"></span>
+</div>
+</div>
+</footer>
+<!-- END: BottomEditorialBar -->
+
+
+</body></html>

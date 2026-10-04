@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional
+import math
 import torch
 import torch.nn as nn
 
@@ -279,6 +280,11 @@ class BiGRUArcFaceClassifier(nn.Module):
         # We can just use nn.Linear(fused_dim, num_classes, bias=False) and normalize it in forward.
         self.classifier = nn.Linear(self.fused_dim, num_classes, bias=False)
         self.s = s
+        self.m = m
+        self.cos_m = math.cos(m)
+        self.sin_m = math.sin(m)
+        self.th = math.cos(math.pi - m)
+        self.mm = math.sin(math.pi - m) * m
 
         self._init_weights()
 
@@ -296,7 +302,7 @@ class BiGRUArcFaceClassifier(nn.Module):
                 nn.init.zeros_(module.bias)
         nn.init.xavier_uniform_(self.classifier.weight)
 
-    def forward(self, x: torch.Tensor, label=None) -> torch.Tensor:
+    def _fused_embedding(self, x: torch.Tensor) -> torch.Tensor:
         gru_output, _ = self.gru(x)
         attn_scores = self.attention_net(gru_output)
         attn_weights = torch.softmax(attn_scores, dim=1)
@@ -305,9 +311,21 @@ class BiGRUArcFaceClassifier(nn.Module):
         max_context = torch.max(gru_output, dim=1).values
         fused_features = torch.cat([attention_context, mean_context, max_context], dim=1)
         normed = self.layer_norm(fused_features)
-        dropped = self.dropout(normed)
-        
-        # Inference-only ArcFace forward (cosine similarity * s)
+        return self.dropout(normed)
+
+    def extract_embedding(self, x: torch.Tensor) -> torch.Tensor:
+        import torch.nn.functional as F
+        return F.normalize(self._fused_embedding(x), p=2, dim=1)
+
+    def forward(self, x: torch.Tensor, label=None) -> torch.Tensor:
+        dropped = self._fused_embedding(x)
         import torch.nn.functional as F
         cosine = F.linear(F.normalize(dropped), F.normalize(self.classifier.weight))
+        if label is not None and self.m > 0:
+            sine = torch.sqrt(torch.clamp(1.0 - cosine.pow(2), min=1e-6))
+            phi = cosine * self.cos_m - sine * self.sin_m
+            phi = torch.where(cosine > self.th, phi, cosine - self.mm)
+            one_hot = torch.zeros_like(cosine)
+            one_hot.scatter_(1, label.view(-1, 1).long(), 1.0)
+            cosine = one_hot * phi + (1.0 - one_hot) * cosine
         return cosine * self.s

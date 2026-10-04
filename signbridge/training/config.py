@@ -76,6 +76,9 @@ class AugmentationConfig:
     spatial_scale_range: Tuple[float, float] = (0.95, 1.05)
     temporal_speed_range: Tuple[float, float] = (0.95, 1.05)
     temporal_jitter_frames: int = 1
+    rotation_degrees: float = 0.0
+    frame_dropout_probability: float = 0.0
+    landmark_dropout_probability: float = 0.0
 
 
 @dataclass
@@ -204,4 +207,3 @@ def get_full_experiment_config(name: str = "exp1_augmented_finetune") -> Experim
             temporal_jitter_frames=1,
         ),
     )
-

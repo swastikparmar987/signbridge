@@ -1,0 +1,1031 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SignBridge UI Kit &amp; Design System Specification</title>
+<!-- Inter Google Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF5A2A',
+              orangeHover: '#E54C1E',
+              orangePressed: '#CA3F16',
+              orangeLight: '#FF7A45',
+              bg: '#F7F1E7',
+              surface: '#FFFDF8',
+              surfaceSoft: '#F2E9DC',
+              textPrimary: '#111318',
+              textSecondary: '#25282D',
+              textMuted: '#6F7074',
+              border: '#E6DED3',
+              success: '#2EB875',
+              warning: '#F6B73C',
+              error: '#EF4444',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="base-styling">
+    body {
+      background-color: #F7F1E7;
+      color: #111318;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #E6DED3;
+      border-radius: 9999px;
+    }
+  </style>
+<style data-purpose="circular-progress">
+    .circle-progress {
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    .tooltip-arrow::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0;
+      border-style: solid;
+      border-color: #111318 transparent transparent transparent;
+      display: block;
+      width: 0;
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="p-4 md:p-8 min-h-screen text-[#111318]">
+<!-- Top Title Banner -->
+<div class="max-w-[1700px] mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-[#E6DED3]">
+<div>
+<div class="flex items-center gap-3">
+<img alt="SignBridge Logo" class="h-10 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrGsintzzXe0hSuJsPpRcpAowTrhE2slErra75P8LqBT91AqM5HknFCDOd8HupNVpCfodEO7y1n0RSN1AR-Oq79RjwdduRWWqhTKcixYouCCGYgS-xkJiVvPKAZ_hvhES5wCfJhSGrBfqtaY0dfxg17zIQPBKhPeDspqbLIwFb7pkT9b8TfvTO_MQhE6JhmuwTD_hwlnb0sdgK03VidOL8QVSUKKGtMWjLiRhffl--akNyCbCs_sXChtVlQ5OXxUAPGKQ">
+<h1 class="text-3xl font-bold tracking-tight text-[#111318]">SignBridge Design System &amp; UI Kit</h1>
+</div>
+<p class="text-sm text-[#6F7074] mt-1">Master Component Specification &amp; Interactive Design Assets (Reference Spec)</p>
+</div>
+<div class="mt-4 md:mt-0 flex items-center gap-3">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#2EB875]/10 text-[#2EB875]">
+<span class="w-2 h-2 rounded-full bg-[#2EB875]"></span> v2.4 Active Specs
+      </span>
+<span class="text-xs text-[#6F7074] bg-[#F2E9DC] px-3 py-1 rounded-full">Device: Desktop &amp; Web</span>
+</div>
+</div>
+<!-- Master Layout Grid matching UI Kit reference format -->
+<main class="max-w-[1700px] mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+<!-- ========================================== -->
+<!-- LEFT COLUMN: Brand, Palette, Typography, Nav -->
+<!-- ========================================== -->
+<div class="xl:col-span-4 flex flex-col gap-8">
+<!-- BEGIN: Section 01 Brand & Color Palette -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="brand-palette-section">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-4">01. Brand &amp; Identity</h2>
+<!-- Logo Display -->
+<div class="flex items-center gap-4 p-4 rounded-xl bg-[#F7F1E7]/60 border border-[#E6DED3] mb-6">
+<img alt="SignBridge Logo" class="w-14 h-14 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRd9ES3Pz90haA0B9j0Y445jhpXPKaGxpI4gAOLiwWefuhUU5tNHY7bZDWqSTtMJ_10IY5iAIliJMESU1sFIkrpsWWIjvxYeuZGMldnJP9JlSRQebAwrGfqmlhbZzsEYkeVKcy4Iev9kk29VsKhEatGic_2XYPAQ_jrWaiQxDdPkw8zSp6Pjg_qF1poODSHmj_JWrDadPJ9zq_n6Fl-SXK3gN8wKZ2RtQWj8okcR22d0EqPjRroQwvGkXR2HJdPSSsWdQ">
+<div>
+<div class="text-2xl font-bold tracking-tight text-[#111318]">SignBridge</div>
+<p class="text-xs text-[#6F7074] font-medium leading-tight">Different Signs.<br>Same Human Connection.</p>
+</div>
+</div>
+<!-- Color Palette Grid -->
+<h3 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">Color Palette</h3>
+<div class="grid grid-cols-2 gap-2.5 text-xs mb-6 font-medium">
+<!-- Swatch: Primary Orange -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#FF5A2A] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Primary Orange</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#FF5A2A</div>
+</div>
+</div>
+<!-- Swatch: Secondary Orange -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#FF7A45] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Secondary Orange</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#FF7A45</div>
+</div>
+</div>
+<!-- Swatch: Background -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#F7F1E7] border border-[#E6DED3] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Background</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#F7F1E7</div>
+</div>
+</div>
+<!-- Swatch: Surface -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#FFFDF8] border border-[#E6DED3] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Surface</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#FFFDF8</div>
+</div>
+</div>
+<!-- Swatch: Soft Surface -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#F2E9DC] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Soft Surface</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#F2E9DC</div>
+</div>
+</div>
+<!-- Swatch: Primary Text -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#111318] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Primary Text</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#111318</div>
+</div>
+</div>
+<!-- Swatch: Secondary Text -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#25282D] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Secondary Text</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#25282D</div>
+</div>
+</div>
+<!-- Swatch: Muted Text -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#6F7074] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Muted Text</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#6F7074</div>
+</div>
+</div>
+<!-- Swatch: Border -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#E6DED3] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Border</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#E6DED3</div>
+</div>
+</div>
+<!-- Swatch: Success -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#2EB875] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Success</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#2EB875</div>
+</div>
+</div>
+<!-- Swatch: Warning -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#F6B73C] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Warning</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#F6B73C</div>
+</div>
+</div>
+<!-- Swatch: Error -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg border border-[#E6DED3] bg-[#FFFDF8]">
+<div class="w-7 h-7 rounded-md shadow-inner bg-[#EF4444] flex-shrink-0"></div>
+<div>
+<div class="text-[#111318] font-semibold text-[11px]">Error</div>
+<div class="text-[#6F7074] text-[10px] uppercase font-mono">#EF4444</div>
+</div>
+</div>
+</div>
+<!-- Typography Scale -->
+<h3 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">Typography (Inter)</h3>
+<div class="space-y-1.5 text-xs text-[#25282D] mb-6 border-t border-[#E6DED3] pt-3">
+<div class="flex justify-between items-baseline"><span class="font-bold">H1 / Display</span> <span class="text-[#6F7074]">48–56px Bold</span></div>
+<div class="flex justify-between items-baseline"><span class="font-bold">H2 / Page Title</span> <span class="text-[#6F7074]">32–40px Bold</span></div>
+<div class="flex justify-between items-baseline"><span class="font-semibold">H3 / Section Title</span> <span class="text-[#6F7074]">20–24px Semibold</span></div>
+<div class="flex justify-between items-baseline"><span class="font-semibold">H4 / Card Title</span> <span class="text-[#6F7074]">16–18px Semibold</span></div>
+<div class="flex justify-between items-baseline"><span class="">Body Large</span> <span class="text-[#6F7074]">16px Regular</span></div>
+<div class="flex justify-between items-baseline"><span class="">Body</span> <span class="text-[#6F7074]">14px Regular</span></div>
+<div class="flex justify-between items-baseline"><span class="text-[11px]">Caption</span> <span class="text-[#6F7074]">12px Regular</span></div>
+<div class="flex justify-between items-baseline"><span class="text-[10px]">Small</span> <span class="text-[#6F7074]">11px Regular</span></div>
+</div>
+<!-- Icon Style Preview -->
+<h3 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">Icon Style</h3>
+<div class="flex flex-wrap items-center gap-3 text-[#FF5A2A] p-3 bg-[#F7F1E7]/50 rounded-xl border border-[#E6DED3]">
+<!-- Home -->
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<!-- Camera -->
+<svg class="w-5 h-5 text-[#25282D]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<!-- Video -->
+<svg class="w-5 h-5 text-[#25282D]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<!-- Plus -->
+<svg class="w-5 h-5 text-[#25282D]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<!-- Book -->
+<svg class="w-5 h-5 text-[#25282D]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<!-- Target Practice -->
+<svg class="w-5 h-5 text-[#25282D]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<!-- Message -->
+<svg class="w-5 h-5 text-[#25282D]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<!-- Settings -->
+<svg class="w-5 h-5 text-[#25282D]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<!-- Profile -->
+<svg class="w-5 h-5 text-[#25282D]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</section>
+<!-- END: Section 01 Brand & Color Palette -->
+<!-- BEGIN: Section 02 Navigation -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="navigation-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-4">02. Navigation</h2>
+<div class="flex gap-4">
+<!-- Full Desktop Navigation Sidebar -->
+<nav class="w-60 bg-[#111318] text-white rounded-3xl p-4 flex flex-col justify-between shadow-xl flex-shrink-0" data-purpose="main-sidebar">
+<div>
+<!-- Sidebar Header -->
+<div class="flex items-center gap-3 px-2 py-3 mb-4">
+<img alt="Logo" class="w-8 h-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3vEGWlzQmZWdBAif5Dxylp_x-sfwYLOhm-cHckW-VVXsmJIEKZ1UW6tM6q-5oFFfS3k9o2MUj-X7ertxYuEkq4Ct2y7vL4kcA--iRmhHbNDI-eAM3YAccbyqZW3iW9vWdqGww7J9Xlvm4h8pNWO33hvV3rB3rHcFptCQqxZPA6E1ACXiMmH7na0VWuCzy2u-fG8JfGSvjnktOARBVYLpu2TIeZX5WgjGsoq01Q6QJXp5SJ7wdprLV8388Z9ji1yChfQI">
+<div>
+<div class="font-bold text-sm tracking-tight text-white leading-tight">SignBridge</div>
+<div class="text-[9px] text-[#6F7074] leading-tight">Different Signs.<br>Same Human Connection.</div>
+</div>
+</div>
+<!-- Nav Links -->
+<div class="space-y-1">
+<!-- Active Link: Home -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#FF5A2A] text-white font-medium text-xs shadow-md shadow-[#FF5A2A]/20 transition" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Home</span>
+</a>
+<!-- Inactive Links -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 font-medium text-xs transition" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Live Translate</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 font-medium text-xs transition" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Video Translate</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 font-medium text-xs transition" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Teach SignBridge</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 font-medium text-xs transition" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Learn</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 font-medium text-xs transition" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Practice</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 font-medium text-xs transition" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Communication</span>
+</a>
+</div>
+<!-- Secondary Navigation Group -->
+<div class="pt-4 mt-4 border-t border-neutral-800 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 font-medium text-xs transition" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/60 font-medium text-xs transition" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Profile</span>
+</a>
+</div>
+</div>
+<!-- Bottom Artwork Card (Mountain Graphic) -->
+<div class="rounded-2xl overflow-hidden mt-6 border border-neutral-800"><img alt="SignBridge — A more inclusive world, together" class="w-full h-auto block rounded-2xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBrKw334TWslgjdsWBdr7rMf9KHhMxywmd0VQA5tB3HYYb6IhoMveGagRHm9iW3432p5N4laL4ryG-IsJVxhAcj3-SHZOA-N6Mb8AuK4S48KncY55_3ANES2PdcM8YOH__wkmBnuS-iJA-cgiXie26dKwP197DalOQZEaP_TUMgLAeeUm_dZJwkDEnr2NtHcAOSFcIBxetd5Gb5x7JQvo0jXI5pjWRePZkRkoALriD1_I-8I5HsvRTLtuGQgMZJvdXWWs"></div>
+</nav>
+<!-- Collapsed (Mini) Navigation Sidebar Variant -->
+<div class="flex flex-col items-center">
+<span class="text-[10px] font-semibold text-[#6F7074] mb-2 uppercase">Collapsed (Mini)</span>
+<nav class="w-14 bg-[#111318] text-white rounded-3xl p-2.5 flex flex-col items-center justify-between shadow-xl min-h-[520px]" data-purpose="mini-sidebar">
+<div class="space-y-4 flex flex-col items-center">
+<img alt="Logo" class="w-6 h-6 object-contain mt-1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1F7WDK3T5FbAOi21-CP1VGjoVvNpimWR5ZexNcPvqWMYNJZVJAjkEAzPHihkIgunlAiWER6ZqpaTKsjVhCkSYs4Q8jlGhb7wxg6iEIB8kOTEeFsKMhZKa9JfuOmfSzxlctD3CT_Uy8XcUV1smgLLYNRTQZ1a4g-6BoD90IKffdeke7ecsLxCcYShHq9P7aaeSONM3h-TS5lBglKKUYEaIZRnMgfrWdj8arntJQEqtLGzgoarjxZhSE5J_tByFxjwRF2o">
+<div class="w-9 h-9 rounded-xl bg-[#FF5A2A] flex items-center justify-center text-white shadow-md shadow-[#FF5A2A]/20">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<div class="space-y-3 flex flex-col items-center pt-3 border-t border-neutral-800">
+<div class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div class="w-7 h-7 rounded-full bg-neutral-700 flex items-center justify-center text-white text-xs font-semibold">
+                  S
+                </div>
+</div>
+</nav>
+</div>
+</div>
+</section>
+<!-- END: Section 02 Navigation -->
+</div>
+<!-- ========================================== -->
+<!-- RIGHT COLUMN: Core UI Components Showcase -->
+<!-- ========================================== -->
+<div class="xl:col-span-8 flex flex-col gap-8">
+<!-- BEGIN: Section 03 Top Navigation Bar -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="top-navigation-bar">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">03. Top Navigation Bar</h2>
+<header class="w-full bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl px-4 py-3 flex items-center justify-between gap-4 shadow-sm">
+<!-- Hamburger toggle -->
+<button class="p-2 hover:bg-[#F2E9DC] rounded-xl text-[#25282D] transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+<!-- Search Bar Input -->
+<div class="flex-1 max-w-xl relative">
+<svg class="w-4 h-4 text-[#6F7074] absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<input class="w-full bg-[#F7F1E7] border-none text-xs rounded-xl pl-10 pr-4 py-2.5 text-[#111318] placeholder-[#6F7074] focus:ring-2 focus:ring-[#FF5A2A] transition" placeholder="Search signs, lessons, people, or anything..." type="text">
+</div>
+<!-- Actions & Profile Pill -->
+<div class="flex items-center gap-3">
+<!-- Theme Toggle Sun -->
+<button class="p-2 text-[#25282D] hover:bg-[#F2E9DC] rounded-xl transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+<!-- Notification Bell -->
+<button class="relative p-2 text-[#25282D] hover:bg-[#F2E9DC] rounded-xl transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4444]"></span>
+</button>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full hover:bg-[#F2E9DC] cursor-pointer transition">
+<div class="w-8 h-8 rounded-full bg-[#111318] text-white flex items-center justify-center font-bold text-xs">
+                S
+              </div>
+<div class="text-left leading-tight hidden sm:block">
+<div class="text-xs font-bold text-[#111318]">Hi, Swastik</div>
+<div class="text-[10px] text-[#6F7074]">Keep learning!</div>
+</div>
+<svg class="w-3.5 h-3.5 text-[#6F7074]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+</header>
+</section>
+<!-- END: Section 03 Top Navigation Bar -->
+<!-- BEGIN: Section 04 Buttons & Section 05 Inputs Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Section 04: Buttons -->
+<section class="lg:col-span-7 bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="buttons-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-4">04. Buttons</h2>
+<!-- Button Variants Row -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 items-center">
+<!-- Primary -->
+<div>
+<span class="text-[10px] text-[#6F7074] block mb-1">Primary</span>
+<button class="w-full flex items-center justify-center gap-2 bg-[#FF5A2A] hover:bg-[#FF7A45] active:bg-[#CA3F16] text-white text-xs font-semibold px-3 py-2.5 rounded-xl shadow-sm transition">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Start Live</span>
+<span class="">→</span>
+</button>
+</div>
+<!-- Secondary -->
+<div>
+<span class="text-[10px] text-[#6F7074] block mb-1">Secondary</span>
+<button class="w-full flex items-center justify-center gap-1.5 border border-[#FF5A2A] text-[#FF5A2A] hover:bg-[#FF5A2A]/5 active:bg-[#FF5A2A]/10 text-xs font-semibold px-3 py-2.5 rounded-xl transition">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="">Upload Video</span>
+</button>
+</div>
+<!-- Tertiary -->
+<div>
+<span class="text-[10px] text-[#6F7074] block mb-1">Tertiary</span>
+<button class="w-full flex items-center justify-center gap-1 text-[#111318] hover:text-[#FF5A2A] text-xs font-semibold px-2 py-2.5 rounded-xl transition">
+<span class="">Learn This Sign</span>
+<span class="">→</span>
+</button>
+</div>
+<!-- Icon Buttons -->
+<div>
+<span class="text-[10px] text-[#6F7074] block mb-1">Icon Button</span>
+<div class="flex items-center gap-2">
+<button class="p-2.5 rounded-xl bg-[#F7F1E7] hover:bg-[#F2E9DC] text-[#FF5A2A] transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+<button class="p-2.5 rounded-xl bg-[#F7F1E7] hover:bg-[#F2E9DC] text-[#25282D] transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+</div>
+</div>
+<!-- Button States Row -->
+<h3 class="text-[11px] font-semibold text-[#6F7074] uppercase tracking-wider mb-2">States</h3>
+<div class="grid grid-cols-4 gap-2 text-center text-xs">
+<div>
+<button class="w-full py-2 rounded-xl bg-[#FF5A2A] text-white font-medium">Default</button>
+</div>
+<div>
+<button class="w-full py-2 rounded-xl bg-[#FF7A45] text-white font-medium">Hover</button>
+</div>
+<div>
+<button class="w-full py-2 rounded-xl bg-[#CA3F16] text-white font-medium">Pressed</button>
+</div>
+<div>
+<button class="w-full py-2 rounded-xl bg-[#E6DED3] text-[#6F7074] font-medium cursor-not-allowed" disabled="">Disabled</button>
+</div>
+</div>
+</section>
+<!-- Section 05: Input Fields & Search -->
+<section class="lg:col-span-5 bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="inputs-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-4">05. Input Fields &amp; Search</h2>
+<div class="space-y-3">
+<!-- Search Input -->
+<div class="relative">
+<svg class="w-4 h-4 text-[#6F7074] absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<input class="w-full bg-[#F7F1E7] border border-[#E6DED3] text-xs rounded-xl pl-9 pr-3 py-2 text-[#111318] placeholder-[#6F7074] focus:ring-1 focus:ring-[#FF5A2A]" placeholder="Search signs, lessons, people..." type="text">
+</div>
+<!-- Field with dropdown inline -->
+<div class="grid grid-cols-2 gap-2">
+<input class="bg-[#FFFDF8] border border-[#E6DED3] text-xs rounded-xl px-3 py-2 text-[#111318] placeholder-[#6F7074] focus:ring-1 focus:ring-[#FF5A2A]" placeholder="Enter sign name" type="text">
+<div class="relative">
+<select class="w-full appearance-none bg-[#FFFDF8] border border-[#E6DED3] text-xs rounded-xl px-3 py-2 text-[#111318] focus:ring-1 focus:ring-[#FF5A2A]">
+<option>Select category</option>
+<option>Greetings</option>
+<option>Alphabet</option>
+<option>Emergency</option>
+</select>
+<svg class="w-3.5 h-3.5 text-[#6F7074] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- END: Section 04 & 05 -->
+<!-- BEGIN: Section 06 Cards -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="cards-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-4">06. Cards</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Card 1: Feature Card -->
+<div class="bg-[#F7F1E7] border border-[#E6DED3] rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition">
+<div class="w-10 h-10 rounded-xl bg-[#FF5A2A]/10 text-[#FF5A2A] flex items-center justify-center mb-4">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div>
+<h4 class="font-bold text-sm text-[#111318]">Live Translate</h4>
+<p class="text-xs text-[#6F7074] mt-1 leading-snug">Use your webcam to translate signs in real-time.</p>
+</div>
+</div>
+<!-- Card 2: Stat Card -->
+<div class="bg-[#F7F1E7] border border-[#E6DED3] rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+<div class="relative w-16 h-16 flex items-center justify-center mb-2">
+<svg class="w-16 h-16 circle-progress" viewBox="0 0 36 36">
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E6DED3" stroke-width="3"></path>
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FF5A2A" stroke-dasharray="75, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center text-[#FF5A2A]">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<div class="text-2xl font-bold text-[#111318]">48</div>
+<div class="text-xs text-[#6F7074] font-medium">Signs Learned</div>
+</div>
+<!-- Card 3: Activity Card -->
+<div class="bg-[#F7F1E7] border border-[#E6DED3] rounded-2xl p-4 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<div class="w-8 h-8 rounded-xl bg-[#2EB875]/15 text-[#2EB875] flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<button class="text-[#6F7074] hover:text-[#111318]">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+<div class="mt-4">
+<div class="text-xs font-semibold text-[#111318]">Translated 5 signs</div>
+<div class="text-[11px] text-[#6F7074] mt-0.5">2 minutes ago</div>
+</div>
+</div>
+<!-- Card 4: Featured Sign Card -->
+<div class="bg-gradient-to-br from-[#FFF5F1] to-[#FFEBE5] border border-[#FFD8CD] rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
+<div>
+<span class="text-[10px] uppercase font-bold text-[#FF5A2A] tracking-wider">Featured Sign</span>
+<div class="text-xl font-bold text-[#111318] mt-1">HELLO</div>
+<div class="text-xs text-[#6F7074]">A common greeting</div>
+</div>
+<button class="mt-4 w-full py-2 bg-[#FF5A2A] hover:bg-[#FF7A45] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1 shadow-sm transition">
+<span class="">Learn This Sign</span>
+<span class="">→</span>
+</button>
+</div>
+</div>
+</section>
+<!-- END: Section 06 Cards -->
+<!-- BEGIN: Sections 07, 08, 09 Row (Tabs, Badges, Avatars) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- 07. Tabs -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-5 shadow-sm" data-purpose="tabs-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">07. Tabs</h2>
+<div class="flex flex-wrap gap-1.5 p-1 bg-[#F7F1E7] rounded-xl border border-[#E6DED3]">
+<button class="px-3 py-1 text-xs font-semibold rounded-lg bg-[#FF5A2A] text-white shadow-sm">All</button>
+<button class="px-3 py-1 text-xs font-medium rounded-lg text-[#25282D] hover:bg-[#FFFDF8] transition">Basics</button>
+<button class="px-3 py-1 text-xs font-medium rounded-lg text-[#25282D] hover:bg-[#FFFDF8] transition">Greetings</button>
+<button class="px-3 py-1 text-xs font-medium rounded-lg text-[#25282D] hover:bg-[#FFFDF8] transition">People</button>
+<button class="px-3 py-1 text-xs font-medium rounded-lg text-[#25282D] hover:bg-[#FFFDF8] transition">Daily</button>
+</div>
+</section>
+<!-- 08. Badges / Chips -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-5 shadow-sm" data-purpose="badges-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">08. Badges / Chips</h2>
+<div class="flex flex-wrap gap-2 items-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FF5A2A] text-white">
+<span class="">•</span> New
+            </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#E6DED3] text-[#25282D]">
+              › Popular
+            </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+              Personalized
+            </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+              • Easy
+            </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+              • Medium
+            </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
+              • Hard
+            </span>
+</div>
+</section>
+<!-- 09. Avatars -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-5 shadow-sm" data-purpose="avatars-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">09. Avatars</h2>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-[#111318] text-white font-bold flex items-center justify-center text-sm shadow-sm">
+              S
+            </div>
+<div class="w-10 h-10 rounded-full bg-[#F2E9DC] text-[#25282D] font-bold flex items-center justify-center text-sm border border-[#E6DED3]">
+              SJ
+            </div>
+<div class="w-10 h-10 rounded-full bg-[#E6DED3] text-[#6F7074] flex items-center justify-center">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<button class="w-10 h-10 rounded-full border-2 border-dashed border-[#6F7074]/40 hover:border-[#FF5A2A] text-[#6F7074] hover:text-[#FF5A2A] flex items-center justify-center transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+</section>
+</div>
+<!-- END: Sections 07, 08, 09 -->
+<!-- BEGIN: Section 10 Progress Components & 11 Stepper -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- 10. Progress Components -->
+<section class="md:col-span-7 bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="progress-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-4">10. Progress Components</h2>
+<!-- Radial Gauges -->
+<div class="grid grid-cols-3 gap-3 mb-6 text-center">
+<!-- 78% Accuracy -->
+<div class="flex flex-col items-center">
+<div class="relative w-14 h-14 flex items-center justify-center">
+<svg class="w-14 h-14 circle-progress" viewBox="0 0 36 36">
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E6DED3" stroke-width="3"></path>
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FF5A2A" stroke-dasharray="78, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute text-xs font-bold text-[#111318]">78%</span>
+</div>
+<span class="text-[11px] text-[#6F7074] mt-1 font-medium">Accuracy</span>
+</div>
+<!-- 3/10 Daily Goal -->
+<div class="flex flex-col items-center">
+<div class="relative w-14 h-14 flex items-center justify-center">
+<svg class="w-14 h-14 circle-progress" viewBox="0 0 36 36">
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E6DED3" stroke-width="3"></path>
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#FF7A45" stroke-dasharray="30, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute text-xs font-bold text-[#111318]">3/10</span>
+</div>
+<span class="text-[11px] text-[#6F7074] mt-1 font-medium">Daily Goal</span>
+</div>
+<!-- 12 Personalized Signs -->
+<div class="flex flex-col items-center">
+<div class="w-14 h-14 rounded-full bg-[#FFF5F1] border border-[#FFD8CD] flex items-center justify-center text-[#FF5A2A]">
+<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+</div>
+<div class="text-xs font-bold text-[#111318] mt-1">12</div>
+<span class="text-[10px] text-[#6F7074] font-medium leading-tight">Personalized</span>
+</div>
+</div>
+<!-- Linear Horizontal Progress Bars -->
+<div class="space-y-3 border-t border-[#E6DED3] pt-4">
+<div>
+<div class="flex justify-between text-xs font-medium mb-1">
+<span class="">Learning Progress</span>
+<span class="text-[#FF5A2A] font-semibold">65%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-[#E6DED3] overflow-hidden">
+<div class="h-full bg-[#FF5A2A] rounded-full" style="width: 65%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-medium mb-1">
+<span class="">Practice Progress</span>
+<span class="text-[#FF7A45] font-semibold">40%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-[#E6DED3] overflow-hidden">
+<div class="h-full bg-[#FF7A45] rounded-full" style="width: 40%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-medium mb-1">
+<span class="">Weekly Goal (Segmented)</span>
+<span class="text-[#6F7074] font-semibold">3/7</span>
+</div>
+<div class="grid grid-cols-7 gap-1 h-2">
+<div class="bg-[#FF5A2A] rounded-sm"></div>
+<div class="bg-[#FF5A2A] rounded-sm"></div>
+<div class="bg-[#FF5A2A] rounded-sm"></div>
+<div class="bg-[#E6DED3] rounded-sm"></div>
+<div class="bg-[#E6DED3] rounded-sm"></div>
+<div class="bg-[#E6DED3] rounded-sm"></div>
+<div class="bg-[#E6DED3] rounded-sm"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- 11. Stepper / Flow & 12. Toggles -->
+<section class="md:col-span-5 flex flex-col gap-6">
+<!-- Stepper Flow -->
+<div class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="stepper-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-4">11. Stepper / Flow</h2>
+<div class="flex items-center justify-between text-center relative">
+<div class="absolute left-4 right-4 top-4 h-0.5 bg-[#E6DED3] -z-0"></div>
+<!-- Step 1 -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-[#FF5A2A] text-white font-bold text-xs flex items-center justify-center shadow-md shadow-[#FF5A2A]/30">1</div>
+<span class="text-[11px] font-bold text-[#111318] mt-1.5">Record</span>
+<span class="text-[9px] text-[#6F7074]">Capture</span>
+</div>
+<!-- Step 2 -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-[#FFFDF8] border-2 border-[#E6DED3] text-[#6F7074] font-semibold text-xs flex items-center justify-center">2</div>
+<span class="text-[11px] font-medium text-[#25282D] mt-1.5">Review</span>
+<span class="text-[9px] text-[#6F7074]">Check</span>
+</div>
+<!-- Step 3 -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-[#FFFDF8] border-2 border-[#E6DED3] text-[#6F7074] font-semibold text-xs flex items-center justify-center">3</div>
+<span class="text-[11px] font-medium text-[#25282D] mt-1.5">Teach</span>
+<span class="text-[9px] text-[#6F7074]">Train</span>
+</div>
+<!-- Step 4 -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-[#FFFDF8] border-2 border-[#E6DED3] text-[#6F7074] font-semibold text-xs flex items-center justify-center">4</div>
+<span class="text-[11px] font-medium text-[#25282D] mt-1.5">Ready</span>
+<span class="text-[9px] text-[#6F7074]">Start using</span>
+</div>
+</div>
+</div>
+<!-- 12. Toggle / Checkbox / Radio -->
+<div class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="form-controls-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-4">12. Toggle / Checkbox / Radio</h2>
+<div class="flex items-center justify-between gap-4">
+<!-- Toggles -->
+<div class="flex items-center gap-2">
+<button class="w-11 h-6 bg-[#FF5A2A] rounded-full p-1 transition-colors relative flex items-center">
+<div class="w-4 h-4 bg-white rounded-full translate-x-5 transition-transform"></div>
+</button>
+<button class="w-11 h-6 bg-[#E6DED3] rounded-full p-1 transition-colors relative flex items-center">
+<div class="w-4 h-4 bg-white rounded-full translate-x-0 transition-transform"></div>
+</button>
+</div>
+<!-- Checkboxes -->
+<div class="flex items-center gap-3">
+<input checked="" class="w-5 h-5 rounded border-[#E6DED3] text-[#FF5A2A] focus:ring-[#FF5A2A]" type="checkbox">
+<input class="w-5 h-5 rounded border-[#E6DED3] text-[#FF5A2A] focus:ring-[#FF5A2A]" type="checkbox">
+</div>
+<!-- Radios -->
+<div class="flex items-center gap-3">
+<input checked="" class="w-5 h-5 border-[#E6DED3] text-[#FF5A2A] focus:ring-[#FF5A2A]" name="sample_radio" type="radio">
+<input class="w-5 h-5 border-[#E6DED3] text-[#FF5A2A] focus:ring-[#FF5A2A]" name="sample_radio" type="radio">
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- END: Section 10 & 11 -->
+<!-- BEGIN: Section 13 Alerts / Messages -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="alerts-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">13. Alerts / Messages</h2>
+<div class="space-y-2.5">
+<!-- Success Alert -->
+<div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-medium">
+<div class="flex items-center gap-2.5">
+<div class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<span class="">Great! Sign recognized successfully.</span>
+</div>
+<button class="text-emerald-700 hover:text-emerald-950 font-bold">×</button>
+</div>
+<!-- Warning Alert -->
+<div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+<div class="flex items-center gap-2.5">
+<div class="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                !
+              </div>
+<span class="">Hand not clearly visible. Try again.</span>
+</div>
+<button class="text-amber-700 hover:text-amber-950 font-bold">×</button>
+</div>
+<!-- Error Alert -->
+<div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-medium">
+<div class="flex items-center gap-2.5">
+<div class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<span class="">No sign detected. Make sure your hand is in frame.</span>
+</div>
+<button class="text-rose-700 hover:text-rose-950 font-bold">×</button>
+</div>
+<!-- Info Alert -->
+<div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-medium">
+<div class="flex items-center gap-2.5">
+<div class="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 text-xs font-serif font-bold">
+                i
+              </div>
+<span class="">Processing your video...</span>
+</div>
+<button class="text-blue-700 hover:text-blue-950 font-bold">×</button>
+</div>
+</div>
+</section>
+<!-- END: Section 13 Alerts -->
+<!-- BEGIN: Section 14 Video / Camera Placeholder & Section 15 Timeline -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- 14. Video / Camera Placeholder -->
+<section class="lg:col-span-6 bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="camera-viewport-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">14. Video / Camera Placeholder</h2>
+<div class="bg-[#111318] rounded-2xl p-4 text-white relative flex flex-col justify-between min-h-[220px] shadow-lg">
+<!-- Top Camera Status -->
+<div class="flex items-center justify-between">
+<!-- Corner Bracket Top-Left -->
+<div class="w-4 h-4 border-t-2 border-l-2 border-white/60"></div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-semibold backdrop-blur-sm border border-emerald-500/30">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Camera On
+              </span>
+<!-- Corner Bracket Top-Right -->
+<div class="w-4 h-4 border-t-2 border-r-2 border-white/60"></div>
+</div>
+<!-- Viewport Center -->
+<div class="flex flex-col items-center justify-center py-6 text-neutral-400">
+<svg class="w-12 h-12 stroke-[1.5] text-white/40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="text-xs font-semibold tracking-wider uppercase text-neutral-300">Camera Preview</span>
+</div>
+<!-- Controls bar -->
+<div class="flex items-center justify-between pt-2">
+<div class="w-4 h-4 border-b-2 border-l-2 border-white/60"></div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+<!-- Record circle button -->
+<button class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center bg-[#FF5A2A] shadow-md shadow-[#FF5A2A]/40 hover:scale-105 active:scale-95 transition">
+<div class="w-4 h-4 rounded bg-white"></div>
+</button>
+<button class="p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+<div class="w-4 h-4 border-b-2 border-r-2 border-white/60"></div>
+</div>
+</div>
+</section>
+<!-- 15. Timeline / Sequence -->
+<section class="lg:col-span-6 bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-6 shadow-sm" data-purpose="timeline-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">15. Timeline / Sequence</h2>
+<div class="bg-[#F7F1E7] border border-[#E6DED3] rounded-2xl p-4 flex flex-col justify-between min-h-[220px]">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-bold text-[#111318]">Gesture Keyframe Track</span>
+<div class="flex items-center gap-1">
+<button class="w-6 h-6 rounded-lg bg-[#FFFDF8] border border-[#E6DED3] flex items-center justify-center text-xs text-[#25282D]">‹</button>
+<button class="w-6 h-6 rounded-lg bg-[#FFFDF8] border border-[#E6DED3] flex items-center justify-center text-xs text-[#25282D]">›</button>
+</div>
+</div>
+<!-- Sequence timeline clips -->
+<div class="grid grid-cols-4 gap-2">
+<div class="flex flex-col items-center">
+<div class="w-full bg-[#111318] text-white rounded-xl py-3 flex items-center justify-center shadow-sm">
+<svg class="w-4 h-4 fill-current text-white/80" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+</div>
+<div class="text-[11px] font-bold text-[#111318] mt-1.5">HELLO</div>
+<div class="text-[9px] text-[#6F7074]">00:00 - 00:02</div>
+</div>
+<div class="flex flex-col items-center">
+<div class="w-full bg-[#111318] text-white rounded-xl py-3 flex items-center justify-center shadow-sm">
+<svg class="w-4 h-4 fill-current text-white/80" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+</div>
+<div class="text-[11px] font-bold text-[#111318] mt-1.5">MY</div>
+<div class="text-[9px] text-[#6F7074]">00:02 - 00:04</div>
+</div>
+<div class="flex flex-col items-center">
+<div class="w-full bg-[#111318] text-white rounded-xl py-3 flex items-center justify-center shadow-sm">
+<svg class="w-4 h-4 fill-current text-white/80" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+</div>
+<div class="text-[11px] font-bold text-[#111318] mt-1.5">NAME</div>
+<div class="text-[9px] text-[#6F7074]">00:04 - 00:06</div>
+</div>
+<div class="flex flex-col items-center">
+<div class="w-full bg-[#111318] text-white rounded-xl py-3 flex items-center justify-center shadow-sm">
+<svg class="w-4 h-4 fill-current text-white/80" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+</div>
+<div class="text-[11px] font-bold text-[#111318] mt-1.5">IS</div>
+<div class="text-[9px] text-[#6F7074]">00:06 - 00:08</div>
+</div>
+</div>
+<!-- Waveform Connector Graphic -->
+<div class="mt-4 flex items-center justify-between text-[#FF5A2A] px-2 opacity-80">
+<div class="h-4 flex items-center gap-0.5">
+<span class="w-0.5 h-2 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-3 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-4 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-2 bg-[#FF5A2A] rounded-full"></span>
+</div>
+<div class="h-0.5 flex-1 mx-2 bg-[#FF7A45]/30"></div>
+<div class="h-4 flex items-center gap-0.5">
+<span class="w-0.5 h-3 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-4 bg-[#FF5A2A] rounded-full"></span>
+<span class="w-0.5 h-1 bg-[#FF5A2A] rounded-full"></span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- END: Section 14 & 15 -->
+<!-- BEGIN: Sections 16, 17, 18, 19, 20 (Interactive Controls, Modals, Lists) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- 16. Dropdowns, 17. List Items & 18. Tooltips -->
+<div class="lg:col-span-7 space-y-6">
+<!-- 16. Dropdowns -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-5 shadow-sm" data-purpose="dropdowns-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">16. Dropdowns</h2>
+<div class="grid grid-cols-3 gap-3">
+<div>
+<label class="text-[10px] text-[#6F7074] font-medium block mb-1">Select language</label>
+<div class="relative">
+<select class="w-full text-xs bg-[#F7F1E7] border border-[#E6DED3] rounded-xl px-2.5 py-1.5 pr-6 appearance-none text-[#111318] font-medium">
+<option>English</option>
+<option>ASL (American)</option>
+<option>BSL (British)</option>
+</select>
+<svg class="w-3 h-3 text-[#6F7074] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<div>
+<label class="text-[10px] text-[#6F7074] font-medium block mb-1">Select theme</label>
+<div class="relative">
+<select class="w-full text-xs bg-[#F7F1E7] border border-[#E6DED3] rounded-xl px-2.5 py-1.5 pr-6 appearance-none text-[#111318] font-medium">
+<option>Light</option>
+<option>Dark</option>
+<option>System</option>
+</select>
+<svg class="w-3 h-3 text-[#6F7074] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<div>
+<label class="text-[10px] text-[#6F7074] font-medium block mb-1">Select camera</label>
+<div class="relative">
+<select class="w-full text-xs bg-[#F7F1E7] border border-[#E6DED3] rounded-xl px-2.5 py-1.5 pr-6 appearance-none text-[#111318] font-medium">
+<option>Default Camera</option>
+<option>HD Webcam</option>
+</select>
+<svg class="w-3 h-3 text-[#6F7074] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+</div>
+</section>
+<!-- 17. List Item -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-5 shadow-sm" data-purpose="list-items-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">17. List Item</h2>
+<div class="space-y-2">
+<div class="flex items-center justify-between p-3 rounded-xl bg-[#F7F1E7] hover:bg-[#F2E9DC] transition cursor-pointer border border-[#E6DED3]">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#FF5A2A]/10 text-[#FF5A2A] flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<span class="text-xs font-semibold text-[#111318]">Learned new sign: HELP</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[11px] text-[#6F7074]">5 hours ago</span>
+<svg class="w-4 h-4 text-[#6F7074]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 rounded-xl bg-[#F7F1E7] hover:bg-[#F2E9DC] transition cursor-pointer border border-[#E6DED3]">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#FF7A45]/15 text-[#FF7A45] flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<span class="text-xs font-semibold text-[#111318]">Added personalized sign: THANK YOU</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[11px] text-[#6F7074]">1 hour ago</span>
+<svg class="w-4 h-4 text-[#6F7074]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+</div>
+</section>
+<!-- 18. Tooltips & 19. Switch View -->
+<div class="grid grid-cols-2 gap-4">
+<!-- 18. Tooltips -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center" data-purpose="tooltip-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] self-start mb-3">18. Tooltips</h2>
+<div class="relative inline-block my-2">
+<div class="bg-[#111318] text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg tooltip-arrow">
+                  Click to start translating
+                </div>
+</div>
+</section>
+<!-- 19. Switch View -->
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-4 shadow-sm" data-purpose="switch-view-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">19. Switch View</h2>
+<div class="flex items-center gap-2 mt-2">
+<!-- Grid Active -->
+<button class="p-2.5 rounded-xl bg-[#FF5A2A] text-white shadow-sm">
+<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+</button>
+<!-- List Inactive -->
+<button class="p-2.5 rounded-xl bg-[#F7F1E7] border border-[#E6DED3] text-[#25282D] hover:bg-[#F2E9DC] transition">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+</section>
+</div>
+</div>
+<!-- 20. Modal / Dialog Showcase -->
+<div class="lg:col-span-5">
+<section class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-5 shadow-sm" data-purpose="modal-dialog-showcase">
+<h2 class="text-xs font-bold uppercase tracking-wider text-[#6F7074] mb-3">20. Modal / Dialog</h2>
+<!-- Upload Modal Simulation Card -->
+<div class="bg-[#FFFDF8] border border-[#E6DED3] rounded-2xl p-4 shadow-xl">
+<!-- Modal Header -->
+<div class="flex items-center justify-between pb-3 border-b border-[#E6DED3]">
+<h3 class="font-bold text-sm text-[#111318]">Upload a Video</h3>
+<button class="text-[#6F7074] hover:text-[#111318] p-1 rounded-lg">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+<!-- Drag and Drop Zone -->
+<div class="mt-4 border-2 border-dashed border-[#E6DED3] rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-[#F7F1E7]/40 hover:bg-[#F7F1E7] transition cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-[#FF5A2A]/10 text-[#FF5A2A] flex items-center justify-center mb-2">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div class="text-xs font-bold text-[#111318]">Drag and drop a video here</div>
+<div class="text-[10px] text-[#6F7074] mt-1">Supports MP4, MOV, WEBM</div>
+</div>
+<!-- Modal Actions -->
+<div class="mt-4 flex items-center justify-end gap-2 pt-2">
+<button class="px-4 py-2 rounded-xl border border-[#E6DED3] text-xs font-semibold text-[#6F7074] hover:text-[#111318] hover:bg-[#F7F1E7] transition">
+                  Cancel
+                </button>
+<button class="px-4 py-2 rounded-xl bg-[#FF5A2A] hover:bg-[#FF7A45] text-xs font-semibold text-white shadow-sm transition">
+                  Upload Video
+                </button>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- END: Sections 16-20 -->
+</div>
+</main>
+<!-- BEGIN: Interactive Toast Script -->
+<script data-purpose="interactive-actions">
+    // Optional interactive feedback for buttons and tabs
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        // Prevent default navigation for dummy links
+        if(btn.closest('a')) e.preventDefault();
+      });
+    });
+  </script>
+<!-- END: Interactive Toast Script -->
+
+
+</body></html>
