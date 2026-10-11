@@ -556,23 +556,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function onMediaPipeResults(results) {
-    if (!landmarkCanvas || !canvasCtx) return;
+    const frameLandmarks = extractLandmarks(results);
+    state.lastLandmarks = frameLandmarks;
 
-    if (webcamFeed && (landmarkCanvas.width !== webcamFeed.videoWidth || landmarkCanvas.height !== webcamFeed.videoHeight)) {
-      landmarkCanvas.width = webcamFeed.videoWidth || 640;
-      landmarkCanvas.height = webcamFeed.videoHeight || 480;
+    let targetCanvas = landmarkCanvas;
+    let targetCtx = canvasCtx;
+    const transCanvas = document.getElementById('trans-landmark-canvas');
+    if (window._activeVideoMode && transCanvas) {
+      targetCanvas = transCanvas;
+      targetCtx = transCanvas.getContext('2d');
     }
 
-    canvasCtx.clearRect(0, 0, landmarkCanvas.width, landmarkCanvas.height);
+    if (targetCanvas && targetCtx) {
+      const activeSource = window._activeVideoMode ? (document.getElementById('video-preview-player') || webcamFeed) : webcamFeed;
+      if (activeSource && activeSource.videoWidth && (targetCanvas.width !== activeSource.videoWidth || targetCanvas.height !== activeSource.videoHeight)) {
+        targetCanvas.width = activeSource.videoWidth;
+        targetCanvas.height = activeSource.videoHeight;
+      }
+      targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        drawHandSkeletons(results.multiHandLandmarks, targetCtx, targetCanvas.width, targetCanvas.height);
+      }
+    }
 
-    const frameLandmarks = extractLandmarks(results);
     state.rollingHistory.push(frameLandmarks);
     if (state.rollingHistory.length > state.HISTORY_WINDOW) {
       state.rollingHistory.shift();
     }
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-      drawHandSkeletons(results.multiHandLandmarks, canvasCtx, landmarkCanvas.width, landmarkCanvas.height);
       const count = results.multiHandLandmarks.length;
       if (diagHands) diagHands.textContent = `${count} tracked`;
       if (liveHandPill) {
@@ -2162,7 +2174,38 @@ document.addEventListener('DOMContentLoaded', () => {
     if (playBtn) playBtn.addEventListener('click', togglePlay);
     if (ctrlPlayBtn) ctrlPlayBtn.addEventListener('click', togglePlay);
 
-    player.addEventListener('play', () => updatePlayIcons(true));
+    // Real-time MediaPipe landmark tracking on video playback
+    async function trackVideoFrame() {
+      if (!player || player.paused || player.ended || !state.handsDetector) return;
+      if (player.readyState >= 2) {
+        try {
+          window._activeVideoMode = true;
+          await state.handsDetector.send({ image: player });
+          window._activeVideoMode = false;
+          if (state.lastLandmarks) {
+            const hasHand = state.lastLandmarks.some(pt => pt[0] !== 0 || pt[1] !== 0);
+            if (hasHand) {
+              if (!window._videoLandmarkBuffer) window._videoLandmarkBuffer = [];
+              window._videoLandmarkBuffer.push(state.lastLandmarks);
+              if (window._videoLandmarkBuffer.length > 64) window._videoLandmarkBuffer.shift();
+            }
+          }
+        } catch (e) {
+          window._activeVideoMode = false;
+        }
+      }
+      if (!player.paused && !player.ended) {
+        requestAnimationFrame(trackVideoFrame);
+      }
+    }
+
+    player.addEventListener('play', () => {
+      updatePlayIcons(true);
+      const transCanvas = document.getElementById('trans-landmark-canvas');
+      if (transCanvas) transCanvas.classList.remove('hidden');
+      trackVideoFrame();
+    });
+
     player.addEventListener('pause', () => updatePlayIcons(false));
     player.addEventListener('timeupdate', () => {
       const dur = player.duration && !isNaN(player.duration) ? player.duration : DEFAULT_DURATION;
@@ -2245,7 +2288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
-          <span>Analyzing video signs...</span>
+          <span id="trans-loading-status">Analyzing video hand gestures...</span>
         `;
 
         try {
@@ -2254,6 +2297,43 @@ document.addEventListener('DOMContentLoaded', () => {
           let filename = selectedVideoFile ? selectedVideoFile.name : 'upload.mp4';
           
           if (selectedVideoFile) {
+            // If fewer than 16 frames captured during playback, do a fast multi-frame scan across video
+            if ((!window._videoLandmarkBuffer || window._videoLandmarkBuffer.length < 16) && player && player.duration && state.handsDetector) {
+              const statusSpan = document.getElementById('trans-loading-status');
+              if (statusSpan) statusSpan.textContent = 'Scanning video hand landmarks...';
+              const scanned = [];
+              const origTime = player.currentTime;
+              const wasPlaying = !player.paused;
+              player.pause();
+              const numFrames = 32;
+              const step = player.duration / (numFrames + 1);
+
+              for (let i = 1; i <= numFrames; i++) {
+                player.currentTime = i * step;
+                await new Promise(r => {
+                  const h = () => { player.removeEventListener('seeked', h); r(); };
+                  player.addEventListener('seeked', h, { once: true });
+                  setTimeout(r, 65);
+                });
+                try {
+                  window._activeVideoMode = true;
+                  await state.handsDetector.send({ image: player });
+                  window._activeVideoMode = false;
+                  if (state.lastLandmarks) {
+                    scanned.push(state.lastLandmarks);
+                  }
+                } catch (e) {
+                  window._activeVideoMode = false;
+                }
+              }
+
+              player.currentTime = origTime;
+              if (wasPlaying) player.play().catch(() => {});
+              if (scanned.length >= 8) {
+                window._videoLandmarkBuffer = scanned;
+              }
+            }
+
             const formData = new FormData();
             formData.append('file', selectedVideoFile);
             formData.append('video', selectedVideoFile);
@@ -3632,6 +3712,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initFeaturedSignCarousel();
   initGlobalSearch();
   initLearnInteractiveModule();
+  initMediaPipe();
 });
 
 
