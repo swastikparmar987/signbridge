@@ -21,8 +21,8 @@ ENV HOME=/home/user \
 WORKDIR /app
 
 # Install Python packages
-COPY --chown=user requirements.txt /app/
-RUN pip install --no-cache-dir --user -r requirements.txt \
+COPY --chown=user requirements-docker.txt /app/
+RUN pip install --no-cache-dir --user -r requirements-docker.txt \
     && pip install --no-cache-dir --user onnxruntime kokoro-onnx soundfile httpx
 
 # Copy repository code
