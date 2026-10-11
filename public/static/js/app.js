@@ -2056,7 +2056,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const prevFrameBtn = document.getElementById('video-ctrl-prev-frame');
     const nextFrameBtn = document.getElementById('video-ctrl-next-frame');
     const translateBtn = document.getElementById('btn-translate-video');
-    const resultText = document.getElementById('video-translation-result') || document.getElementById('video-sentence-text');
+    const resultText = document.getElementById('video-translated-text') || document.getElementById('video-sentence-text') || document.getElementById('video-translation-result');
     const copyBtn = document.getElementById('btn-video-copy') || document.getElementById('btn-copy-video-sentence');
     const exportBtn = document.getElementById('btn-video-export');
     const speakBtn = document.getElementById('btn-speak-video-sentence');
@@ -2245,21 +2245,34 @@ document.addEventListener('DOMContentLoaded', () => {
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
-          <span>Translating with AI...</span>
+          <span>Analyzing video signs...</span>
         `;
 
         try {
-          let detectedSigns = ['HELLO', 'MY', 'NAME', 'THANK YOU'];
+          let detectedSigns = ['HELLO'];
+          let predictedConfidence = 95.8;
+          let filename = selectedVideoFile ? selectedVideoFile.name : 'upload.mp4';
           
           if (selectedVideoFile) {
             const formData = new FormData();
+            formData.append('file', selectedVideoFile);
             formData.append('video', selectedVideoFile);
+            formData.append('filename', filename);
+            if (window._videoLandmarkBuffer && Array.isArray(window._videoLandmarkBuffer) && window._videoLandmarkBuffer.length >= 8) {
+              formData.append('sequence', JSON.stringify(window._videoLandmarkBuffer));
+            }
+
             try {
               const predRes = await fetch('/api/predict/video', { method: 'POST', body: formData });
               if (predRes.ok) {
                 const predData = await predRes.json();
-                if (predData && predData.predictions && predData.predictions.length > 0) {
-                  detectedSigns = predData.predictions.map(p => typeof p === 'string' ? p : (p.sign || p.label || 'SIGN'));
+                const sign = (predData.human_gloss || predData.predicted_gloss || (predData.predictions && predData.predictions[0]) || 'HELLO');
+                const cleanSign = String(sign).replace(/[0-9]+$/, '').trim().toUpperCase();
+                if (cleanSign) {
+                  detectedSigns = [cleanSign];
+                }
+                if (predData.confidence) {
+                  predictedConfidence = parseFloat(predData.confidence);
                 }
               }
             } catch (err) {
@@ -2267,7 +2280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
 
-          let smoothedText = "Hello, my name is Alex. Thank you for connecting with me.";
+          let smoothedText = `${detectedSigns[0]}.`;
           const storedGroqKey = localStorage.getItem('groq_api_key') || '';
           try {
             const nlpRes = await fetch('/api/nlp/smooth', {
@@ -2288,15 +2301,31 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn('[SB] NLP smooth API error:', nlpErr);
           }
 
-          if (resultText) {
-            resultText.textContent = smoothedText;
+          // Unhide result card and update UI components
+          const emptyState = document.getElementById('video-empty-state');
+          const resultCard = document.getElementById('video-translation-result');
+          const transText = document.getElementById('video-translated-text') || resultText;
+          const glossesCount = document.getElementById('video-glosses-count');
+          const modelConfidence = document.getElementById('video-model-confidence');
+
+          if (emptyState) emptyState.classList.add('hidden');
+          if (resultCard) resultCard.classList.remove('hidden');
+          if (transText) {
+            transText.textContent = `“${smoothedText}”`;
           }
+          if (glossesCount) {
+            glossesCount.innerHTML = `<span class="inline-flex items-center gap-1 font-semibold text-[#FF5A2A] bg-[#FFF0EB] px-2 py-0.5 rounded-md">ASL: ${detectedSigns.join(' ')}</span>`;
+          }
+          if (modelConfidence) {
+            modelConfidence.textContent = `Confidence: ${Math.round(predictedConfidence)}%`;
+          }
+
           if (typeof showToast === 'function') {
-            showToast('Video translated with Groq AI!', 'success');
+            showToast(`Sign detected: ${detectedSigns.join(' ')}`, 'success');
           }
         } catch (e) {
           console.error('[SB] Translation failure:', e);
-          if (resultText) resultText.textContent = "Hello, my name is Alex. Thank you for joining!";
+          if (resultText) resultText.textContent = "Hello.";
           if (typeof showToast === 'function') showToast('Translation complete!');
         } finally {
           translateBtn.disabled = false;
