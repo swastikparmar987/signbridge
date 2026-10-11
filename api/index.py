@@ -283,7 +283,10 @@ class FlatSequenceRequest(BaseModel):
 
 
 class NLPSmoothRequest(BaseModel):
-    glosses: List[str]
+    glosses: Optional[List[str]] = None
+    tokens: Optional[List[str]] = None
+    api_key: Optional[str] = None
+    mode: Optional[str] = "smooth"
 
 
 class TTSRequest(BaseModel):
@@ -424,12 +427,13 @@ def get_groq_key() -> str:
 
 @app.post("/api/nlp/smooth")
 async def nlp_smooth_endpoint(req: NLPSmoothRequest):
-    glosses = [g.strip().upper() for g in req.glosses if g.strip()]
+    input_list = req.glosses if req.glosses is not None else (req.tokens or [])
+    glosses = [g.strip().upper() for g in input_list if isinstance(g, str) and g.strip()]
     if not glosses:
-        return {"english": "", "glosses": [], "latency_ms": 0.0, "engine": "None"}
+        return {"english": "", "sentence": "", "glosses": [], "tokens": [], "latency_ms": 0.0, "engine": "None"}
 
     start_time = time.time()
-    groq_api_key = get_groq_key()
+    groq_api_key = (req.api_key.strip() if req.api_key and req.api_key.strip() else None) or get_groq_key()
 
     if groq_api_key:
         try:
@@ -467,7 +471,9 @@ async def nlp_smooth_endpoint(req: NLPSmoothRequest):
                         latency = round((time.time() - start_time) * 1000, 1)
                         return {
                             "english": english,
+                            "sentence": english,
                             "glosses": glosses,
+                            "tokens": glosses,
                             "latency_ms": latency,
                             "engine": f"Groq AI ({model_id})",
                             "status": "success",
@@ -511,7 +517,9 @@ async def nlp_smooth_endpoint(req: NLPSmoothRequest):
     latency = round((time.time() - start_time) * 1000, 1)
     return {
         "english": english,
+        "sentence": english,
         "glosses": glosses,
+        "tokens": glosses,
         "latency_ms": latency,
         "engine": "ASL Grammar Rule Engine",
         "status": "success",
