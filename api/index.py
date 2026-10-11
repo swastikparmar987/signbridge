@@ -245,8 +245,8 @@ if not TEMPLATES_DIR.exists():
     TEMPLATES_DIR = PROJECT_ROOT / "public"
 
 
-@app.get("/", response_class=HTMLResponse)
-@app.get("/index.html", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
+@app.api_route("/index.html", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def serve_index():
     index_path = TEMPLATES_DIR / "index.html"
     if not index_path.exists():
