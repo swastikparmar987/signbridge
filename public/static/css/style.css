@@ -3142,6 +3142,40 @@ body.theme-dark .window-chrome {
 }
 
 /* ==========================================================================
+   DYNAMIC TOP NOTCH NAVIGATION (APPLE / DYNAMIC ISLAND STYLE)
+   ========================================================================== */
+#signbridge-top-notch {
+  color: rgba(17, 19, 24, 0.95);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notch-pill-body {
+  background: rgba(17, 19, 24, 0.92);
+  color: #FFFFFF;
+}
+
+[data-theme='light'] #signbridge-top-notch .notch-pill-body {
+  background: rgba(255, 255, 255, 0.95);
+  color: #111318;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='light'] #signbridge-top-notch .notch-ear {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.notch-ear {
+  color: rgba(17, 19, 24, 0.92);
+  display: block;
+  flex-shrink: 0;
+}
+
+.notch-tab-item:hover {
+  background: rgba(255, 90, 42, 0.12);
+  color: #FF5A2A;
+}
+
+/* ==========================================================================
    DYNAMIC BOTTOM FLOATING MENU BAR & TOOLTIP ANIMATIONS
    ========================================================================== */
 @keyframes fadeIn {

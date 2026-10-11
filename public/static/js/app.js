@@ -235,6 +235,27 @@ document.addEventListener('DOMContentLoaded', () => {
       titleEl.textContent = titles[viewName];
     }
 
+    // Update Top Notch active tab label & close dropdown
+    const notchLabels = {
+      home: 'Home',
+      live: 'Live Studio',
+      video: 'Video Translate',
+      communication: 'Two-Way Chat',
+      learn: 'Learn Signs',
+      practice: 'Practice Cards',
+      teach: 'Teach AI',
+      profile: 'Profile',
+      settings: 'Settings'
+    };
+    const notchActiveLabel = document.getElementById('notch-active-tab-label');
+    if (notchActiveLabel && notchLabels[viewName]) {
+      notchActiveLabel.textContent = notchLabels[viewName];
+    }
+    const notchDropdownMenu = document.getElementById('notch-view-dropdown-menu');
+    if (notchDropdownMenu) notchDropdownMenu.classList.add('hidden');
+    const notchArrowIcon = document.getElementById('notch-dropdown-arrow');
+    if (notchArrowIcon) notchArrowIcon.classList.remove('rotate-180');
+
     // View specific activations
     if (viewName === 'live') {
       if (!state.isCameraRunning) {
@@ -335,6 +356,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.addEventListener('click', () => {
       notificationsDropdown.classList.add('hidden');
+    });
+  }
+
+  // TOP NOTCH NAVIGATION INTERACTIVITY
+  const notchBtn = document.getElementById('notch-view-dropdown-btn');
+  const notchMenu = document.getElementById('notch-view-dropdown-menu');
+  const notchArrow = document.getElementById('notch-dropdown-arrow');
+  if (notchBtn && notchMenu) {
+    notchBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = notchMenu.classList.contains('hidden');
+      if (isHidden) {
+        notchMenu.classList.remove('hidden');
+        if (notchArrow) notchArrow.classList.add('rotate-180');
+      } else {
+        notchMenu.classList.add('hidden');
+        if (notchArrow) notchArrow.classList.remove('rotate-180');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!notchBtn.contains(e.target) && !notchMenu.contains(e.target)) {
+        notchMenu.classList.add('hidden');
+        if (notchArrow) notchArrow.classList.remove('rotate-180');
+      }
+    });
+  }
+
+  const notchThemeToggle = document.getElementById('notch-theme-toggle');
+  if (notchThemeToggle) {
+    notchThemeToggle.addEventListener('click', () => {
+      const isDark = !document.documentElement.classList.contains('dark');
+      applyTheme(isDark);
+      showToast(isDark ? 'Dark theme enabled' : 'Light theme enabled');
     });
   }
 
