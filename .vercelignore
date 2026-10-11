@@ -1,0 +1,41 @@
+# Vercel Deployment Ignore List
+# Keep deployment payload small (<30MB) and fast
+
+# Python environment & caches
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+*.ipynb
+
+# Heavy Datasets & Landmark Caches (50GB+)
+dataset/
+MS-ASL/
+landmark_cache/
+landmark_cache_full/
+landmark_interpolation_cache/
+landmark_pose_cache/
+pose_cache_full/
+data/
+msasl_matching_train.json
+msasl_signbridge_overlap.csv
+
+# Large Training Checkpoints (PyTorch checkpoints are in api/model as ONNX)
+trained_models/
+*.pth
+
+# Auxiliary Folders & Prototypes
+lets-scroll-main/
+SignBridge-UI-Prototype/
+stitch_designs/
+tests/
+scripts/
+
+# Git & OS artifacts
+.git/
+.gitignore
+.DS_Store
+*.log
