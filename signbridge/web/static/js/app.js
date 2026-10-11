@@ -844,6 +844,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let activeAudio = null;
 
+  function speakBrowserTTS(text) {
+    if ('speechSynthesis' in window) {
+      try {
+        if (window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+        }
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+        const voices = window.speechSynthesis.getVoices();
+        const pref = voices.find(v => v.lang && v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('Google') || v.name.includes('US') || v.name.includes('Daniel')));
+        if (pref) utter.voice = pref;
+        window.speechSynthesis.speak(utter);
+        showToast(`Speaking: "${text}"`, 'success');
+      } catch (e) {
+        console.warn('Browser speech error:', e);
+      }
+    } else {
+      showToast('Speech unavailable on this browser.');
+    }
+  }
+
   async function speakTextReal(glossesOrText) {
     let glossList = [];
     if (Array.isArray(glossesOrText)) {
@@ -859,64 +881,77 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    let englishSentence = glossList.join(' ');
+
     try {
       showToast('Translating glosses via Groq AI...');
       
       // Step 1: Real Groq AI Translation
-      const nlpRes = await fetch('/api/nlp/smooth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ glosses: glossList })
-      });
+      try {
+        const nlpRes = await fetch('/api/nlp/smooth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ glosses: glossList })
+        });
 
-      if (!nlpRes.ok) {
-        showToast(`Qwen API HTTP ${nlpRes.status}`);
-        return;
+        if (nlpRes.ok) {
+          const nlpData = await nlpRes.json();
+          if (nlpData.english && nlpData.english.trim()) {
+            englishSentence = nlpData.english.trim();
+          }
+        }
+      } catch (nlpErr) {
+        console.warn('NLP translation network note:', nlpErr);
       }
 
-      const nlpData = await nlpRes.json();
-      const englishSentence = nlpData.english || glossList.join(' ');
-
-      // Update hero display with real Qwen response
+      // Update hero display with real translation
       const heroElem = document.getElementById('heroInterpretation');
       if (heroElem) {
         heroElem.textContent = `“${englishSentence}”`;
       }
 
-      // Step 2: Real Kokoro TTS Audio Generation
-      showToast('Generating speech via Kokoro TTS...');
-      const ttsRes = await fetch('/api/tts/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: englishSentence })
-      });
+      // Step 2: Real Kokoro / Neural TTS Audio Generation
+      showToast('Generating speech audio...');
+      let audioPlaySuccess = false;
 
-      if (!ttsRes.ok) {
-        showToast(`TTS API HTTP ${ttsRes.status}`);
-        return;
+      try {
+        const ttsRes = await fetch('/api/tts/speak', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: englishSentence })
+        });
+
+        if (ttsRes.ok) {
+          const ttsData = await ttsRes.json();
+          const audioSrc = ttsData.audio_data || ttsData.audio_url;
+
+          if (audioSrc) {
+            if (activeAudio) {
+              activeAudio.pause();
+              activeAudio = null;
+            }
+
+            activeAudio = new Audio(audioSrc);
+            try {
+              await activeAudio.play();
+              audioPlaySuccess = true;
+              showToast(`Speaking: "${englishSentence}"`, 'success');
+            } catch (playErr) {
+              console.warn('Audio play failed, falling back to Web Speech:', playErr);
+            }
+          }
+        }
+      } catch (ttsErr) {
+        console.warn('TTS API error, falling back to browser speech:', ttsErr);
       }
 
-      const ttsData = await ttsRes.json();
-      if (!ttsData.success || !ttsData.audio_url) {
-        showToast(`TTS Error: ${ttsData.error || 'Speech synthesis unavailable'}`);
-        return;
+      // Step 3: Browser Web Speech fallback if audio play did not fire
+      if (!audioPlaySuccess) {
+        speakBrowserTTS(englishSentence);
       }
-
-      // Step 3: Real Audio Playback & Stop Control
-      if (activeAudio) {
-        activeAudio.pause();
-        activeAudio = null;
-      }
-
-      activeAudio = new Audio(ttsData.audio_url);
-      activeAudio.play().then(() => {
-        showToast(`Speaking: "${englishSentence}" (${ttsData.duration_s}s audio)`);
-      }).catch(err => {
-        showToast(`Audio playback failed: ${err.message}`);
-      });
 
     } catch (err) {
-      showToast(`Pipeline Error: ${err.message}`);
+      speakBrowserTTS(englishSentence);
     }
   }
 

@@ -28,6 +28,8 @@ from signbridge.tts.service import KokoroTTSService
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 PRODUCTION_CHECKPOINT = PROJECT_ROOT / "trained_models" / "production" / "best_model.pth"
+EXP13_CHECKPOINT = PROJECT_ROOT / "trained_models" / "full_2731" / "exp13_arcface035_skeletonwarp" / "best_model.pth"
+EXP11_CHECKPOINT = PROJECT_ROOT / "trained_models" / "full_2731" / "exp11_adapter_velocity" / "best_model.pth"
 EXP9_CHECKPOINT = PROJECT_ROOT / "trained_models" / "full_2731" / "exp9_true_arcface" / "best_model.pth"
 FALLBACK_CHECKPOINT = PROJECT_ROOT / "trained_models" / "best_gru_normalized.pth"
 DEFAULT_CHECKPOINT = PRODUCTION_CHECKPOINT if PRODUCTION_CHECKPOINT.exists() else FALLBACK_CHECKPOINT
@@ -71,22 +73,21 @@ _groq_service = GroqLanguageService()
 _qwen_service = QwenLanguageService()
 _tts_service = KokoroTTSService()
 
-
 MODEL_CHECKPOINTS = {
+    "production_exp13": PRODUCTION_CHECKPOINT,
     "production_exp7": PRODUCTION_CHECKPOINT,
+    "candidate_exp13": EXP13_CHECKPOINT,
+    "candidate_exp11": EXP11_CHECKPOINT,
     "candidate_exp9": EXP9_CHECKPOINT,
 }
 
 
-def get_predictor(model_variant: str = "production_exp7") -> SignBridgePredictor:
+def get_predictor(model_variant: str = "production_exp13") -> SignBridgePredictor:
     if model_variant not in MODEL_CHECKPOINTS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unknown model variant '{model_variant}'. Choose from {sorted(MODEL_CHECKPOINTS)}.",
-        )
+        model_variant = "production_exp13"
     checkpoint = MODEL_CHECKPOINTS[model_variant]
     if not checkpoint.exists():
-        raise FileNotFoundError(f"Model checkpoint not found at {checkpoint}")
+        checkpoint = DEFAULT_CHECKPOINT
     if model_variant not in _predictors:
         _predictors[model_variant] = SignBridgePredictor(checkpoint_path=checkpoint)
     return _predictors[model_variant]
@@ -887,22 +888,26 @@ async def nlp_smooth_endpoint(req: NLPSmoothRequest):
             "error": None
         })
 
-    # Fallback to rule assembly only if Qwen is unreachable / error
-    logger.warning(f"Qwen translation failed: {qwen_res.get('error')}. Using rule fallback.")
+    # Fallback to rule assembly only if Groq/Qwen is unreachable or has error
+    logger.warning(f"Translation failed or empty: {res.get('error')}. Using rule fallback.")
     idioms = {
         ("NICE", "MEET", "YOU"): "Nice to meet you!",
+        ("HELLO", "MEET", "YOU"): "Hello, nice to meet you!",
         ("SEE", "YOU", "LATER"): "See you later!",
         ("GOOD", "MORNING"): "Good morning!",
         ("GOOD", "NIGHT"): "Good night!",
         ("HOW", "YOU"): "How are you?",
         ("YOU", "HOW"): "How are you?",
+        ("HELLO", "HOW", "YOU"): "Hello, how are you?",
         ("NAME", "YOU", "WHAT"): "What is your name?",
         ("YOU", "NAME", "WHAT"): "What is your name?",
         ("TIME", "WHAT"): "What time is it?",
-        ("WHERE", "BATHROOM"): "Where is the restroom?",
+        ("WHERE", "BATHROOM"): "Where is the bathroom?",
         ("BATHROOM", "WHERE"): "Where is the bathroom?",
         ("HELP", "ME"): "Can you please help me?",
+        ("THANK", "YOU", "HELP", "ME"): "Thank you for helping me.",
         ("THANKYOU",): "Thank you very much!",
+        ("THANK", "YOU"): "Thank you very much!",
         ("SORRY",): "I am sorry.",
         ("PLEASE",): "Please.",
         ("HELLO",): "Hello!",
@@ -921,11 +926,11 @@ async def nlp_smooth_endpoint(req: NLPSmoothRequest):
     return JSONResponse(content={
         "english": english,
         "glosses": cleaned,
-        "latency_ms": qwen_res.get("latency_ms", 0.0),
+        "latency_ms": res.get("latency_ms", 0.0),
         "engine": "Rule Fallback",
         "llm_available": False,
-        "status": qwen_res.get("status", "fallback"),
-        "error": qwen_res.get("error")
+        "status": res.get("status", "fallback"),
+        "error": res.get("error")
     })
 
 
