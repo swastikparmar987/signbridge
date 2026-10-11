@@ -189,11 +189,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (viewName === 'video-translation') viewName = 'video';
     state.currentView = viewName;
 
-    // Update active nav styling in sidebar & anywhere else
-    navLinks.forEach(link => {
+    // Update active nav styling in sidebar, bottom dock & anywhere else
+    document.querySelectorAll('[data-nav]').forEach(link => {
       const target = link.getAttribute('data-nav');
+      const isActive = (target === viewName || (viewName === 'video' && target === 'video-translation'));
+      if (link.classList.contains('dock-btn')) {
+        if (isActive) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      }
       if (link.classList.contains('nav-link')) {
-        const isActive = (target === viewName || (viewName === 'video' && target === 'video-translation'));
         if (isActive) {
           link.className = 'nav-link active flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all cursor-pointer bg-[#FF5A2A] text-white font-bold shadow-md shadow-orange-500/20';
         } else {
@@ -259,6 +266,37 @@ document.addEventListener('DOMContentLoaded', () => {
       switchView(target);
     }
   });
+
+  // Floating bottom dock tooltip motion controller
+  function initFloatingDock() {
+    const dockContainer = document.querySelector('.dock-pill-container');
+    const tooltip = document.getElementById('dock-tooltip');
+    const tooltipText = document.getElementById('dock-tooltip-text');
+    if (!dockContainer || !tooltip || !tooltipText) return;
+
+    const dockButtons = dockContainer.querySelectorAll('.dock-btn');
+    dockButtons.forEach(btn => {
+      btn.addEventListener('mouseenter', () => {
+        const label = btn.getAttribute('data-label') || btn.getAttribute('data-nav');
+        tooltipText.textContent = label;
+        
+        const containerRect = dockContainer.getBoundingClientRect();
+        const btnRect = btn.getBoundingClientRect();
+        const tooltipWidth = tooltip.offsetWidth || 70;
+        
+        const centerLeft = (btnRect.left - containerRect.left) + (btnRect.width / 2) - (tooltipWidth / 2);
+        const clampedLeft = Math.max(0, Math.min(centerLeft, containerRect.width - tooltipWidth));
+        
+        tooltip.style.left = `${clampedLeft}px`;
+        tooltip.classList.add('visible');
+      });
+
+      btn.addEventListener('mouseleave', () => {
+        tooltip.classList.remove('visible');
+      });
+    });
+  }
+  setTimeout(initFloatingDock, 100);
 
   // ==========================================================================
   // 5. THEME & NOTIFICATIONS
