@@ -2274,6 +2274,7 @@ document.addEventListener('DOMContentLoaded', () => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
+                glosses: detectedSigns,
                 tokens: detectedSigns,
                 mode: 'smooth',
                 api_key: storedGroqKey
@@ -2281,7 +2282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (nlpRes.ok) {
               const nlpData = await nlpRes.json();
-              if (nlpData.sentence) smoothedText = nlpData.sentence;
+              if (nlpData.english || nlpData.sentence) smoothedText = nlpData.english || nlpData.sentence;
             }
           } catch (nlpErr) {
             console.warn('[SB] NLP smooth API error:', nlpErr);
@@ -3389,13 +3390,14 @@ document.addEventListener('DOMContentLoaded', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              glosses: ['HELLO', 'WORLD'],
               tokens: ['HELLO', 'WORLD'],
               mode: 'smooth',
               api_key: key
             })
           });
           const data = await res.json();
-          if (data && data.sentence) {
+          if (data && (data.english || data.sentence)) {
             localStorage.setItem('groq_api_key', key);
             if (groqKeyStatus) {
               groqKeyStatus.textContent = 'Verified & Saved';
