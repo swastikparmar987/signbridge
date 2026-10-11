@@ -28,6 +28,7 @@ RUN pip install --no-cache-dir --user -r requirements.txt \
 # Copy repository code
 COPY --chown=user . /app
 
-EXPOSE 7860
+ENV PORT=8000
+EXPOSE 8000 7860 8080
 
-CMD ["uvicorn", "signbridge.web.app:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["sh", "-c", "uvicorn signbridge.web.app:app --host 0.0.0.0 --port ${PORT:-8000}"]
