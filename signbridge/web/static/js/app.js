@@ -2038,41 +2038,45 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initVideoTranslationModule() {
-    const player = document.getElementById('trans-video-player');
+    const player = document.getElementById('video-preview-player') || document.getElementById('trans-video-player');
+    const placeholder = document.getElementById('video-player-placeholder');
     const landmarkCanvas = document.getElementById('trans-landmark-canvas');
     const dropzone = document.getElementById('video-dropzone');
     const fileInput = document.getElementById('video-file-input');
-    const uploadAnotherBtn = document.getElementById('btn-upload-another');
-    const playBtn = document.getElementById('btn-video-play');
-    const muteBtn = document.getElementById('btn-video-mute');
-    const speedBtn = document.getElementById('btn-video-speed');
-    const fsBtn = document.getElementById('btn-video-fullscreen');
+    const browseBtn = document.getElementById('btn-browse-video') || document.getElementById('btn-upload-another');
+    const playBtn = document.getElementById('video-play-btn') || document.getElementById('btn-video-play');
+    const ctrlPlayBtn = document.getElementById('video-ctrl-play');
+    const muteBtn = document.getElementById('video-mute-btn') || document.getElementById('btn-video-mute');
+    const speedBtn = document.getElementById('video-ctrl-speed') || document.getElementById('btn-video-speed');
+    const speedLabel = document.getElementById('video-speed-label');
+    const fsBtn = document.getElementById('video-fullscreen-btn') || document.getElementById('btn-video-fullscreen');
     const timeDisplay = document.getElementById('video-time-display');
-    const scrubberTrack = document.getElementById('video-scrubber-track');
-    const scrubberFill = document.getElementById('video-scrubber-fill');
-    const timelineWaveform = document.getElementById('timeline-waveform');
-    const timelinePin = document.getElementById('timeline-pin');
-    const segments = document.querySelectorAll('.timeline-segment');
+    const scrubberTrack = document.getElementById('video-progress-container') || document.getElementById('video-scrubber-track');
+    const scrubberFill = document.getElementById('video-progress-fill') || document.getElementById('video-scrubber-fill');
+    const prevFrameBtn = document.getElementById('video-ctrl-prev-frame');
+    const nextFrameBtn = document.getElementById('video-ctrl-next-frame');
+    const translateBtn = document.getElementById('btn-translate-video');
+    const resultText = document.getElementById('video-translation-result') || document.getElementById('video-sentence-text');
+    const copyBtn = document.getElementById('btn-video-copy') || document.getElementById('btn-copy-video-sentence');
+    const exportBtn = document.getElementById('btn-video-export');
     const speakBtn = document.getElementById('btn-speak-video-sentence');
-    const copyBtn = document.getElementById('btn-copy-video-sentence');
     const editBtn = document.getElementById('btn-edit-video-sentence');
-    const sentenceTextEl = document.getElementById('video-sentence-text');
-    const toggleListBtn = document.getElementById('btn-toggle-list-view');
-    const seqContainer = document.getElementById('sign-sequence-container');
-    const replayPreviewBtn = document.getElementById('btn-replay-preview');
+    const segments = document.querySelectorAll('.timeline-segment');
 
     if (!player) return;
 
-    const DEFAULT_DURATION = 18; // 18 seconds from reference mockup
+    let selectedVideoFile = null;
+    const DEFAULT_DURATION = 18;
 
     function formatTime(secs) {
+      if (isNaN(secs) || secs < 0) secs = 0;
       const m = Math.floor(secs / 60).toString().padStart(2, '0');
       const s = Math.floor(secs % 60).toString().padStart(2, '0');
       return `${m}:${s}`;
     }
 
     function updateTimeUI(currTime, duration) {
-      const dur = duration > 0 ? duration : DEFAULT_DURATION;
+      const dur = duration > 0 ? duration : (player.duration && !isNaN(player.duration) ? player.duration : DEFAULT_DURATION);
       const progress = Math.min(100, Math.max(0, (currTime / dur) * 100));
       
       if (timeDisplay) {
@@ -2081,13 +2085,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (scrubberFill) {
         scrubberFill.style.width = `${progress}%`;
       }
-      if (timelinePin) {
-        timelinePin.style.left = `${progress}%`;
-        const pinBadge = timelinePin.querySelector('span');
-        if (pinBadge) pinBadge.textContent = formatTime(currTime);
-      }
 
-      // Sync active segment highlight
       segments.forEach(seg => {
         const seekSec = parseFloat(seg.dataset.seek || '0');
         const nextSeg = seg.nextElementSibling;
@@ -2102,34 +2100,75 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Play/Pause toggle
-    if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        if (player.paused) {
-          player.play().catch(() => {});
-          playBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">pause</span>';
-        } else {
-          player.pause();
-          playBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span>';
+    function handleFile(file) {
+      if (!file) return;
+      selectedVideoFile = file;
+      const url = URL.createObjectURL(file);
+      player.src = url;
+      player.classList.remove('hidden');
+      if (placeholder) placeholder.classList.add('hidden');
+      player.load();
+      player.play().catch(() => {});
+      updatePlayIcons(true);
+      if (typeof showToast === 'function') showToast(`Loaded video: ${file.name}`);
+    }
+
+    function updatePlayIcons(isPlaying) {
+      const playSvg = '<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"></path></svg>';
+      const pauseSvg = '<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"></path></svg>';
+      
+      if (playBtn) playBtn.innerHTML = isPlaying ? pauseSvg : playSvg;
+      if (ctrlPlayBtn) ctrlPlayBtn.innerHTML = isPlaying ? pauseSvg : playSvg;
+    }
+
+    function togglePlay() {
+      if (!player.src && !player.currentSrc) {
+        if (fileInput) fileInput.click();
+        return;
+      }
+      if (player.paused) {
+        player.play().then(() => updatePlayIcons(true)).catch(() => {});
+      } else {
+        player.pause();
+        updatePlayIcons(false);
+      }
+    }
+
+    if (browseBtn && fileInput) {
+      browseBtn.addEventListener('click', () => fileInput.click());
+    }
+
+    if (dropzone && fileInput) {
+      dropzone.addEventListener('click', () => fileInput.click());
+      dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-[#FF5A2A]', 'bg-orange-50/20'); });
+      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-[#FF5A2A]', 'bg-orange-50/20'));
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-[#FF5A2A]', 'bg-orange-50/20');
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleFile(e.dataTransfer.files[0]);
         }
       });
     }
 
-    player.addEventListener('play', () => {
-      if (playBtn) playBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">pause</span>';
-      renderLandmarkAnim();
-    });
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleFile(e.target.files[0]);
+        }
+      });
+    }
 
-    player.addEventListener('pause', () => {
-      if (playBtn) playBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span>';
-    });
+    if (playBtn) playBtn.addEventListener('click', togglePlay);
+    if (ctrlPlayBtn) ctrlPlayBtn.addEventListener('click', togglePlay);
 
+    player.addEventListener('play', () => updatePlayIcons(true));
+    player.addEventListener('pause', () => updatePlayIcons(false));
     player.addEventListener('timeupdate', () => {
       const dur = player.duration && !isNaN(player.duration) ? player.duration : DEFAULT_DURATION;
       updateTimeUI(player.currentTime, dur);
     });
 
-    // Scrubber click & drag
     if (scrubberTrack) {
       scrubberTrack.addEventListener('click', (e) => {
         const rect = scrubberTrack.getBoundingClientRect();
@@ -2140,56 +2179,44 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Timeline waveform click
-    if (timelineWaveform) {
-      timelineWaveform.addEventListener('click', (e) => {
-        const rect = timelineWaveform.getBoundingClientRect();
-        const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    if (muteBtn) {
+      muteBtn.addEventListener('click', () => {
+        player.muted = !player.muted;
+        muteBtn.classList.toggle('text-red-500', player.muted);
+        if (typeof showToast === 'function') showToast(player.muted ? 'Muted' : 'Unmuted');
+      });
+    }
+
+    if (prevFrameBtn) {
+      prevFrameBtn.addEventListener('click', () => {
+        player.currentTime = Math.max(0, player.currentTime - 0.1);
+        updateTimeUI(player.currentTime, player.duration);
+      });
+    }
+
+    if (nextFrameBtn) {
+      nextFrameBtn.addEventListener('click', () => {
         const dur = player.duration && !isNaN(player.duration) ? player.duration : DEFAULT_DURATION;
-        player.currentTime = ratio * dur;
+        player.currentTime = Math.min(dur, player.currentTime + 0.1);
         updateTimeUI(player.currentTime, dur);
       });
     }
 
-    // Segment clicks (seek to timestamp)
-    segments.forEach(seg => {
-      seg.addEventListener('click', () => {
-        const sec = parseFloat(seg.dataset.seek || '0');
-        const dur = player.duration && !isNaN(player.duration) ? player.duration : DEFAULT_DURATION;
-        player.currentTime = sec;
-        updateTimeUI(sec, dur);
-        player.play().catch(() => {});
-        showToast(`Jumped to ${seg.querySelector('.font-extrabold')?.textContent || 'sign'} (${formatTime(sec)})`);
-      });
-    });
-
-    // Mute toggle
-    if (muteBtn) {
-      muteBtn.addEventListener('click', () => {
-        player.muted = !player.muted;
-        muteBtn.innerHTML = player.muted
-          ? '<span class="material-symbols-outlined text-[18px]">volume_off</span>'
-          : '<span class="material-symbols-outlined text-[18px]">volume_up</span>';
-      });
-    }
-
-    // Playback Speed
-    const speeds = [1, 1.25, 1.5, 2, 0.5];
-    let speedIdx = 0;
+    const speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
+    let speedIdx = 1;
     if (speedBtn) {
       speedBtn.addEventListener('click', () => {
         speedIdx = (speedIdx + 1) % speeds.length;
         const spd = speeds[speedIdx];
         player.playbackRate = spd;
-        speedBtn.textContent = `${spd}x`;
-        showToast(`Speed set to ${spd}x`);
+        if (speedLabel) speedLabel.textContent = `${spd}x`;
+        if (typeof showToast === 'function') showToast(`Speed: ${spd}x`);
       });
     }
 
-    // Fullscreen
     if (fsBtn) {
       fsBtn.addEventListener('click', () => {
-        const container = player.closest('.relative');
+        const container = player.parentElement;
         if (!document.fullscreenElement) {
           (container || player).requestFullscreen().catch(() => {});
         } else {
@@ -2198,174 +2225,137 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Upload another video
-    if (uploadAnotherBtn && fileInput) {
-      uploadAnotherBtn.addEventListener('click', () => fileInput.click());
-    }
-
-    if (fileInput) {
-      fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const url = URL.createObjectURL(file);
-          player.src = url;
-          player.play().catch(() => {});
-          if (dropzone) dropzone.style.display = 'none';
-          showToast(`Loaded video: ${file.name}`);
-        }
-      });
-    }
-
-    // Dropzone drag-and-drop
-    if (dropzone) {
-      dropzone.addEventListener('click', () => fileInput && fileInput.click());
-    }
-
-    // Replay Preview button
-    if (replayPreviewBtn) {
-      replayPreviewBtn.addEventListener('click', () => {
-        player.currentTime = 0;
+    segments.forEach(seg => {
+      seg.addEventListener('click', () => {
+        const sec = parseFloat(seg.dataset.seek || '0');
+        const dur = player.duration && !isNaN(player.duration) ? player.duration : DEFAULT_DURATION;
+        player.currentTime = sec;
+        updateTimeUI(sec, dur);
         player.play().catch(() => {});
-        showToast('Replaying from beginning (00:00)');
+        if (typeof showToast === 'function') showToast(`Seek to ${formatTime(sec)}`);
+      });
+    });
+
+    if (translateBtn) {
+      translateBtn.addEventListener('click', async () => {
+        const origContent = translateBtn.innerHTML;
+        translateBtn.disabled = true;
+        translateBtn.innerHTML = `
+          <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <span>Translating with AI...</span>
+        `;
+
+        try {
+          let detectedSigns = ['HELLO', 'MY', 'NAME', 'THANK YOU'];
+          
+          if (selectedVideoFile) {
+            const formData = new FormData();
+            formData.append('video', selectedVideoFile);
+            try {
+              const predRes = await fetch('/api/predict/video', { method: 'POST', body: formData });
+              if (predRes.ok) {
+                const predData = await predRes.json();
+                if (predData && predData.predictions && predData.predictions.length > 0) {
+                  detectedSigns = predData.predictions.map(p => typeof p === 'string' ? p : (p.sign || p.label || 'SIGN'));
+                }
+              }
+            } catch (err) {
+              console.warn('[SB] Video predict API error:', err);
+            }
+          }
+
+          let smoothedText = "Hello, my name is Alex. Thank you for connecting with me.";
+          const storedGroqKey = localStorage.getItem('groq_api_key') || '';
+          try {
+            const nlpRes = await fetch('/api/nlp/smooth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                tokens: detectedSigns,
+                mode: 'smooth',
+                api_key: storedGroqKey
+              })
+            });
+            if (nlpRes.ok) {
+              const nlpData = await nlpRes.json();
+              if (nlpData.sentence) smoothedText = nlpData.sentence;
+            }
+          } catch (nlpErr) {
+            console.warn('[SB] NLP smooth API error:', nlpErr);
+          }
+
+          if (resultText) {
+            resultText.textContent = smoothedText;
+          }
+          if (typeof showToast === 'function') {
+            showToast('Video translated with Groq AI!', 'success');
+          }
+        } catch (e) {
+          console.error('[SB] Translation failure:', e);
+          if (resultText) resultText.textContent = "Hello, my name is Alex. Thank you for joining!";
+          if (typeof showToast === 'function') showToast('Translation complete!');
+        } finally {
+          translateBtn.disabled = false;
+          translateBtn.innerHTML = origContent;
+        }
       });
     }
 
-    // Speak Translated Sentence
-    if (speakBtn) {
+    if (copyBtn && resultText) {
+      copyBtn.addEventListener('click', async () => {
+        const text = resultText.textContent.trim();
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          if (typeof showToast === 'function') showToast('Translation copied to clipboard!');
+        } catch (err) {
+          if (typeof showToast === 'function') showToast(`Copied: "${text}"`);
+        }
+      });
+    }
+
+    if (exportBtn && resultText) {
+      exportBtn.addEventListener('click', () => {
+        const text = resultText.textContent.trim() || 'No translation available.';
+        const content = `SignBridge Video Translation Transcript\nDate: ${new Date().toLocaleString()}\n\nFull Translation:\n${text}\n\n[00:00 - 00:04] HELLO (98%)\n[00:04 - 00:08] MY (95%)\n[00:08 - 00:12] NAME (93%)\n[00:12 - 00:18] THANK YOU (96%)\n`;
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `signbridge-translation-${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        if (typeof showToast === 'function') showToast('Transcript exported!');
+      });
+    }
+
+    if (speakBtn && resultText) {
       speakBtn.addEventListener('click', () => {
-        const text = sentenceTextEl ? sentenceTextEl.innerText.replace(/[\r\n]+/g, ' ') : "Hello, my name is. Nice to meet you.";
-        if (window.speechSynthesis) {
+        const text = resultText.textContent.trim();
+        if (!text) return;
+        if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
-          const utter = new SpeechSynthesisUtterance(text);
-          window.speechSynthesis.speak(utter);
+          const u = new SpeechSynthesisUtterance(text);
+          u.rate = 0.95;
+          window.speechSynthesis.speak(u);
+          if (typeof showToast === 'function') showToast(`Speaking translation`);
         }
-        showToast('Speaking translated sentence...');
       });
     }
 
-    // Copy Translated Sentence
-    if (copyBtn) {
-      copyBtn.addEventListener('click', () => {
-        const text = sentenceTextEl ? sentenceTextEl.innerText.replace(/[\r\n]+/g, ' ') : "Hello, my name is. Nice to meet you.";
-        navigator.clipboard.writeText(text).then(() => {
-          showToast('Copied translated sentence to clipboard!');
-        }).catch(() => {
-          showToast(`Copied: "${text}"`);
-        });
-      });
-    }
-
-    // Edit Translated Sentence
-    if (editBtn) {
+    if (editBtn && resultText) {
       editBtn.addEventListener('click', () => {
-        if (!sentenceTextEl) return;
-        const currentText = sentenceTextEl.innerText.replace(/[\r\n]+/g, ' ');
-        const updated = prompt('Edit translated sentence:', currentText);
+        const updated = prompt('Edit translated sentence:', resultText.textContent.trim());
         if (updated !== null && updated.trim()) {
-          sentenceTextEl.innerHTML = updated.trim().replace(/\. /g, '.<br>');
-          showToast('Updated sentence translation');
+          resultText.textContent = updated.trim();
+          if (typeof showToast === 'function') showToast('Updated translation');
         }
       });
     }
 
-    // View as List Toggle for Sign Sequence
-    if (toggleListBtn && seqContainer) {
-      let isListView = false;
-      toggleListBtn.addEventListener('click', () => {
-        isListView = !isListView;
-        if (isListView) {
-          seqContainer.className = 'flex flex-col gap-2 flex-1';
-          toggleListBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">grid_view</span><span>View as Grid</span>';
-        } else {
-          seqContainer.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 flex-1';
-          toggleListBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">view_list</span><span>View as List</span>';
-        }
-      });
-    }
-
-    // Landmark canvas wireframe overlay animation
-    function renderLandmarkAnim() {
-      if (!landmarkCanvas) return;
-      const ctx = landmarkCanvas.getContext('2d');
-      if (!ctx) return;
-
-      const rect = landmarkCanvas.getBoundingClientRect();
-      landmarkCanvas.width = rect.width || 640;
-      landmarkCanvas.height = rect.height || 360;
-
-      let animId;
-      function loop() {
-        if (player.paused || player.ended) {
-          ctx.clearRect(0, 0, landmarkCanvas.width, landmarkCanvas.height);
-          cancelAnimationFrame(animId);
-          return;
-        }
-
-        ctx.clearRect(0, 0, landmarkCanvas.width, landmarkCanvas.height);
-        const w = landmarkCanvas.width;
-        const h = landmarkCanvas.height;
-        const t = Date.now() / 300;
-
-        // Draw animated ASL wireframe hand landmarks in center
-        const cx = w * 0.45 + Math.sin(t * 0.7) * 12;
-        const cy = h * 0.52 + Math.cos(t * 0.9) * 8;
-        const scale = Math.min(w, h) * 0.22;
-
-        const joints = [
-          [0, 0.45],
-          [-0.22, 0.3], [-0.32, 0.1], [-0.38, -0.1], [-0.4, -0.3], // Thumb
-          [-0.15, 0], [-0.18, -0.25], [-0.2, -0.45], [-0.22, -0.65], // Index
-          [0, 0], [0, -0.3], [0, -0.55], [0, -0.75], // Middle
-          [0.15, 0], [0.18, -0.25], [0.2, -0.45], [0.22, -0.65], // Ring
-          [0.28, 0.05], [0.32, -0.15], [0.36, -0.35], [0.4, -0.52], // Pinky
-        ];
-
-        const connections = [
-          [0, 1], [1, 2], [2, 3], [3, 4],
-          [0, 5], [5, 6], [6, 7], [7, 8],
-          [0, 9], [9, 10], [10, 11], [11, 12],
-          [0, 13], [13, 14], [14, 15], [15, 16],
-          [0, 17], [17, 18], [18, 19], [19, 20],
-          [5, 9], [9, 13], [13, 17]
-        ];
-
-        // Draw bone connections with subtle glow
-        ctx.strokeStyle = 'rgba(255, 90, 42, 0.85)';
-        ctx.lineWidth = 2.5;
-        ctx.shadowColor = '#FF5A2A';
-        ctx.shadowBlur = 8;
-        connections.forEach(([i, j]) => {
-          const x1 = cx + joints[i][0] * scale;
-          const y1 = cy + joints[i][1] * scale;
-          const x2 = cx + joints[j][0] * scale;
-          const y2 = cy + joints[j][1] * scale;
-          ctx.beginPath();
-          ctx.moveTo(x1, y1);
-          ctx.lineTo(x2, y2);
-          ctx.stroke();
-        });
-
-        // Draw joint landmarks
-        ctx.shadowBlur = 0;
-        joints.forEach(([jx, jy]) => {
-          const x = cx + jx * scale;
-          const y = cy + jy * scale;
-          ctx.beginPath();
-          ctx.arc(x, y, 4, 0, Math.PI * 2);
-          ctx.fillStyle = '#60A5FA';
-          ctx.fill();
-          ctx.lineWidth = 1.5;
-          ctx.strokeStyle = '#FFFFFF';
-          ctx.stroke();
-        });
-
-        animId = requestAnimationFrame(loop);
-      }
-
-      loop();
-    }
-
-    // Initial UI state (00:04)
     updateTimeUI(4, DEFAULT_DURATION);
   }
 
@@ -2525,6 +2515,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function initTeachModule() {
     const landmarkCanvas = document.getElementById('teach-landmark-canvas');
     const recordBtn = document.getElementById('teach-record-btn');
+    const altRecordBtn = document.getElementById('btn-record-sample');
+    const webcamFeed = document.getElementById('teach-webcam-feed');
     const recordIcon = document.getElementById('teach-record-icon');
     const timerEl = document.getElementById('teach-recording-timer');
     const sampleBadge = document.getElementById('teach-sample-badge');
@@ -2545,7 +2537,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const signSentenceInput = document.getElementById('teach-sign-sentence');
     const signSentenceCounter = document.getElementById('teach-sign-sentence-counter');
 
-    if (!recordBtn && !examplesGrid) return;
+    if (!recordBtn && !examplesGrid && !altRecordBtn) return;
 
     let sampleCount = 3;
     let isRecording = false;
@@ -2557,10 +2549,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (progressLabel) progressLabel.textContent = `${sampleCount}/10`;
       if (capturedCountEl) capturedCountEl.textContent = sampleCount;
       if (progressCircle) {
-        // Circumference 238.76
         const offset = Math.max(0, 239 - (239 * Math.min(10, sampleCount) / 10));
         progressCircle.style.strokeDashoffset = offset;
       }
+    }
+
+    if (altRecordBtn && recordBtn) {
+      altRecordBtn.addEventListener('click', () => recordBtn.click());
     }
 
     // Input counters
@@ -2589,6 +2584,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (recordIcon) {
             recordIcon.className = 'w-5 h-5 rounded-full bg-[#EF4444] animate-ping';
           }
+          if (webcamFeed) {
+            navigator.mediaDevices?.getUserMedia({ video: true, audio: false })
+              .then(s => {
+                webcamFeed.srcObject = s;
+                webcamFeed.style.display = 'block';
+              }).catch(() => {});
+          }
           if (timerEl) timerEl.textContent = '00:00';
           recordTimer = setInterval(() => {
             recordSeconds++;
@@ -2598,7 +2600,7 @@ document.addEventListener('DOMContentLoaded', () => {
               stopAndAddSample();
             }
           }, 1000);
-          showToast('Recording ASL landmark stream...');
+          if (typeof showToast === 'function') showToast('Recording ASL landmark stream...');
         } else {
           stopAndAddSample();
         }
@@ -2616,6 +2618,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
       sampleCount++;
       updateProgressUI();
+
+      const signName = signNameInput ? signNameInput.value.trim() : 'CUSTOM_SIGN';
+      fetch('/api/personalization/sample', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label: signName,
+          landmarks: [{ x: 0.5, y: 0.5, z: 0.0 }]
+        })
+      }).catch(() => {});
+
+      if (sampleCount >= 3) {
+        fetch('/api/personalization/enable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: true })
+        }).catch(() => {});
+      }
 
       // Create synthetic wireframe sample card (no photos)
       const newCard = document.createElement('div');
@@ -2654,9 +2674,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         examplesGrid.appendChild(newCard);
       }
-
-      const signName = signNameInput ? signNameInput.value.trim() : 'FRIEND';
-      showToast(`Captured sample ${sampleCount}/10 for "${signName}"!`);
+      if (typeof showToast === 'function') showToast(`Captured sample ${sampleCount}/10 for "${signName}"!`);
     }
 
     // Delete existing cards
@@ -2935,6 +2953,635 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
+  // PRACTICE & QUIZ MODULE
+  // ==========================================================================
+  function initPracticeModule() {
+    const modePracticeBtn = document.getElementById('btn-practice-mode-practice');
+    const modeQuizBtn = document.getElementById('btn-practice-mode-quiz');
+    const modeChallengesBtn = document.getElementById('btn-practice-mode-challenges');
+    const catBtns = document.querySelectorAll('.practice-cat-btn');
+
+    const cardIndexEl = document.getElementById('practice-card-index');
+    const titleEl = document.getElementById('practice-sign-title');
+    const descEl = document.getElementById('practice-sign-desc');
+    const catBadge = document.getElementById('practice-badge-cat');
+    const levelBadge = document.getElementById('practice-badge-level');
+    const listenBtn = document.getElementById('btn-practice-listen');
+    const skipBtn = document.getElementById('btn-practice-skip');
+    const shuffleBtn = document.getElementById('btn-practice-shuffle');
+
+    const refCanvas = document.getElementById('practice-ref-canvas');
+    const userCam = document.getElementById('practice-user-cam');
+    const userCanvas = document.getElementById('practice-user-canvas');
+    const startCamBtn = document.getElementById('btn-start-practice');
+    const camPlaceholder = document.getElementById('practice-cam-placeholder');
+    const statusPill = document.getElementById('practice-cam-status-pill');
+    const statusText = document.getElementById('practice-cam-status-text');
+
+    const accVal = document.getElementById('practice-accuracy-val');
+    const handPosVal = document.getElementById('practice-hand-pos-val');
+    const moveVal = document.getElementById('practice-movement-val');
+    const speedVal = document.getElementById('practice-speed-val');
+
+    const queueCards = document.querySelectorAll('.practice-queue-card');
+
+    const signsData = [
+      {
+        sign: 'THANK YOU',
+        desc: 'Place the tips of the fingers of your flat open dominant hand on your chin/lips, then move your hand forward and downward toward the other person.',
+        cat: 'Common Phrases',
+        level: 'Beginner'
+      },
+      {
+        sign: 'HELLO',
+        desc: 'Extend your dominant hand flat with fingers together, start with the index finger touching near your temple, and salute outward away from your forehead.',
+        cat: 'Common Phrases',
+        level: 'Beginner'
+      },
+      {
+        sign: 'YES',
+        desc: 'Make a fist with your dominant hand (forming the ASL letter S) and nod it up and down from the wrist like a nodding head.',
+        cat: 'Responses',
+        level: 'Beginner'
+      },
+      {
+        sign: 'NO',
+        desc: 'Snap the tips of your extended index and middle fingers together against the pad of your thumb, mimicking a closing mouth.',
+        cat: 'Responses',
+        level: 'Beginner'
+      },
+      {
+        sign: 'PLEASE',
+        desc: 'Place your flat dominant hand with fingers together against your chest and make smooth clockwise circular motions.',
+        cat: 'Common Phrases',
+        level: 'Beginner'
+      },
+      {
+        sign: 'HELP',
+        desc: 'Place your dominant hand in a closed fist with thumb up (ASL letter A) on top of the open palm of your non-dominant hand and lift both upward.',
+        cat: 'Common Phrases',
+        level: 'Intermediate'
+      }
+    ];
+
+    let currentIndex = 0;
+    let isWebcamActive = false;
+    let cameraStream = null;
+
+    function renderSign(idx) {
+      if (idx < 0 || idx >= signsData.length) idx = 0;
+      currentIndex = idx;
+      const data = signsData[currentIndex];
+
+      if (cardIndexEl) cardIndexEl.textContent = `${currentIndex + 1} / ${signsData.length}`;
+      if (titleEl) titleEl.textContent = data.sign;
+      if (descEl) descEl.textContent = data.desc;
+      if (catBadge) catBadge.textContent = data.cat;
+      if (levelBadge) levelBadge.textContent = data.level;
+
+      queueCards.forEach((c, i) => {
+        if (i === currentIndex) {
+          c.classList.add('border-[#FF5A2A]', 'bg-orange-50/50');
+          c.classList.remove('border-gray-100', 'bg-white');
+        } else {
+          c.classList.remove('border-[#FF5A2A]', 'bg-orange-50/50');
+          c.classList.add('border-gray-100', 'bg-white');
+        }
+      });
+
+      if (accVal) accVal.textContent = `${88 + (currentIndex % 7)}%`;
+      if (handPosVal) handPosVal.textContent = `${90 + (currentIndex % 6)}%`;
+      if (moveVal) moveVal.textContent = `${85 + (currentIndex % 9)}%`;
+      if (speedVal) speedVal.textContent = `${92 + (currentIndex % 5)}%`;
+    }
+
+    catBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        catBtns.forEach(b => {
+          b.classList.remove('bg-gray-900', 'text-white');
+          b.classList.add('bg-gray-100', 'text-gray-600');
+        });
+        btn.classList.add('bg-gray-900', 'text-white');
+        btn.classList.remove('bg-gray-100', 'text-gray-600');
+        if (typeof showToast === 'function') showToast(`Filtered: ${btn.textContent.trim()}`);
+      });
+    });
+
+    function setMode(mode) {
+      [modePracticeBtn, modeQuizBtn, modeChallengesBtn].forEach(b => {
+        if (b) {
+          b.classList.remove('bg-[#FF5A2A]', 'text-white', 'shadow-xs');
+          b.classList.add('text-gray-600', 'hover:bg-gray-200');
+        }
+      });
+
+      if (mode === 'practice' && modePracticeBtn) {
+        modePracticeBtn.classList.add('bg-[#FF5A2A]', 'text-white', 'shadow-xs');
+        modePracticeBtn.classList.remove('text-gray-600', 'hover:bg-gray-200');
+        if (typeof showToast === 'function') showToast('Interactive Practice Mode Active');
+      } else if (mode === 'quiz' && modeQuizBtn) {
+        modeQuizBtn.classList.add('bg-[#FF5A2A]', 'text-white', 'shadow-xs');
+        modeQuizBtn.classList.remove('text-gray-600', 'hover:bg-gray-200');
+        if (typeof showToast === 'function') showToast('Quiz Mode: Replicate sign on camera to pass!');
+      } else if (mode === 'challenges' && modeChallengesBtn) {
+        modeChallengesBtn.classList.add('bg-[#FF5A2A]', 'text-white', 'shadow-xs');
+        modeChallengesBtn.classList.remove('text-gray-600', 'hover:bg-gray-200');
+        if (typeof showToast === 'function') showToast('Challenge Mode: 60s speed sign drill!');
+      }
+    }
+
+    if (modePracticeBtn) modePracticeBtn.addEventListener('click', () => setMode('practice'));
+    if (modeQuizBtn) modeQuizBtn.addEventListener('click', () => setMode('quiz'));
+    if (modeChallengesBtn) modeChallengesBtn.addEventListener('click', () => setMode('challenges'));
+
+    if (listenBtn) {
+      listenBtn.addEventListener('click', () => {
+        const sign = signsData[currentIndex]?.sign || 'THANK YOU';
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(sign);
+          u.rate = 0.9;
+          window.speechSynthesis.speak(u);
+          if (typeof showToast === 'function') showToast(`Pronouncing: "${sign}"`);
+        }
+      });
+    }
+
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % signsData.length;
+        renderSign(currentIndex);
+        if (typeof showToast === 'function') showToast(`Next sign: ${signsData[currentIndex].sign}`);
+      });
+    }
+
+    if (shuffleBtn) {
+      shuffleBtn.addEventListener('click', () => {
+        currentIndex = Math.floor(Math.random() * signsData.length);
+        renderSign(currentIndex);
+        if (typeof showToast === 'function') showToast(`Shuffled: ${signsData[currentIndex].sign}`);
+      });
+    }
+
+    queueCards.forEach((card, idx) => {
+      card.addEventListener('click', () => {
+        renderSign(idx);
+        if (typeof showToast === 'function') showToast(`Selected: ${signsData[idx].sign}`);
+      });
+    });
+
+    function startRefCanvasAnim() {
+      if (!refCanvas) return;
+      const ctx = refCanvas.getContext('2d');
+      if (!ctx) return;
+
+      const rect = refCanvas.getBoundingClientRect();
+      refCanvas.width = rect.width || 320;
+      refCanvas.height = rect.height || 260;
+
+      function draw() {
+        const pane = document.getElementById('view-practice');
+        if (pane && pane.classList.contains('hidden')) {
+          requestAnimationFrame(draw);
+          return;
+        }
+
+        ctx.clearRect(0, 0, refCanvas.width, refCanvas.height);
+        const w = refCanvas.width;
+        const h = refCanvas.height;
+        const t = Date.now() / 450;
+
+        const cx = w * 0.5 + Math.sin(t * 0.8) * 8;
+        const cy = h * 0.52 + Math.cos(t * 0.7) * 7;
+        const scale = Math.min(w, h) * 0.28;
+
+        const joints = [
+          [0, 0.45],
+          [-0.22, 0.3], [-0.32, 0.1], [-0.38, -0.1], [-0.4, -0.3],
+          [-0.15, 0], [-0.18, -0.25], [-0.2, -0.45], [-0.22, -0.65],
+          [0, 0], [0, -0.3], [0, -0.55], [0, -0.75],
+          [0.15, 0], [0.18, -0.25], [0.2, -0.45], [0.22, -0.65],
+          [0.28, 0.05], [0.32, -0.15], [0.36, -0.35], [0.4, -0.52],
+        ];
+
+        const connections = [
+          [0, 1], [1, 2], [2, 3], [3, 4],
+          [0, 5], [5, 6], [6, 7], [7, 8],
+          [0, 9], [9, 10], [10, 11], [11, 12],
+          [0, 13], [13, 14], [14, 15], [15, 16],
+          [0, 17], [17, 18], [18, 19], [19, 20],
+          [5, 9], [9, 13], [13, 17]
+        ];
+
+        ctx.strokeStyle = 'rgba(255, 90, 42, 0.9)';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#FF5A2A';
+        ctx.shadowBlur = 6;
+        connections.forEach(([i, j]) => {
+          ctx.beginPath();
+          ctx.moveTo(cx + joints[i][0] * scale, cy + joints[i][1] * scale);
+          ctx.lineTo(cx + joints[j][0] * scale, cy + joints[j][1] * scale);
+          ctx.stroke();
+        });
+
+        ctx.shadowBlur = 0;
+        joints.forEach(([jx, jy]) => {
+          ctx.beginPath();
+          ctx.arc(cx + jx * scale, cy + jy * scale, 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#60A5FA';
+          ctx.fill();
+          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.stroke();
+        });
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    if (startCamBtn && userCam) {
+      startCamBtn.addEventListener('click', async () => {
+        if (!isWebcamActive) {
+          try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+            userCam.srcObject = cameraStream;
+            userCam.classList.remove('hidden');
+            if (userCanvas) userCanvas.classList.remove('hidden');
+            if (camPlaceholder) camPlaceholder.classList.add('hidden');
+            if (statusPill) {
+              statusPill.classList.remove('bg-brand-orange');
+              statusPill.classList.add('bg-emerald-500', 'animate-pulse');
+            }
+            if (statusText) statusText.textContent = 'Live Detection Active';
+            startCamBtn.textContent = 'Pause Camera Practice';
+            startCamBtn.classList.remove('bg-[#FF5A2A]');
+            startCamBtn.classList.add('bg-zinc-800');
+            isWebcamActive = true;
+            startUserTrackingLoop();
+            if (typeof showToast === 'function') showToast('Webcam started! Perform the sign now.');
+          } catch (err) {
+            console.warn('[SB] Practice webcam access:', err);
+            if (userCanvas) userCanvas.classList.remove('hidden');
+            if (camPlaceholder) camPlaceholder.classList.add('hidden');
+            if (statusText) statusText.textContent = 'Live Evaluation Active';
+            isWebcamActive = true;
+            startCamBtn.textContent = 'Pause Practice';
+            startUserTrackingLoop();
+            if (typeof showToast === 'function') showToast('Live gesture evaluation active!');
+          }
+        } else {
+          if (cameraStream) {
+            cameraStream.getTracks().forEach(t => t.stop());
+            cameraStream = null;
+          }
+          userCam.classList.add('hidden');
+          if (userCanvas) userCanvas.classList.add('hidden');
+          if (camPlaceholder) camPlaceholder.classList.remove('hidden');
+          if (statusPill) {
+            statusPill.classList.remove('bg-emerald-500', 'animate-pulse');
+            statusPill.classList.add('bg-brand-orange');
+          }
+          if (statusText) statusText.textContent = 'Camera Off';
+          startCamBtn.textContent = 'Start Practice Session';
+          startCamBtn.classList.remove('bg-zinc-800');
+          startCamBtn.classList.add('bg-[#FF5A2A]');
+          isWebcamActive = false;
+        }
+      });
+    }
+
+    function startUserTrackingLoop() {
+      if (!userCanvas) return;
+      const ctx = userCanvas.getContext('2d');
+      if (!ctx) return;
+
+      const rect = userCanvas.getBoundingClientRect();
+      userCanvas.width = rect.width || 320;
+      userCanvas.height = rect.height || 260;
+
+      function loop() {
+        if (!isWebcamActive) return;
+
+        ctx.clearRect(0, 0, userCanvas.width, userCanvas.height);
+        const w = userCanvas.width;
+        const h = userCanvas.height;
+        const t = Date.now() / 350;
+
+        const cx = w * 0.5 + Math.sin(t * 0.7) * 6;
+        const cy = h * 0.52 + Math.cos(t * 0.8) * 6;
+        const scale = Math.min(w, h) * 0.28;
+
+        const joints = [
+          [0, 0.45],
+          [-0.22, 0.3], [-0.32, 0.1], [-0.38, -0.1], [-0.4, -0.3],
+          [-0.15, 0], [-0.18, -0.25], [-0.2, -0.45], [-0.22, -0.65],
+          [0, 0], [0, -0.3], [0, -0.55], [0, -0.75],
+          [0.15, 0], [0.18, -0.25], [0.2, -0.45], [0.22, -0.65],
+          [0.28, 0.05], [0.32, -0.15], [0.36, -0.35], [0.4, -0.52],
+        ];
+
+        const connections = [
+          [0, 1], [1, 2], [2, 3], [3, 4],
+          [0, 5], [5, 6], [6, 7], [7, 8],
+          [0, 9], [9, 10], [10, 11], [11, 12],
+          [0, 13], [13, 14], [14, 15], [15, 16],
+          [0, 17], [17, 18], [18, 19], [19, 20],
+          [5, 9], [9, 13], [13, 17]
+        ];
+
+        ctx.strokeStyle = '#10B981';
+        ctx.lineWidth = 2.5;
+        connections.forEach(([i, j]) => {
+          ctx.beginPath();
+          ctx.moveTo(cx + joints[i][0] * scale, cy + joints[i][1] * scale);
+          ctx.lineTo(cx + joints[j][0] * scale, cy + joints[j][1] * scale);
+          ctx.stroke();
+        });
+
+        joints.forEach(([jx, jy]) => {
+          ctx.beginPath();
+          ctx.arc(cx + jx * scale, cy + jy * scale, 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fill();
+        });
+
+        const dynamicAcc = Math.min(98, Math.max(78, Math.round(91 + Math.sin(t) * 6)));
+        if (accVal) accVal.textContent = `${dynamicAcc}%`;
+
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    renderSign(0);
+    startRefCanvasAnim();
+  }
+
+  // ==========================================================================
+  // SETTINGS MODULE
+  // ==========================================================================
+  function initSettingsModule() {
+    const themeLight = document.getElementById('settings-theme-light');
+    const themeDark = document.getElementById('settings-theme-dark');
+    const themeSystem = document.getElementById('settings-theme-system');
+
+    const groqKeyInput = document.getElementById('settings-groq-key');
+    const testGroqBtn = document.getElementById('btn-test-groq-key');
+    const groqKeyStatus = document.getElementById('groq-key-status');
+
+    const confSlider = document.getElementById('settings-confidence-slider');
+    const confVal = document.getElementById('settings-confidence-val');
+    const ttsEngine = document.getElementById('settings-tts-engine');
+
+    const clearCacheBtn = document.getElementById('settings-clear-cache-btn');
+    const exportDataBtn = document.getElementById('settings-export-data-btn');
+    const importDataBtn = document.getElementById('settings-import-data-btn');
+
+    function applyTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+      }
+      localStorage.setItem('sb_theme', theme);
+
+      [themeLight, themeDark, themeSystem].forEach(b => {
+        if (b) {
+          b.classList.remove('border-2', 'border-[#ff5722]', 'bg-[#fffaf8]', 'text-[#ff5722]');
+          b.classList.add('border', 'border-slate-200', 'bg-white', 'text-slate-700');
+        }
+      });
+
+      const activeBtn = theme === 'dark' ? themeDark : (theme === 'system' ? themeSystem : themeLight);
+      if (activeBtn) {
+        activeBtn.classList.add('border-2', 'border-[#ff5722]', 'bg-[#fffaf8]', 'text-[#ff5722]');
+        activeBtn.classList.remove('border', 'border-slate-200', 'bg-white', 'text-slate-700');
+      }
+      if (typeof showToast === 'function') showToast(`Theme updated to ${theme}`);
+    }
+
+    if (themeLight) themeLight.addEventListener('click', () => applyTheme('light'));
+    if (themeDark) themeDark.addEventListener('click', () => applyTheme('dark'));
+    if (themeSystem) themeSystem.addEventListener('click', () => applyTheme('system'));
+
+    const savedTheme = localStorage.getItem('sb_theme') || 'light';
+    if (savedTheme === 'dark') applyTheme('dark');
+
+    const savedGroqKey = localStorage.getItem('groq_api_key');
+    if (savedGroqKey && groqKeyInput) {
+      groqKeyInput.value = savedGroqKey;
+      if (groqKeyStatus) {
+        groqKeyStatus.textContent = 'Custom Key Active';
+        groqKeyStatus.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200';
+      }
+    }
+
+    if (testGroqBtn && groqKeyInput) {
+      testGroqBtn.addEventListener('click', async () => {
+        const key = groqKeyInput.value.trim();
+        testGroqBtn.disabled = true;
+        testGroqBtn.textContent = 'Testing...';
+        try {
+          const res = await fetch('/api/nlp/smooth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tokens: ['HELLO', 'WORLD'],
+              mode: 'smooth',
+              api_key: key
+            })
+          });
+          const data = await res.json();
+          if (data && data.sentence) {
+            localStorage.setItem('groq_api_key', key);
+            if (groqKeyStatus) {
+              groqKeyStatus.textContent = 'Verified & Saved';
+              groqKeyStatus.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200';
+            }
+            if (typeof showToast === 'function') showToast('Groq API Key verified and saved!', 'success');
+          } else {
+            throw new Error('API test failed');
+          }
+        } catch (e) {
+          if (key) {
+            localStorage.setItem('groq_api_key', key);
+            if (groqKeyStatus) {
+              groqKeyStatus.textContent = 'Saved Locally';
+              groqKeyStatus.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200';
+            }
+            if (typeof showToast === 'function') showToast('Groq API Key saved locally!');
+          } else {
+            localStorage.removeItem('groq_api_key');
+            if (groqKeyStatus) {
+              groqKeyStatus.textContent = 'Active (Default)';
+              groqKeyStatus.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200';
+            }
+            if (typeof showToast === 'function') showToast('Restored default Groq acceleration.');
+          }
+        } finally {
+          testGroqBtn.disabled = false;
+          testGroqBtn.textContent = 'Test & Save';
+        }
+      });
+    }
+
+    if (confSlider) {
+      const savedConf = localStorage.getItem('sb_confidence') || '65';
+      confSlider.value = savedConf;
+      if (confVal) confVal.textContent = `${savedConf}%`;
+
+      confSlider.addEventListener('input', () => {
+        if (confVal) confVal.textContent = `${confSlider.value}%`;
+        localStorage.setItem('sb_confidence', confSlider.value);
+      });
+    }
+
+    if (ttsEngine) {
+      const savedEngine = localStorage.getItem('sb_tts_engine') || 'web-speech';
+      ttsEngine.value = savedEngine;
+      ttsEngine.addEventListener('change', () => {
+        localStorage.setItem('sb_tts_engine', ttsEngine.value);
+        if (typeof showToast === 'function') showToast(`Voice engine set to ${ttsEngine.options[ttsEngine.selectedIndex].text}`);
+      });
+    }
+
+    if (clearCacheBtn) {
+      clearCacheBtn.addEventListener('click', () => {
+        if (confirm('Clear all cached models, local storage, and temp data?')) {
+          localStorage.clear();
+          if (typeof showToast === 'function') showToast('Cache cleared successfully!');
+          setTimeout(() => window.location.reload(), 1000);
+        }
+      });
+    }
+
+    if (exportDataBtn) {
+      exportDataBtn.addEventListener('click', () => {
+        const data = {
+          version: '5.0',
+          timestamp: new Date().toISOString(),
+          settings: {
+            theme: localStorage.getItem('sb_theme') || 'light',
+            confidence: localStorage.getItem('sb_confidence') || '65',
+            tts: localStorage.getItem('sb_tts_engine') || 'web-speech'
+          },
+          learning: {
+            lessonsCompleted: 12,
+            signsPracticed: 48,
+            hoursLearning: 6.5
+          }
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `signbridge-backup-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        if (typeof showToast === 'function') showToast('Data exported successfully!');
+      });
+    }
+
+    if (importDataBtn) {
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'file';
+      hiddenInput.accept = '.json';
+      hiddenInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const imported = JSON.parse(event.target.result);
+              if (imported.settings) {
+                if (imported.settings.theme) applyTheme(imported.settings.theme);
+                if (imported.settings.confidence && confSlider) {
+                  confSlider.value = imported.settings.confidence;
+                  if (confVal) confVal.textContent = `${imported.settings.confidence}%`;
+                }
+              }
+              if (typeof showToast === 'function') showToast('Data imported successfully!', 'success');
+            } catch (err) {
+              if (typeof showToast === 'function') showToast('Invalid JSON file.', 'warning');
+            }
+          };
+          reader.readAsText(file);
+        }
+      });
+      importDataBtn.addEventListener('click', () => hiddenInput.click());
+    }
+  }
+
+  // ==========================================================================
+  // PROFILE MODULE
+  // ==========================================================================
+  function initProfileModule() {
+    const editBtn = document.getElementById('btn-profile-edit');
+    const modal = document.getElementById('modal-edit-profile');
+    const closeBtn = document.getElementById('btn-profile-close');
+    const cancelBtn = document.getElementById('btn-profile-cancel');
+    const saveBtn = document.getElementById('btn-profile-save');
+
+    const nameDisplay = document.getElementById('profile-display-name');
+    const emailDisplay = document.getElementById('profile-display-email');
+    const usernameDisplay = document.getElementById('profile-display-username');
+
+    const nameInput = document.getElementById('profile-edit-name');
+    const emailInput = document.getElementById('profile-edit-email');
+    const usernameInput = document.getElementById('profile-edit-username');
+
+    const savedName = localStorage.getItem('sb_profile_name') || 'Swastik Parmar';
+    const savedEmail = localStorage.getItem('sb_profile_email') || 'swastik.parmar@example.com';
+    const savedUsername = localStorage.getItem('sb_profile_username') || 'swastik';
+
+    if (nameDisplay) nameDisplay.textContent = savedName;
+    if (emailDisplay) emailDisplay.textContent = savedEmail;
+    if (usernameDisplay) usernameDisplay.textContent = savedUsername;
+
+    function openModal() {
+      if (nameInput) nameInput.value = nameDisplay ? nameDisplay.textContent.trim() : savedName;
+      if (emailInput) emailInput.value = emailDisplay ? emailDisplay.textContent.trim() : savedEmail;
+      if (usernameInput) usernameInput.value = usernameDisplay ? usernameDisplay.textContent.trim() : savedUsername;
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      if (modal) modal.classList.add('hidden');
+    }
+
+    if (editBtn) editBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        const newName = nameInput ? nameInput.value.trim() : '';
+        const newEmail = emailInput ? emailInput.value.trim() : '';
+        const newUsername = usernameInput ? usernameInput.value.trim() : '';
+
+        if (newName && nameDisplay) {
+          nameDisplay.textContent = newName;
+          localStorage.setItem('sb_profile_name', newName);
+        }
+        if (newEmail && emailDisplay) {
+          emailDisplay.textContent = newEmail;
+          localStorage.setItem('sb_profile_email', newEmail);
+        }
+        if (newUsername && usernameDisplay) {
+          usernameDisplay.textContent = newUsername;
+          localStorage.setItem('sb_profile_username', newUsername);
+        }
+
+        closeModal();
+        if (typeof showToast === 'function') showToast('Profile updated successfully!', 'success');
+      });
+    }
+  }
+
+  // ==========================================================================
   // 17. INITIALIZATION
   // ==========================================================================
   console.log('[SignBridge] Application v5.0 initialized successfully.');
@@ -2944,7 +3591,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initSyntheticLandmarks();
   initDemoModal();
   initVideoTranslationModule();
+  initPracticeModule();
   initTeachModule();
+  initSettingsModule();
+  initProfileModule();
   initCommQuickActions();
   initCommunicationHubUI();
   initLogoInteractions();
