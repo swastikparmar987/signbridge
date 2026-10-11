@@ -897,26 +897,48 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const ttsData = await ttsRes.json();
-      if (!ttsData.success || !ttsData.audio_url) {
-        showToast(`TTS Error: ${ttsData.error || 'Speech synthesis unavailable'}`);
-        return;
+
+      function speakBrowserTTS(text) {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.rate = 1.0;
+          utter.pitch = 1.0;
+          const voices = window.speechSynthesis.getVoices();
+          const pref = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('Google') || v.name.includes('US')));
+          if (pref) utter.voice = pref;
+          window.speechSynthesis.speak(utter);
+          showToast(`Speaking: "${text}"`, 'success');
+        } else {
+          showToast(`TTS: ${ttsData.error || 'Speech unavailable'}`);
+        }
       }
 
       // Step 3: Real Audio Playback & Stop Control
-      if (activeAudio) {
-        activeAudio.pause();
-        activeAudio = null;
+      if (ttsData.success && ttsData.audio_url) {
+        if (activeAudio) {
+          activeAudio.pause();
+          activeAudio = null;
+        }
+
+        activeAudio = new Audio(ttsData.audio_url);
+        activeAudio.play().then(() => {
+          showToast(`Speaking: "${englishSentence}" (${ttsData.duration_s}s audio)`);
+        }).catch(() => {
+          speakBrowserTTS(englishSentence);
+        });
+      } else {
+        speakBrowserTTS(englishSentence);
       }
 
-      activeAudio = new Audio(ttsData.audio_url);
-      activeAudio.play().then(() => {
-        showToast(`Speaking: "${englishSentence}" (${ttsData.duration_s}s audio)`);
-      }).catch(err => {
-        showToast(`Audio playback failed: ${err.message}`);
-      });
-
     } catch (err) {
-      showToast(`Pipeline Error: ${err.message}`);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(englishSentence));
+        showToast(`Speaking: "${englishSentence}"`);
+      } else {
+        showToast(`Pipeline Error: ${err.message}`);
+      }
     }
   }
 
