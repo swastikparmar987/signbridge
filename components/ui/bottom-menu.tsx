@@ -1,11 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, type Transition } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 export interface MenuBarItem {
-  icon: (props: React.SVGProps<SVGSVGElement>) => JSX.Element
+  icon: (props: React.SVGProps<SVGSVGElement>) => React.ReactNode
   label: string
 }
 
@@ -13,7 +13,7 @@ interface MenuBarProps extends React.HTMLAttributes<HTMLDivElement> {
   items: MenuBarItem[]
 }
 
-const springConfig = {
+const springConfig: Transition = {
   duration: 0.3,
   ease: "easeInOut"
 }

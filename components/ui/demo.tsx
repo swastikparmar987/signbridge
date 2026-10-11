@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 import { MenuBar } from "@/components/ui/bottom-menu"
 
