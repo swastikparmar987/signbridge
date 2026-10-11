@@ -11,6 +11,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 # Setup logging
@@ -231,6 +232,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+STATIC_DIR = API_DIR / "static"
+if not STATIC_DIR.exists():
+    STATIC_DIR = PROJECT_ROOT / "public" / "static"
+
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+TEMPLATES_DIR = API_DIR / "templates"
+if not TEMPLATES_DIR.exists():
+    TEMPLATES_DIR = PROJECT_ROOT / "public"
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/index.html", response_class=HTMLResponse)
+async def serve_index():
+    index_path = TEMPLATES_DIR / "index.html"
+    if not index_path.exists():
+        index_path = PROJECT_ROOT / "public" / "index.html"
+    if index_path.exists():
+        with open(index_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse("<h1>SignBridge Live</h1>")
 
 
 # Request schemas
