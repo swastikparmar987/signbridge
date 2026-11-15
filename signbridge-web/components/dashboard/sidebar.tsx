@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import {
   Home,
@@ -33,52 +34,6 @@ interface SidebarProps {
   onSelectTab: (id: string) => void
   isMobileOpen?: boolean
   onCloseMobile?: () => void
-}
-
-function SignBridgeLogoMark() {
-  return (
-    <div className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FF8D1A] via-[#FF7900] to-[#E85D04] shadow-[0_8px_20px_-6px_rgba(255,121,0,0.6)] shrink-0">
-      <svg
-        viewBox="0 0 36 36"
-        className="w-7 h-7 text-white"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <path
-          d="M11 21.5V12.5C11 11.4 11.9 10.5 13 10.5C14.1 10.5 15 11.4 15 12.5V18"
-          stroke="currentColor"
-          strokeWidth="2.3"
-          strokeLinecap="round"
-        />
-        <path
-          d="M15 17.5V9.5C15 8.4 15.9 7.5 17 7.5C18.1 7.5 19 8.4 19 9.5V17.5"
-          stroke="currentColor"
-          strokeWidth="2.3"
-          strokeLinecap="round"
-        />
-        <path
-          d="M19 17.5V11C19 9.9 19.9 9 21 9C22.1 9 23 9.9 23 11V18.5"
-          stroke="currentColor"
-          strokeWidth="2.3"
-          strokeLinecap="round"
-        />
-        <path
-          d="M23 18.5V14.2C23 13.2 23.8 12.4 24.8 12.4C25.8 12.4 26.6 13.2 26.6 14.2V21.5C26.6 25.9 23.1 29.2 18.7 29.2C14.7 29.2 11.5 26.4 11 22.6L8.7 19.2C8.1 18.3 8.4 17 9.4 16.5C10.3 16 11.5 16.3 12.1 17.2L13.5 19.3"
-          stroke="currentColor"
-          strokeWidth="2.3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M7 10.5C8.2 8.7 10 7.4 12.1 6.8"
-          stroke="rgba(255,255,255,0.8)"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-      </svg>
-    </div>
-  )
 }
 
 function SidebarContent({
@@ -145,7 +100,7 @@ function SidebarContent({
             whileTap={prefersReduced ? undefined : { scale: 0.96 }}
             transition={{ duration: 0.2 }}
           >
-            <SignBridgeLogoMark />
+            <SignBridgeLogoMark size="lg" priority />
           </motion.div>
 
           <div className="mt-3 text-[21px] font-extrabold tracking-tight leading-none">

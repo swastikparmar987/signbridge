@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { cn } from "@/lib/utils"
 
 export interface NotchTab {
@@ -54,9 +55,7 @@ export function NotchNav({
           onClick={() => onTabChange("home")}
           title="SignBridge Home"
         >
-          <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center p-1 shadow-sm">
-            <span className="text-[14px]">🤟</span>
-          </div>
+          <SignBridgeLogoMark size="xs" priority />
           <span className="font-bold text-xs tracking-tight text-white">
             SignBridge
           </span>

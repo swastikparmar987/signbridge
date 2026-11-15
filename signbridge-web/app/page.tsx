@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ArrowLeft, ArrowRight, Command } from "lucide-react"
+import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { CommandPalette } from "@/components/navigation/command-palette"
 import { CommunicationCanvas } from "@/components/studio/communication-canvas"
 import { UnifiedModeMenu } from "@/components/studio/unified-mode-menu"
@@ -243,6 +244,7 @@ export default function SignBridgeAppPage() {
                 {activeWindowMeta && (
                   <div className="hidden sm:flex items-center gap-2.5 min-w-0">
                     <span className="h-4 w-px bg-white/15 shrink-0" />
+                    <SignBridgeLogoMark size="xs" priority />
                     <span className="text-sm font-bold text-white truncate">
                       {activeWindowMeta.title}
                     </span>

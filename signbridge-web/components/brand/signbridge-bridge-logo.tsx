@@ -1,6 +1,44 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
+
+type LogoMarkSize = "xs" | "sm" | "md" | "lg"
+
+const LOGO_CONTAINER_STYLES: Record<LogoMarkSize, string> = {
+  xs: "h-6 w-6 rounded-lg p-0.5",
+  sm: "h-9 w-9 rounded-xl p-1",
+  md: "h-10 w-10 rounded-xl p-1",
+  lg: "h-11 w-11 rounded-2xl p-1.5",
+}
+
+interface SignBridgeLogoMarkProps {
+  size?: LogoMarkSize
+  className?: string
+  priority?: boolean
+}
+
+/** Shared brand mark rendering the SignBridge orange hand-with-star logo. */
+export function SignBridgeLogoMark({
+  size = "sm",
+  className = "",
+  priority = false,
+}: SignBridgeLogoMarkProps) {
+  return (
+    <div
+      className={`relative flex items-center justify-center shrink-0 bg-[#1F1A2E]/90 ring-1 ring-amber-400/30 shadow-[0_6px_18px_-6px_rgba(255,121,0,0.45)] ${LOGO_CONTAINER_STYLES[size]} ${className}`}
+    >
+      <Image
+        src="/logo.png"
+        alt="SignBridge logo"
+        width={221}
+        height={288}
+        priority={priority}
+        className="h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(255,121,0,0.35)]"
+      />
+    </div>
+  )
+}
 
 interface SignBridgeLogoProps {
   compact?: boolean
@@ -8,6 +46,7 @@ interface SignBridgeLogoProps {
   className?: string
 }
 
+/** Full SignBridge logo mark paired with wordmark and optional tagline. */
 export function SignBridgeBridgeLogo({
   compact = false,
   showTagline = true,
@@ -15,52 +54,7 @@ export function SignBridgeBridgeLogo({
 }: SignBridgeLogoProps) {
   return (
     <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
-      {/* Sculpted Orange Suspension Bridge Mark (matching reference) */}
-      <div className="relative flex items-center justify-center shrink-0">
-        <svg
-          viewBox="0 0 48 34"
-          className={compact ? "w-9 h-6.5" : "w-11 h-8"}
-          fill="none"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="sbBridgeGrad" x1="2" y1="28" x2="46" y2="6" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#FF9A3C" />
-              <stop offset="55%" stopColor="#FF7900" />
-              <stop offset="100%" stopColor="#E85D04" />
-            </linearGradient>
-          </defs>
-          {/* Main sweeping span */}
-          <path
-            d="M3 25C10 11 22 6 35 12C40 14.3 43.5 17.5 45.5 21"
-            stroke="url(#sbBridgeGrad)"
-            strokeWidth="4.2"
-            strokeLinecap="round"
-          />
-          {/* Secondary inner structural arch */}
-          <path
-            d="M8.5 27.5C15 16.5 25.5 12.5 36.5 17.5C40 19 42.5 21.5 44 24"
-            stroke="url(#sbBridgeGrad)"
-            strokeWidth="2.8"
-            strokeLinecap="round"
-            opacity="0.92"
-          />
-          {/* Bridge deck subtle curve */}
-          <path
-            d="M4.5 28.5C16.5 24 31 23 44 26.5"
-            stroke="#E85D04"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            opacity="0.7"
-          />
-          {/* Vertical support piers */}
-          <path d="M16 14.5V25.2" stroke="#FFF8F1" strokeWidth="1.4" strokeLinecap="round" opacity="0.85" />
-          <path d="M23 11.2V24.5" stroke="#FFF8F1" strokeWidth="1.4" strokeLinecap="round" opacity="0.85" />
-          <path d="M30 11.5V24.6" stroke="#FFF8F1" strokeWidth="1.4" strokeLinecap="round" opacity="0.85" />
-          {/* Warm apex spark dot */}
-          <circle cx="24" cy="9.2" r="2.1" fill="#FFB347" />
-        </svg>
-      </div>
+      <SignBridgeLogoMark size={compact ? "sm" : "md"} priority />
 
       <div className="leading-none">
         <span

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { ArrowRight, BookOpen, Camera, Command, FolderOpen, Settings, Sparkles } from "lucide-react"
 import type { RecognitionMode, StudioWindowId } from "@/lib/signbridge-store"
+import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { InteractiveMenuHand, type ModePointerRef } from "./menu-3d-hands"
 
 interface UnifiedModeMenuProps {
@@ -161,17 +162,7 @@ export function UnifiedModeMenu({
       {/* Minimal Header */}
       <header className="relative z-30 flex items-center justify-between px-6 sm:px-10 pt-6 pb-2">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400/10 ring-1 ring-amber-400/25">
-            <svg viewBox="0 0 28 28" className="h-5 w-5 text-amber-400" fill="none">
-              <path
-                d="M7.5 14V8.5a1.25 1.25 0 0 1 2.5 0V13m0-5.5a1.25 1.25 0 0 1 2.5 0V13m0-5a1.25 1.25 0 0 1 2.5 0V13.5m0-3.5a1.25 1.25 0 0 1 2.5 0v5.7c0 3.7-2.6 6.8-6.4 6.8-2.9 0-5.1-1.9-5.9-4.5l-.9-2.8a1.2 1.2 0 0 1 2.1-1.1l1.6 1.8V14Z"
-                stroke="currentColor"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
+          <SignBridgeLogoMark size="sm" priority />
           <span className="font-display text-lg font-bold tracking-tight text-white">
             SignBridge
           </span>

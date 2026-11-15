@@ -16,6 +16,7 @@ import {
   VolumeX,
 } from "lucide-react"
 import type { RecognitionMode } from "@/lib/signbridge-store"
+import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { useAslRecognition } from "@/lib/use-asl-recognition"
 import { InteractiveHandGuide } from "./interactive-hand-guide"
 
@@ -300,8 +301,8 @@ export function CommunicationCanvas({
             <span>Menu</span>
           </button>
 
-          <div className="hidden md:flex items-center gap-2 pl-1.5 text-sm font-display font-bold text-white/90 drop-shadow">
-            <span className="h-2 w-2 rounded-full bg-amber-400" />
+          <div className="hidden md:flex items-center gap-2 pl-1.5 text-sm font-display font-bold text-white/95 drop-shadow">
+            <SignBridgeLogoMark size="xs" priority />
             <span>SignBridge</span>
           </div>
         </div>
