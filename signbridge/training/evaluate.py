@@ -84,14 +84,15 @@ def evaluate_full_model(
     model, class_names, metadata = load_signbridge_model(checkpoint_path, device=device)
     model.eval()
 
-    # Check if model expects velocity features (input_size > 126)
+    # Check if model expects ST-GCN or velocity features
     model_input_size = metadata.get("input_size", input_size)
-    
-    # Load untouched test split (32,941 samples) with appropriate features
-    if model_input_size > 126:
-        # Model expects velocity features
+    arch = metadata.get("architecture", "")
+
+    if arch == "STGCNArcFaceClassifier" or hasattr(model, "block1"):
+        from signbridge.training.dataset import create_stgcn_dataloaders
+        _, _, test_loader, _ = create_stgcn_dataloaders(batch_size=batch_size, num_workers=0, use_skeleton_warp=False)
+    elif model_input_size > 126:
         from signbridge.training.dataset import create_velocity_dataloaders
-        # We need to import the velocity dataloader function
         _, _, test_loader, _ = create_velocity_dataloaders(batch_size=batch_size, num_workers=0)
     else:
         _, _, test_loader, _ = create_full_dataloaders(batch_size=batch_size, num_workers=0)

@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Any, List, Optional, Tuple
 import json
 import numpy as np
 from datetime import datetime, timezone
-import torch
 import shutil
 
-from signbridge.inference.predictor import SignBridgePredictor
+if TYPE_CHECKING:
+    from signbridge.inference.predictor import SignBridgePredictor
 from signbridge.preprocessing.normalize import normalize_sequence
 from signbridge.personalization.models import (
     PersonalSignSample,
@@ -248,13 +250,16 @@ class PersonalizationManager:
                 ))
         return samples
 
-    def _recompute_prototype(self, gloss: str, user_id: str) -> Optional[PersonalSignPrototype]:
+    def _recompute_prototype(
+        self, gloss: str, user_id: str, min_samples: Optional[int] = None
+    ) -> Optional[PersonalSignPrototype]:
         active_samples = self._load_active_samples(gloss, user_id)
         if not active_samples:
             return None
 
         embeddings = np.stack([s.embedding for s in active_samples])
-        if embeddings.shape[0] < self.config.reraank_min_prototype_samples:
+        req_samples = min_samples if min_samples is not None else self.config.reraank_min_prototype_samples
+        if embeddings.shape[0] < req_samples:
             return None
 
         prototype_embedding = embeddings.mean(axis=0)
@@ -265,7 +270,7 @@ class PersonalizationManager:
             for j, other in enumerate(embeddings):
                 if i != j:
                     sims.append(float(np.dot(emb, other)))
-        avg_sim = float(np.mean(sims)) if sims else 0.0
+        avg_sim = float(np.mean(sims)) if sims else 1.0
 
         proto = PersonalSignPrototype(
             gloss=gloss,
@@ -313,6 +318,64 @@ class PersonalizationManager:
                 prototypes[sign["gloss"]] = emb
         return prototypes
 
+    def get_all_sample_banks(self, user_id: str = None) -> Dict[str, np.ndarray]:
+        """Return per-sign stacked normalized sample embeddings for hybrid k-NN + centroid matching."""
+        uid = user_id or self.default_user
+        signs_path = self._user_dir(uid) / "signs"
+        if not signs_path.exists():
+            return {}
+        banks: Dict[str, np.ndarray] = {}
+        for gloss_dir in sorted(signs_path.iterdir()):
+            if not gloss_dir.is_dir():
+                continue
+            samples = self._load_active_samples(gloss_dir.name, uid)
+            if samples:
+                banks[gloss_dir.name] = np.stack([s.embedding for s in samples]).astype(np.float32)
+        return banks
+
+    def train_custom_model(self, user_id: str = None) -> Dict[str, Any]:
+        """Train/calibrate prototypes & k-NN sample banks for all recorded custom user signs."""
+        uid = user_id or self.default_user
+        signs_path = self._user_dir(uid) / "signs"
+        trained: List[Dict[str, Any]] = []
+        if signs_path.exists():
+            for gloss_dir in sorted(signs_path.iterdir()):
+                if not gloss_dir.is_dir():
+                    continue
+                proto = self._recompute_prototype(gloss_dir.name, uid, min_samples=1)
+                if proto is not None:
+                    trained.append(
+                        {
+                            "gloss": proto.gloss,
+                            "sample_count": proto.sample_count,
+                            "cohesion": proto.average_similarity_to_others,
+                            "ready": proto.sample_count >= self.config.min_samples_required,
+                        }
+                    )
+
+        state = self.get_model_state(uid)
+        state["enabled"] = bool(trained)
+        state["thresholds"] = {
+            "rerank_similarity_threshold": self.config.rerank_similarity_threshold,
+            "rerank_margin_threshold": self.config.rerank_margin_threshold,
+            "override_similarity_threshold": self.config.override_similarity_threshold,
+        }
+        state["total_signs_personalized"] = len(trained)
+        state["total_samples"] = sum(item["sample_count"] for item in trained)
+        state["last_updated"] = datetime.now(timezone.utc).isoformat()
+        self._user_dir(uid).mkdir(parents=True, exist_ok=True)
+        with open(self._model_state_path(uid), "w") as f:
+            json.dump(state, f, indent=2)
+
+        return {
+            "user_id": uid,
+            "enabled": state["enabled"],
+            "trained_signs": trained,
+            "total_signs": len(trained),
+            "total_samples": state["total_samples"],
+            "trained_at": state["last_updated"],
+        }
+
     def delete_sample(self, gloss: str, sample_id: str, user_id: str = None) -> Dict[str, Any]:
         uid = user_id or self.default_user
         sign_dir = self._sign_dir(uid, gloss)
@@ -356,13 +419,18 @@ class PersonalizationManager:
             json.dump(meta, f, indent=2)
         return {"gloss": gloss, "deleted": True}
 
-    def delete_all_personalization(self, user_id: str = None) -> Dict[str, Any]:
+    def delete_all_personalization(
+        self,
+        user_id: str = None,
+        remove_user_dir: bool = False,
+    ) -> Dict[str, Any]:
         uid = user_id or self.default_user
         user_dir = self._user_dir(uid)
         if user_dir.exists():
             shutil.rmtree(user_dir)
-        (user_dir / "signs").mkdir(parents=True, exist_ok=True)
-        (user_dir / "prototypes").mkdir(parents=True, exist_ok=True)
+        if not remove_user_dir:
+            (user_dir / "signs").mkdir(parents=True, exist_ok=True)
+            (user_dir / "prototypes").mkdir(parents=True, exist_ok=True)
         return {"user_id": uid, "deleted": True, "total_signs_removed": 0}
 
     def retrain_prototype(self, gloss: str, user_id: str = None) -> Dict[str, Any]:
@@ -381,15 +449,19 @@ class PersonalizationManager:
     def set_config(self, config: PersonalizationConfig) -> None:
         self.config = config
         uid = self.default_user
+        state_path = self._model_state_path(uid)
+        has_saved_state = state_path.exists()
         state = self.get_model_state(uid)
-        state["enabled"] = config.enabled
+        if not has_saved_state:
+            state["enabled"] = config.enabled
         state["thresholds"] = {
             "rerank_similarity_threshold": config.rerank_similarity_threshold,
             "rerank_margin_threshold": config.rerank_margin_threshold,
             "override_similarity_threshold": config.override_similarity_threshold,
         }
         state["last_updated"] = datetime.now(timezone.utc).isoformat()
-        with open(self._model_state_path(uid), "w") as f:
+        self._user_dir(uid).mkdir(parents=True, exist_ok=True)
+        with open(state_path, "w") as f:
             json.dump(state, f, indent=2)
 
     def get_config(self) -> Dict[str, Any]:
@@ -402,6 +474,10 @@ class PersonalizationManager:
     def extract_embedding(self, sequence: np.ndarray) -> np.ndarray:
         if self.predictor is None:
             raise RuntimeError("Predictor not set. Cannot extract embedding.")
+        if hasattr(self.predictor, "extract_embedding"):
+            return self.predictor.extract_embedding(sequence, is_normalized=False)
+        import torch
+
         tensor_input = self.predictor._prepare_tensor(sequence, is_normalized=False)
         with torch.no_grad():
             embedding = self.predictor.model.extract_embedding(tensor_input)

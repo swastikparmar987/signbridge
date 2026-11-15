@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 from signbridge.preprocessing.normalize import normalize_sequence
+from signbridge.preprocessing.features import build_xyz_velocity_features
 from signbridge.training.config import (
     SPLITS_DIR,
     CACHE_DIR,
@@ -258,6 +259,7 @@ class ASLCitizenFullDatasetVelocity(Dataset):
         cache_dir: Optional[Path] = None,
         class_names: Optional[List[str]] = None,
         augmentor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        use_skeleton_warp: bool = False,
         is_training: bool = False,
     ):
         from signbridge.training.config import SPLITS_DIR, CACHE_DIR, load_full_glosses
@@ -266,6 +268,7 @@ class ASLCitizenFullDatasetVelocity(Dataset):
         self.cache_dir = Path(cache_dir or CACHE_DIR)
         self.is_training = is_training
         self.augmentor = augmentor
+        self.use_skeleton_warp = use_skeleton_warp
 
         csv_file = self.splits_dir / f"{self.split}.csv"
         if not csv_file.exists():
@@ -291,17 +294,20 @@ class ASLCitizenFullDatasetVelocity(Dataset):
         if raw_landmarks.ndim == 2 and raw_landmarks.shape[1] == 126:
             raw_landmarks = raw_landmarks.reshape(32, 42, 3)
 
+        # 1. Kinematic Skeleton Warp Augmentation (training only)
+        if self.is_training and self.use_skeleton_warp:
+            from signbridge.preprocessing.skeleton_augment import apply_skeleton_warp
+            raw_landmarks = apply_skeleton_warp(raw_landmarks, scale_min=0.85, scale_max=1.15)
+
+        # 2. General Landmark Augmentations (training only)
         if self.is_training and self.augmentor is not None:
             raw_landmarks = self.augmentor(raw_landmarks)
 
-        normalized = normalize_sequence(raw_landmarks)  # [32, 42, 3]
-        normalized_flat = normalized.reshape(32, 126)  # [32, 126]
-        
-        # Compute velocity: frame-to-frame difference
-        velocity = np.diff(normalized_flat, axis=0, prepend=normalized_flat[:1])  # [32, 126]
-        
-        # Concatenate position + velocity
-        features = np.concatenate([normalized_flat, velocity], axis=1).astype(np.float32)  # [32, 252]
+        # 3. Verified Normalization
+        normalized = normalize_sequence(raw_landmarks)
+
+        # 4. Recompute velocity features post-skeleton warp
+        features = build_xyz_velocity_features(normalized)
 
         gloss = self.dataframe.iloc[index]["Gloss"]
         label = self.gloss_to_idx[gloss]
@@ -315,6 +321,7 @@ class ASLCitizenFullDatasetVelocity(Dataset):
 def create_velocity_dataloaders(
     batch_size: int = 128,
     augmentation_config: Optional[AugmentationConfig] = None,
+    use_skeleton_warp: bool = False,
     num_workers: int = 0,
     seed: int = 42,
 ) -> Tuple[DataLoader, DataLoader, DataLoader, List[str]]:
@@ -331,6 +338,7 @@ def create_velocity_dataloaders(
         split="train",
         class_names=class_names,
         augmentor=augmentor,
+        use_skeleton_warp=use_skeleton_warp,
         is_training=True,
     )
 
@@ -338,6 +346,7 @@ def create_velocity_dataloaders(
         split="val",
         class_names=class_names,
         augmentor=None,
+        use_skeleton_warp=False,
         is_training=False,
     )
 
@@ -345,6 +354,7 @@ def create_velocity_dataloaders(
         split="test",
         class_names=class_names,
         augmentor=None,
+        use_skeleton_warp=False,
         is_training=False,
     )
 
@@ -413,6 +423,461 @@ def create_full_dataloaders(
         split="test",
         class_names=class_names,
         augmentor=None,
+        is_training=False,
+    )
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        worker_init_fn=seed_worker,
+        generator=g,
+        pin_memory=False,
+    )
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=False,
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=False,
+    )
+
+    return train_loader, val_loader, test_loader, class_names
+
+
+class ASLCitizenFullDatasetSTGCN(Dataset):
+    """
+    SignBridge Full 2,731-Class ASL Dataset for ST-GCN Model.
+    
+    Returns landmark tensors formatted as (C=3, T=32, V=42)
+    with optional kinematic skeleton warp augmentation.
+    """
+
+    def __init__(
+        self,
+        split: str,
+        splits_dir: Optional[Path] = None,
+        cache_dir: Optional[Path] = None,
+        class_names: Optional[List[str]] = None,
+        augmentor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        use_skeleton_warp: bool = False,
+        is_training: bool = False,
+    ):
+        from signbridge.training.config import SPLITS_DIR, CACHE_DIR, load_full_glosses
+        self.split = split.lower()
+        self.splits_dir = Path(splits_dir or SPLITS_DIR)
+        self.cache_dir = Path(cache_dir or CACHE_DIR)
+        self.is_training = is_training
+        self.augmentor = augmentor
+        self.use_skeleton_warp = use_skeleton_warp
+
+        csv_file = self.splits_dir / f"{self.split}.csv"
+        if not csv_file.exists():
+            raise FileNotFoundError(f"Split CSV not found: {csv_file}")
+
+        split_cache_name = "validation" if self.split in ["val", "validation"] else self.split
+        self.split_cache_dir = self.cache_dir / split_cache_name
+        if not self.split_cache_dir.exists():
+            self.split_cache_dir = self.cache_dir / self.split
+            if not self.split_cache_dir.exists():
+                raise FileNotFoundError(f"Cache dir not found: {self.split_cache_dir}")
+
+        self.class_names = class_names or load_full_glosses(self.splits_dir)
+        self.gloss_to_idx: Dict[str, int] = {g: i for i, g in enumerate(self.class_names)}
+        self.dataframe = pd.read_csv(csv_file)
+
+    def __len__(self) -> int:
+        return len(self.dataframe)
+
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        cache_path = self.split_cache_dir / f"{index}.npy"
+        raw_landmarks = np.load(cache_path).astype(np.float32)
+        if raw_landmarks.ndim == 2 and raw_landmarks.shape[1] == 126:
+            raw_landmarks = raw_landmarks.reshape(32, 42, 3)
+
+        # 1. Kinematic Skeleton Warp Augmentation (training only)
+        if self.is_training and self.use_skeleton_warp:
+            from signbridge.preprocessing.skeleton_augment import apply_skeleton_warp
+            raw_landmarks = apply_skeleton_warp(raw_landmarks, scale_min=0.85, scale_max=1.15)
+
+        # 2. General Landmark Augmentations (training only)
+        if self.is_training and self.augmentor is not None:
+            raw_landmarks = self.augmentor(raw_landmarks)
+
+        # 3. Verified Normalization
+        normalized = normalize_sequence(raw_landmarks)  # shape (32, 42, 3)
+
+        # 4. Format to ST-GCN input: (C=3, T=32, V=42)
+        features = np.transpose(normalized, (2, 0, 1)).astype(np.float32)
+
+        gloss = self.dataframe.iloc[index]["Gloss"]
+        label = self.gloss_to_idx[gloss]
+
+        return (
+            torch.from_numpy(features),
+            torch.tensor(label, dtype=torch.long),
+        )
+
+
+def create_stgcn_dataloaders(
+    batch_size: int = 128,
+    augmentation_config: Optional[AugmentationConfig] = None,
+    use_skeleton_warp: bool = True,
+    num_workers: int = 0,
+    seed: int = 42,
+) -> Tuple[DataLoader, DataLoader, DataLoader, List[str]]:
+    """
+    Factory function to create train, val, and test DataLoaders for ST-GCN (C=3, T=32, V=42).
+    """
+    class_names = load_full_glosses()
+
+    augmentor = None
+    if augmentation_config and augmentation_config.enabled:
+        augmentor = LandmarkAugmentor(augmentation_config)
+
+    train_dataset = ASLCitizenFullDatasetSTGCN(
+        split="train",
+        class_names=class_names,
+        augmentor=augmentor,
+        use_skeleton_warp=use_skeleton_warp,
+        is_training=True,
+    )
+
+    val_dataset = ASLCitizenFullDatasetSTGCN(
+        split="val",
+        class_names=class_names,
+        augmentor=None,
+        use_skeleton_warp=False,
+        is_training=False,
+    )
+
+    test_dataset = ASLCitizenFullDatasetSTGCN(
+        split="test",
+        class_names=class_names,
+        augmentor=None,
+        use_skeleton_warp=False,
+        is_training=False,
+    )
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        worker_init_fn=seed_worker,
+        generator=g,
+        pin_memory=False,
+    )
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=False,
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=False,
+    )
+
+    return train_loader, val_loader, test_loader, class_names
+
+
+class ASLCitizenFullDatasetEXP14(Dataset):
+    """
+    SignBridge Full 2,731-Class ASL Dataset for EXP14 (255D, 258D, or 261D).
+    
+    Reads pre-extracted raw landmark caches from landmark_cache_full,
+    applies optional skeleton warp and landmark augmentations during training,
+    normalizes hand landmarks using normalize_sequence(), and constructs
+    EXP14 features (252D baseline + inter-hand displacement and/or palm normals).
+    """
+
+    def __init__(
+        self,
+        split: str,
+        feature_mode: str = "c",
+        splits_dir: Optional[Path] = None,
+        cache_dir: Optional[Path] = None,
+        class_names: Optional[List[str]] = None,
+        augmentor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        use_skeleton_warp: bool = False,
+        is_training: bool = False,
+    ):
+        from signbridge.training.config import SPLITS_DIR, CACHE_DIR, load_full_glosses
+        from signbridge.preprocessing.features import build_exp14_features
+        self.split = split.lower()
+        self.feature_mode = feature_mode.lower()
+        self.splits_dir = Path(splits_dir or SPLITS_DIR)
+        self.cache_dir = Path(cache_dir or CACHE_DIR)
+        self.is_training = is_training
+        self.augmentor = augmentor
+        self.use_skeleton_warp = use_skeleton_warp
+
+        csv_file = self.splits_dir / f"{self.split}.csv"
+        if not csv_file.exists():
+            raise FileNotFoundError(f"Split CSV not found: {csv_file}")
+
+        split_cache_name = "validation" if self.split in ["val", "validation"] else self.split
+        self.split_cache_dir = self.cache_dir / split_cache_name
+        if not self.split_cache_dir.exists():
+            self.split_cache_dir = self.cache_dir / self.split
+            if not self.split_cache_dir.exists():
+                raise FileNotFoundError(f"Cache dir not found: {self.split_cache_dir}")
+
+        self.class_names = class_names or load_full_glosses(self.splits_dir)
+        self.gloss_to_idx: Dict[str, int] = {g: i for i, g in enumerate(self.class_names)}
+        self.dataframe = pd.read_csv(csv_file)
+
+    def __len__(self) -> int:
+        return len(self.dataframe)
+
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        from signbridge.preprocessing.features import build_exp14_features
+        cache_path = self.split_cache_dir / f"{index}.npy"
+        raw_landmarks = np.load(cache_path).astype(np.float32)
+        if raw_landmarks.ndim == 2 and raw_landmarks.shape[1] == 126:
+            raw_landmarks = raw_landmarks.reshape(32, 42, 3)
+
+        # 1. Kinematic Skeleton Warp Augmentation (training only)
+        if self.is_training and self.use_skeleton_warp:
+            from signbridge.preprocessing.skeleton_augment import apply_skeleton_warp
+            raw_landmarks = apply_skeleton_warp(raw_landmarks, scale_min=0.85, scale_max=1.15)
+
+        # 2. General Landmark Augmentations (training only)
+        if self.is_training and self.augmentor is not None:
+            raw_landmarks = self.augmentor(raw_landmarks)
+
+        # 3. Verified Normalization
+        normalized = normalize_sequence(raw_landmarks)
+
+        # 4. Construct EXP14 features
+        features = build_exp14_features(raw_landmarks, normalized, feature_mode=self.feature_mode)
+
+        gloss = self.dataframe.iloc[index]["Gloss"]
+        label = self.gloss_to_idx[gloss]
+
+        return (
+            torch.from_numpy(features),
+            torch.tensor(label, dtype=torch.long),
+        )
+
+
+def create_exp14_dataloaders(
+    feature_mode: str = "c",
+    batch_size: int = 128,
+    augmentation_config: Optional[AugmentationConfig] = None,
+    use_skeleton_warp: bool = False,
+    num_workers: int = 0,
+    seed: int = 42,
+) -> Tuple[DataLoader, DataLoader, DataLoader, List[str]]:
+    """
+    Factory function to create train, val, and test DataLoaders for EXP14.
+    """
+    class_names = load_full_glosses()
+
+    augmentor = None
+    if augmentation_config and augmentation_config.enabled:
+        augmentor = LandmarkAugmentor(augmentation_config)
+
+    train_dataset = ASLCitizenFullDatasetEXP14(
+        split="train",
+        feature_mode=feature_mode,
+        class_names=class_names,
+        augmentor=augmentor,
+        use_skeleton_warp=use_skeleton_warp,
+        is_training=True,
+    )
+
+    val_dataset = ASLCitizenFullDatasetEXP14(
+        split="val",
+        feature_mode=feature_mode,
+        class_names=class_names,
+        augmentor=None,
+        use_skeleton_warp=False,
+        is_training=False,
+    )
+
+    test_dataset = ASLCitizenFullDatasetEXP14(
+        split="test",
+        feature_mode=feature_mode,
+        class_names=class_names,
+        augmentor=None,
+        use_skeleton_warp=False,
+        is_training=False,
+    )
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        worker_init_fn=seed_worker,
+        generator=g,
+        pin_memory=False,
+    )
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=False,
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=False,
+    )
+
+    return train_loader, val_loader, test_loader, class_names
+
+
+class ASLCitizenFullDatasetEXP15(Dataset):
+    """
+    SignBridge Full 2,731-Class ASL Dataset for EXP15 (292D: 261D EXP14-C + 31D Body Features).
+    """
+
+    def __init__(
+        self,
+        split: str,
+        splits_dir: Optional[Path] = None,
+        cache_dir: Optional[Path] = None,
+        pose_cache_dir: Optional[Path] = None,
+        class_names: Optional[List[str]] = None,
+        augmentor: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        use_skeleton_warp: bool = False,
+        is_training: bool = False,
+    ):
+        from signbridge.training.config import SPLITS_DIR, CACHE_DIR, load_full_glosses, PROJECT_ROOT
+        from signbridge.preprocessing.features import build_exp15_features
+        self.split = split.lower()
+        self.splits_dir = Path(splits_dir or SPLITS_DIR)
+        self.cache_dir = Path(cache_dir or CACHE_DIR)
+        self.pose_cache_dir = Path(pose_cache_dir or (PROJECT_ROOT / "pose_cache_full"))
+        self.is_training = is_training
+        self.augmentor = augmentor
+        self.use_skeleton_warp = use_skeleton_warp
+
+        csv_file = self.splits_dir / f"{self.split}.csv"
+        if not csv_file.exists():
+            raise FileNotFoundError(f"Split CSV not found: {csv_file}")
+
+        split_cache_name = "validation" if self.split in ["val", "validation"] else self.split
+        self.split_cache_dir = self.cache_dir / split_cache_name
+        self.split_pose_cache_dir = self.pose_cache_dir / split_cache_name
+
+        self.class_names = class_names or load_full_glosses(self.splits_dir)
+        self.gloss_to_idx: Dict[str, int] = {g: i for i, g in enumerate(self.class_names)}
+        self.dataframe = pd.read_csv(csv_file)
+
+    def __len__(self) -> int:
+        return len(self.dataframe)
+
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        from signbridge.preprocessing.features import build_exp15_features
+        cache_path = self.split_cache_dir / f"{index}.npy"
+        raw_landmarks = np.load(cache_path).astype(np.float32)
+        if raw_landmarks.ndim == 2 and raw_landmarks.shape[1] == 126:
+            raw_landmarks = raw_landmarks.reshape(32, 42, 3)
+
+        pose_cache_path = self.split_pose_cache_dir / f"{index}.npy"
+        if pose_cache_path.exists():
+            try:
+                pose_landmarks = np.load(pose_cache_path).astype(np.float32)
+            except Exception:
+                pose_landmarks = np.zeros((32, 33, 3), dtype=np.float32)
+        else:
+            pose_landmarks = np.zeros((32, 33, 3), dtype=np.float32)
+
+        # 1. Kinematic Skeleton Warp Augmentation (training only)
+        if self.is_training and self.use_skeleton_warp:
+            from signbridge.preprocessing.skeleton_augment import apply_skeleton_warp
+            raw_landmarks = apply_skeleton_warp(raw_landmarks, scale_min=0.85, scale_max=1.15)
+
+        # 2. General Landmark Augmentations (training only)
+        if self.is_training and self.augmentor is not None:
+            raw_landmarks = self.augmentor(raw_landmarks)
+
+        # 3. Verified Normalization
+        normalized = normalize_sequence(raw_landmarks)
+
+        # 4. Construct EXP15 features (292D)
+        features = build_exp15_features(raw_landmarks, normalized, pose_landmarks)
+
+        gloss = self.dataframe.iloc[index]["Gloss"]
+        label = self.gloss_to_idx[gloss]
+
+        return (
+            torch.from_numpy(features),
+            torch.tensor(label, dtype=torch.long),
+        )
+
+
+def create_exp15_dataloaders(
+    batch_size: int = 128,
+    augmentation_config: Optional[AugmentationConfig] = None,
+    use_skeleton_warp: bool = False,
+    num_workers: int = 0,
+    seed: int = 42,
+) -> Tuple[DataLoader, DataLoader, DataLoader, List[str]]:
+    """
+    Factory function to create train, val, and test DataLoaders for EXP15.
+    """
+    class_names = load_full_glosses()
+
+    augmentor = None
+    if augmentation_config and augmentation_config.enabled:
+        augmentor = LandmarkAugmentor(augmentation_config)
+
+    train_dataset = ASLCitizenFullDatasetEXP15(
+        split="train",
+        class_names=class_names,
+        augmentor=augmentor,
+        use_skeleton_warp=use_skeleton_warp,
+        is_training=True,
+    )
+
+    val_dataset = ASLCitizenFullDatasetEXP15(
+        split="val",
+        class_names=class_names,
+        augmentor=None,
+        use_skeleton_warp=False,
+        is_training=False,
+    )
+
+    test_dataset = ASLCitizenFullDatasetEXP15(
+        split="test",
+        class_names=class_names,
+        augmentor=None,
+        use_skeleton_warp=False,
         is_training=False,
     )
 

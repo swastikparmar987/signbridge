@@ -185,9 +185,9 @@ def save_checkpoint(
         "architecture": model.__class__.__name__,
         "model_state_dict": model.state_dict(),
         "class_names": class_names,
-        "input_size": getattr(model, "input_size", getattr(model.gru, "input_size", 126)),
-        "hidden_size": getattr(model, "hidden_size", getattr(model.gru, "hidden_size", 256)),
-        "num_layers": getattr(model, "num_layers", getattr(model.gru, "num_layers", 2)),
+        "input_size": getattr(model, "input_size", getattr(getattr(model, "backbone", None), "input_size", 126)),
+        "hidden_size": getattr(model, "hidden_size", getattr(getattr(model, "backbone", None), "hidden_size", 256)),
+        "num_layers": getattr(model, "num_layers", getattr(getattr(model, "backbone", None), "num_layers", 2)),
         "num_classes": len(class_names),
         **meta,
     }

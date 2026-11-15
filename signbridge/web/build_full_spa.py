@@ -471,11 +471,11 @@ INDEX_TEMPLATE = f"""<!DOCTYPE html>
           <!-- User Profile Pill -->
           <div class="flex items-center gap-2.5 pl-1 cursor-pointer" id="user-profile-menu" data-nav="profile">
             <div class="w-8 h-8 rounded-full bg-[#181a20] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              SP
+              SB
             </div>
             <div class="text-left text-xs leading-snug hidden md:block">
               <div class="font-bold text-gray-900 flex items-center gap-1">
-                <span>Swastik Parmar</span>
+                <span>SignBridge Learner</span>
                 <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
               </div>
               <div class="text-gray-500 text-[10px]">Student · Active</div>

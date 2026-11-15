@@ -159,7 +159,7 @@ def load_signbridge_model(
     if device is None:
         device = get_default_device()
 
-    checkpoint = torch.load(checkpoint_path, map_location=device)
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
 
     input_size = checkpoint.get("input_size", 126)
     hidden_size = checkpoint.get("hidden_size", 256)
@@ -169,17 +169,91 @@ def load_signbridge_model(
     state_dict = checkpoint.get("model_state_dict", checkpoint)
 
     # Detect architecture type
-    is_bigru_attention = (
-        checkpoint.get("architecture") == "BiGRUAttentionPoolingClassifier"
-        or ("attention_net.0.weight" in state_dict and checkpoint.get("architecture") != "BiGRUArcFaceClassifier")
+    arch_name = checkpoint.get("architecture", "")
+    is_conformer = arch_name == "SignConformerClassifier" or ("stem.b1.weight" in state_dict and "blocks.0.qkv.weight" in state_dict)
+    is_pyramid_gru = arch_name == "SignPyramidBiGRUClassifier" or ("stem.b1.weight" in state_dict and "gru_layers.0.weight_ih_l0" in state_dict)
+    is_stgcn = (
+        arch_name == "STGCNArcFaceClassifier"
+        or "block1.gcn.conv.weight" in state_dict
     )
-    is_arcface = checkpoint.get("architecture") == "BiGRUArcFaceClassifier"
+    is_exp11_adapter = (
+        arch_name == "Exp11AdapterClassifier"
+        or "adapter.weight" in state_dict
+    )
+    is_bigru_attention = (
+        arch_name == "BiGRUAttentionPoolingClassifier"
+        or ("attention_net.0.weight" in state_dict and arch_name != "BiGRUArcFaceClassifier" and not is_exp11_adapter and not is_stgcn and not is_conformer and not is_pyramid_gru)
+    )
+    is_arcface = arch_name == "BiGRUArcFaceClassifier" and not is_exp11_adapter and not is_stgcn
 
-    if is_arcface:
+    if is_conformer:
+        from signbridge.models.architectures import SignConformerClassifier
+        model = SignConformerClassifier(
+            input_size=input_size,
+            d_model=checkpoint.get("d_model", hidden_size),
+            num_layers=num_layers,
+            num_heads=checkpoint.get("num_heads", 6),
+            num_classes=num_classes,
+            emb_dim=checkpoint.get("emb_dim", 512),
+            num_subcenters=checkpoint.get("num_subcenters", 2),
+            dropout_p=checkpoint.get("dropout_p", 0.2),
+            drop_path=checkpoint.get("drop_path", 0.08),
+            s=checkpoint.get("s", 32.0),
+            m=checkpoint.get("m", 0.30),
+        )
+    elif is_pyramid_gru:
+        from signbridge.models.architectures import SignPyramidBiGRUClassifier
+        model = SignPyramidBiGRUClassifier(
+            input_size=input_size,
+            d_model=checkpoint.get("d_model", 384),
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            num_classes=num_classes,
+            emb_dim=checkpoint.get("emb_dim", 512),
+            num_subcenters=checkpoint.get("num_subcenters", 2),
+            dropout_p=checkpoint.get("dropout_p", 0.25),
+            s=checkpoint.get("s", 32.0),
+            m=checkpoint.get("m", 0.30),
+        )
+    elif is_stgcn:
+        from signbridge.models.stgcn import STGCNArcFaceClassifier
+        dropout_p = checkpoint.get("dropout_p", 0.3)
+        s = checkpoint.get("s", 30.0)
+        m = checkpoint.get("m", 0.25)
+        model = STGCNArcFaceClassifier(
+            in_channels=checkpoint.get("in_channels", 3),
+            num_classes=num_classes,
+            num_joints=checkpoint.get("num_joints", 42),
+            dropout_p=dropout_p,
+            s=s,
+            m=m,
+        )
+    elif is_exp11_adapter:
         attention_hidden_dim = checkpoint.get("attention_hidden_dim", 128)
         dropout_p = checkpoint.get("dropout_p", 0.3)
         s = checkpoint.get("s", 30.0)
-        m = checkpoint.get("m", 0.50)
+        m = checkpoint.get("m", 0.25)
+        adapter_output_size = checkpoint.get("adapter_output_size", 126)
+        backbone = BiGRUArcFaceClassifier(
+            input_size=adapter_output_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            num_classes=num_classes,
+            attention_hidden_dim=attention_hidden_dim,
+            dropout_p=dropout_p,
+            s=s,
+            m=m,
+        )
+        model = Exp11AdapterClassifier(
+            backbone=backbone,
+            input_size=input_size,
+            adapter_output_size=adapter_output_size,
+        )
+    elif is_arcface:
+        attention_hidden_dim = checkpoint.get("attention_hidden_dim", 128)
+        dropout_p = checkpoint.get("dropout_p", 0.3)
+        s = checkpoint.get("s", 30.0)
+        m = checkpoint.get("m", 0.25)
         model = BiGRUArcFaceClassifier(
             input_size=input_size,
             hidden_size=hidden_size,
@@ -329,3 +403,38 @@ class BiGRUArcFaceClassifier(nn.Module):
             one_hot.scatter_(1, label.view(-1, 1).long(), 1.0)
             cosine = one_hot * phi + (1.0 - one_hot) * cosine
         return cosine * self.s
+
+
+class Exp11AdapterClassifier(nn.Module):
+    """
+    EXP11: Linear(252 -> 126) adapter feeding into pretrained BiGRUArcFaceClassifier backbone.
+    Initializes adapter weight to [I_126 | 0_126] and bias to 0 so that
+    Linear([XYZ, Velocity]) = XYZ at step 0.
+    """
+    def __init__(
+        self,
+        backbone: BiGRUArcFaceClassifier,
+        input_size: int = 252,
+        adapter_output_size: int = 126,
+    ):
+        super().__init__()
+        self.input_size = input_size
+        self.adapter_output_size = adapter_output_size
+        self.adapter = nn.Linear(input_size, adapter_output_size)
+        self.backbone = backbone
+        self.init_adapter_identity()
+
+    def init_adapter_identity(self):
+        """
+        Initialize adapter weight to [I_126 | 0_126] and bias to 0.
+        """
+        with torch.no_grad():
+            self.adapter.weight.zero_()
+            self.adapter.bias.zero_()
+            self.adapter.weight[:, :self.adapter_output_size] = torch.eye(self.adapter_output_size)
+
+    def forward(self, x: torch.Tensor, label: Optional[torch.Tensor] = None) -> torch.Tensor:
+        # x shape: (B, T, 252)
+        adapted_x = self.adapter(x)  # shape: (B, T, 126)
+        return self.backbone(adapted_x, label=label)
+

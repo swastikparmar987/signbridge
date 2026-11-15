@@ -1,12 +1,19 @@
 services:
   - type: web
     name: signbridge-backend
-    env: docker
-    dockerfilePath: Dockerfile
-    plan: starter
+    runtime: docker
+    dockerfilePath: Dockerfile.render
+    plan: free
     region: oregon
+    healthCheckPath: /api/health
     envVars:
       - key: PORT
-        value: 8000
+        value: "8000"
+      - key: SIGNBRIDGE_USE_ONNX
+        value: "1"
+      - key: SIGNBRIDGE_ONNX_INT8
+        value: "1"
+      - key: PYTHONUNBUFFERED
+        value: "1"
       - key: GROQ_API_KEY
         sync: false

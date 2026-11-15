@@ -1,0 +1,57 @@
+# Lightweight Torch-free Render Docker image (fits comfortably under 512 MB Free RAM)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# OpenMP runtime needed by onnxruntime CPUExecutionProvider
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-render.txt .
+RUN pip install --no-cache-dir -r requirements-render.txt
+
+# Copy pure application code and lightweight vocabulary/config CSVs
+COPY signbridge ./signbridge
+COPY signbridge_final_demo_glosses.csv signbridge_elite_glosses.csv ./
+COPY trained_models/production/class_names.json ./trained_models/production/class_names.json
+
+# Download ONNX Ensemble V2 weights, 3D exemplars, fingerspelling weights & split index from HF Hub
+ARG HF_MODEL_REPO=https://huggingface.co/paparoach2/signbridge-models/resolve/main
+RUN python - << 'EOF'
+import os, pathlib, urllib.request
+
+base = os.environ.get("HF_MODEL_REPO", "https://huggingface.co/paparoach2/signbridge-models/resolve/main")
+downloads = [
+    ("ensemble_v2/exp16.int8.onnx", "/app/trained_models/full_2731/ensemble_v2/exp16.int8.onnx"),
+    ("ensemble_v2/exp17.int8.onnx", "/app/trained_models/full_2731/ensemble_v2/exp17.int8.onnx"),
+    ("ensemble_v2/ensemble_config.json", "/app/trained_models/full_2731/ensemble_v2/ensemble_config.json"),
+    ("production/class_names.json", "/app/trained_models/production/class_names.json"),
+    ("dictionary_exemplars_32.npz", "/app/data/dictionary_exemplars_32.npz"),
+    ("fingerspelling/asl_alphabet_weights.npz", "/app/trained_models/fingerspelling/asl_alphabet_weights.npz"),
+    ("splits/train.csv", "/app/dataset/ASL_Citizen/splits/train.csv"),
+    ("splits/val.csv", "/app/dataset/ASL_Citizen/splits/val.csv"),
+    ("splits/test.csv", "/app/dataset/ASL_Citizen/splits/test.csv"),
+]
+for rel_src, dst in downloads:
+    dst_path = pathlib.Path(dst)
+    dst_path.parent.mkdir(parents=True, exist_ok=True)
+    url = f"{base}/{rel_src}"
+    print(f"Downloading {url} -> {dst_path}")
+    urllib.request.urlretrieve(url, dst_path)
+    print(f"  saved {dst_path.stat().st_size:,} bytes")
+EOF
+
+RUN mkdir -p /app/data/personalization /app/signbridge/web/static/audio
+
+ENV PYTHONUNBUFFERED=1 \
+    SIGNBRIDGE_USE_ONNX=1 \
+    SIGNBRIDGE_ONNX_INT8=1 \
+    SIGNBRIDGE_HOST=0.0.0.0 \
+    PORT=8000 \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "uvicorn signbridge.web.app:app --host 0.0.0.0 --port ${PORT:-8000}"]

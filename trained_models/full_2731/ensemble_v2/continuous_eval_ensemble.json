@@ -1,0 +1,93 @@
+{
+  "num_streams": 200,
+  "num_ood": 100,
+  "seed": 42,
+  "active_eligible_test_clips": 24414,
+  "total_test_clips": 32941,
+  "candidate": {
+    "paused_coarticulation": {
+      "streams": 200,
+      "total_ref_tokens": 801,
+      "total_emitted_tokens": 636,
+      "wer_pct": 52.81,
+      "sub_pct": 23.47,
+      "del_pct": 24.97,
+      "ins_pct": 4.37,
+      "top5_slot_recall_pct": 62.05,
+      "exact_sentence_pct": 8.0,
+      "auto_finalized_pct": 100.0,
+      "mean_window_latency_ms": 13.45,
+      "p95_window_latency_ms": 16.84,
+      "wall_sec": 31.92
+    },
+    "zero_pause_flow": {
+      "streams": 200,
+      "total_ref_tokens": 801,
+      "total_emitted_tokens": 735,
+      "wer_pct": 42.7,
+      "sub_pct": 25.22,
+      "del_pct": 12.86,
+      "ins_pct": 4.62,
+      "top5_slot_recall_pct": 73.53,
+      "exact_sentence_pct": 13.0,
+      "auto_finalized_pct": 100.0,
+      "mean_window_latency_ms": 12.56,
+      "p95_window_latency_ms": 14.45,
+      "wall_sec": 34.13
+    },
+    "ood_static_rest": {
+      "ood_streams": 100,
+      "false_trigger_streams": 0,
+      "rejection_rate_pct": 100.0,
+      "total_spurious_tokens": 0
+    }
+  },
+  "asl_grammar": {
+    "rule_checks_passed": 4,
+    "rule_checks_total": 4,
+    "ncslgr_clean_sentences_translated": 94,
+    "samples": [
+      {
+        "glosses": [
+          "TOMORROW",
+          "I",
+          "GO",
+          "SCHOOL"
+        ],
+        "english": "Tomorrow I go a school.",
+        "passed": true
+      },
+      {
+        "glosses": [
+          "BOOK",
+          "YOU",
+          "WANT",
+          "WHAT"
+        ],
+        "english": "What book you want?",
+        "passed": true
+      },
+      {
+        "glosses": [
+          "YESTERDAY",
+          "FATHER",
+          "BUY",
+          "CAR",
+          "FINISH"
+        ],
+        "english": "Yesterday father buy car finished.",
+        "passed": true
+      },
+      {
+        "glosses": [
+          "COFFEE",
+          "I",
+          "LIKE",
+          "NOT"
+        ],
+        "english": "I do not like coffee.",
+        "passed": true
+      }
+    ]
+  }
+}

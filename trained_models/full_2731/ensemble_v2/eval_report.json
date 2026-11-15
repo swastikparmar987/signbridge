@@ -1,0 +1,92 @@
+{
+  "promoted": true,
+  "version": "ensemble_v2_kinematic_476",
+  "ood_threshold": 0.4842,
+  "members": [
+    {
+      "name": "exp16_kinematic_conformer",
+      "architecture": "SignConformerClassifier",
+      "checkpoint": "trained_models/full_2731/exp16_kinematic_conformer/best_model.pth",
+      "weight": 0.55,
+      "temperature": 1.15
+    },
+    {
+      "name": "exp17_pyramid_bigru",
+      "architecture": "SignPyramidBiGRUClassifier",
+      "checkpoint": "trained_models/full_2731/exp17_pyramid_bigru/best_model.pth",
+      "weight": 0.45,
+      "temperature": 1.15
+    }
+  ],
+  "val_summary": {
+    "weights": [
+      0.55,
+      0.44999999999999996
+    ],
+    "temperatures": [
+      1.15,
+      1.15
+    ],
+    "ood_threshold": 0.4842,
+    "val_metrics": {
+      "top1": 78.53260869565217,
+      "top3": 91.88664596273291,
+      "top5": 94.24495341614907,
+      "macro_f1": 77.8151204319167
+    },
+    "val_mirrored_metrics": {
+      "top1": 78.15411490683229,
+      "top3": 91.69254658385093,
+      "top5": 94.22554347826086,
+      "macro_f1": 77.47460459739952
+    },
+    "val_ood_auroc": 0.9997901300465839,
+    "val_ood_fpr95": 0.0,
+    "val_pos_ood_p02": 0.9404504895210266,
+    "val_neg_ood_p99": 0.027944529429078102
+  },
+  "test_summary": {
+    "num_samples": 32941,
+    "test_top1": 71.889,
+    "test_top3": 87.007,
+    "test_top5": 90.38,
+    "test_macro_f1": 71.207,
+    "mirrored_2k_top1": 72.25,
+    "mirrored_2k_top5": 91.2,
+    "offset_crop_2k_top1": 71.85,
+    "drop_20pct_2k_top1": 72.75,
+    "ood_auroc": 0.99981,
+    "ood_fpr95": 0.0,
+    "latency": {
+      "mean_ms": 11.87,
+      "p50_ms": 11.72,
+      "p95_ms": 13.91
+    }
+  },
+  "per_model_test": {
+    "exp16_kinematic_conformer": {
+      "architecture": "SignConformerClassifier",
+      "test_top1": 70.66,
+      "test_top3": 85.802,
+      "test_top5": 89.266,
+      "test_macro_f1": 70.031,
+      "mirrored_2k_top1": 71.4,
+      "offset_crop_2k_top1": 72.1,
+      "drop_20pct_2k_top1": 71.65,
+      "ood_auroc": 0.99984,
+      "ood_fpr95": 0.0
+    },
+    "exp17_pyramid_bigru": {
+      "architecture": "SignPyramidBiGRUClassifier",
+      "test_top1": 69.433,
+      "test_top3": 85.529,
+      "test_top5": 89.223,
+      "test_macro_f1": 68.674,
+      "mirrored_2k_top1": 69.3,
+      "offset_crop_2k_top1": 70.25,
+      "drop_20pct_2k_top1": 70.65,
+      "ood_auroc": 0.99952,
+      "ood_fpr95": 0.0
+    }
+  }
+}

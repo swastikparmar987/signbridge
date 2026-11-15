@@ -20,17 +20,22 @@ dataset/
 
 # Landmark caches (regenerated automatically) - KEEP LOCAL
 landmark_cache/
+landmark_cache_packed/
 landmark_interpolation_cache/
 landmark_pose_cache/
 landmark_cache_full/
 
-# Local user personalization data (never upload by default)
+# Local user personalization & annotation data (never upload by default)
 data/personalization/
+data/ncslgr_annotations/
 
 # Model checkpoints - Ignore training runs & heavy external TTS weights
 trained_models/demo_50/
 trained_models/full_2731/*
 !trained_models/full_2731/exp9_true_arcface/
+!trained_models/full_2731/ensemble_v2/
+trained_models/full_2731/ensemble_v2/*.onnx
+trained_models/fingerspelling/*.tflite
 trained_models/tts/
 
 # Whitelist best integrated models for production deployment
@@ -42,6 +47,7 @@ trained_models/tts/
 
 # Generated speech cache
 signbridge/web/static/audio/*.wav
+signbridge/web/static/audio/*.mp3
 !signbridge/web/static/audio/.gitkeep
 
 # Internal agent caches & symlinks
@@ -159,3 +165,4 @@ cookies.txt
 # Large CSV files (keep small metadata files)
 *.csv
 
+.vercel

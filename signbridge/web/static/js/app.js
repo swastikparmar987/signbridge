@@ -3737,9 +3737,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailInput = document.getElementById('profile-edit-email');
     const usernameInput = document.getElementById('profile-edit-username');
 
-    const savedName = localStorage.getItem('sb_profile_name') || 'Swastik Parmar';
-    const savedEmail = localStorage.getItem('sb_profile_email') || 'swastik.parmar@example.com';
-    const savedUsername = localStorage.getItem('sb_profile_username') || 'swastik';
+    const savedName = localStorage.getItem('sb_profile_name') || 'SignBridge Learner';
+    const savedEmail = localStorage.getItem('sb_profile_email') || 'learner@signbridge.local';
+    const savedUsername = localStorage.getItem('sb_profile_username') || 'learner';
 
     if (nameDisplay) nameDisplay.textContent = savedName;
     if (emailDisplay) emailDisplay.textContent = savedEmail;

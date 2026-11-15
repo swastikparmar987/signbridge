@@ -1,14 +1,14 @@
+import importlib.util
 import time
 import re
 import logging
 from typing import Dict, Any, Optional, List
 
-try:
-    import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    TRANSFORMERS_AVAILABLE = False
+# Defer importing heavy transformers modules until local model loading is invoked
+TRANSFORMERS_AVAILABLE = (
+    importlib.util.find_spec("torch") is not None
+    and importlib.util.find_spec("transformers") is not None
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +22,15 @@ class QwenLanguageService:
         self.model_name = model_name
         self.tokenizer = None
         self.model = None
-        self.device = device or ("mps" if TRANSFORMERS_AVAILABLE and torch.backends.mps.is_available() else "cpu") if TRANSFORMERS_AVAILABLE else "cpu"
+        self._torch = None
+        self.device = device or "cpu"
         self._is_initialized = False
         self._init_error = None
         self.system_prompt = (
             "You are an ASL gloss to natural English translator.\n"
-            "Convert the input ASL glosses into a single fluent, natural English sentence."
+            "Convert the input ASL glosses into a single fluent, natural English sentence. "
+            "When an ambiguous slot lists candidates [A|B|C], choose the candidate that fits the sentence meaning best. "
+            "Output ONLY the final plain English sentence."
         )
 
         # Pre-compiled high-frequency ASL gloss to English mappings
@@ -62,6 +65,12 @@ class QwenLanguageService:
             return False
 
         try:
+            import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+
+            self._torch = torch
+            if self.device == "cpu" and torch.backends.mps.is_available():
+                self.device = "mps"
             logger.info(f"Checking for local cached {self.model_name} model...")
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, local_files_only=True)
             dtype = torch.float16 if self.device == "mps" else torch.float32
@@ -133,11 +142,18 @@ class QwenLanguageService:
 
         return sentence
 
-    def translate_glosses(self, glosses: List[str]) -> Dict[str, Any]:
+    def translate_glosses(
+        self,
+        glosses: List[str],
+        hypotheses: Optional[List[List[Dict[str, Any]]]] = None,
+        non_manual: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """
         Translate a list of ASL glosses into a natural English sentence.
         Returns dict with 'english', 'latency_ms', 'status', and 'error'.
         """
+        from signbridge.language.asl_grammar import asl_rules_to_english, build_translation_prompt
+
         if not glosses:
             return {"english": "", "latency_ms": 0.0, "status": "empty_input", "error": None}
 
@@ -161,14 +177,15 @@ class QwenLanguageService:
 
         if self._is_initialized and self.model is not None:
             try:
+                user_prompt = build_translation_prompt(glosses, hypotheses=hypotheses, non_manual=non_manual)
                 messages = [
                     {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": f"ASL Glosses: {gloss_text}"}
+                    {"role": "user", "content": user_prompt}
                 ]
                 prompt_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
                 inputs = self.tokenizer([prompt_text], return_tensors="pt").to(self.device)
 
-                with torch.no_grad():
+                with self._torch.no_grad():
                     generated_ids = self.model.generate(
                         **inputs,
                         max_new_tokens=48,
@@ -191,8 +208,10 @@ class QwenLanguageService:
             except Exception as e:
                 logger.warning(f"PyTorch inference failed, falling back to local NLP rules: {e}")
 
-        # Fast local rule engine fallback
-        english_sentence = self._rule_based_translation(glosses)
+        # Fast local ASL grammar rule engine fallback
+        english_sentence = asl_rules_to_english(glosses, non_manual=non_manual)
+        if not english_sentence:
+            english_sentence = self._rule_based_translation(glosses)
         latency_ms = round((time.time() - start_time) * 1000.0, 2)
 
         return {

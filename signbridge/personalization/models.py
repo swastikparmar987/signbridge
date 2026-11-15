@@ -80,7 +80,7 @@ class PersonalizationConfig:
     min_samples_required: int = 3
     target_samples_per_sign: int = 10
     max_samples_per_sign: int = 20
-    override_similarity_threshold: float = 0.90
-    rerank_similarity_threshold: float = 0.75
-    rerank_margin_threshold: float = 0.05
+    override_similarity_threshold: float = 0.68
+    rerank_similarity_threshold: float = 0.56
+    rerank_margin_threshold: float = 0.04
     reraank_min_prototype_samples: int = 3

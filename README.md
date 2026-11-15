@@ -2,9 +2,9 @@
 title: SignBridge
 emoji: 🤟
 colorFrom: red
-colorTo: orange
+colorTo: yellow
 sdk: docker
-app_port: 7860
+app_port: 3099
 pinned: false
 ---
 

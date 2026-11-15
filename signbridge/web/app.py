@@ -1,6 +1,8 @@
 import os
+import platform
 import random
 import shutil
+import subprocess
 import tempfile
 import json
 import logging
@@ -10,8 +12,8 @@ from typing import List, Dict, Any, Optional, Union
 
 logger = logging.getLogger(__name__)
 
+import csv
 import numpy as np
-import pandas as pd
 import re
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,15 +21,29 @@ from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from signbridge.inference.predictor import SignBridgePredictor
+try:
+    import torch as _torch  # noqa: F401
+    from signbridge.inference.predictor import EnsemblePredictor, SignBridgePredictor
+    _TORCH_AVAILABLE = True
+except ImportError:
+    EnsemblePredictor = Any  # type: ignore[misc,assignment]
+    SignBridgePredictor = Any  # type: ignore[misc,assignment]
+    _TORCH_AVAILABLE = False
+
+from signbridge.inference.onnx_predictor import KinematicEnsembleONNXPredictor
+from signbridge.continuous.session import ContinuousCSLRSessionManager
 from signbridge.personalization.manager import PersonalizationManager
 from signbridge.personalization.router import PersonalizationRouter
 from signbridge.language.qwen_service import QwenLanguageService
 from signbridge.language.groq_service import GroqLanguageService
+from signbridge.language.asl_grammar import asl_rules_to_english
 from signbridge.tts.service import KokoroTTSService
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 PRODUCTION_CHECKPOINT = PROJECT_ROOT / "trained_models" / "production" / "best_model.pth"
+EXP17_CHECKPOINT = PROJECT_ROOT / "trained_models" / "full_2731" / "exp17_pyramid_bigru" / "best_model.pth"
+EXP16_CHECKPOINT = PROJECT_ROOT / "trained_models" / "full_2731" / "exp16_kinematic_conformer" / "best_model.pth"
+ENSEMBLE_CONFIG_PATH = PROJECT_ROOT / "trained_models" / "full_2731" / "ensemble_v2" / "ensemble_config.json"
 EXP13_CHECKPOINT = PROJECT_ROOT / "trained_models" / "full_2731" / "exp13_arcface035_skeletonwarp" / "best_model.pth"
 EXP11_CHECKPOINT = PROJECT_ROOT / "trained_models" / "full_2731" / "exp11_adapter_velocity" / "best_model.pth"
 EXP9_CHECKPOINT = PROJECT_ROOT / "trained_models" / "full_2731" / "exp9_true_arcface" / "best_model.pth"
@@ -59,7 +75,7 @@ ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
-_predictors: Dict[str, SignBridgePredictor] = {}
+_predictors: Dict[str, Any] = {}
 _gloss_to_videos: Dict[str, List[str]] = {}
 _demo_ready_glosses: set = set()
 _elite_glosses: set = set()
@@ -72,25 +88,122 @@ _personalization_router = PersonalizationRouter(_personalization_manager)
 _groq_service = GroqLanguageService()
 _qwen_service = QwenLanguageService()
 _tts_service = KokoroTTSService()
+_continuous_manager = ContinuousCSLRSessionManager()
 
 MODEL_CHECKPOINTS = {
     "production_exp13": PRODUCTION_CHECKPOINT,
+    "production_v2": ENSEMBLE_CONFIG_PATH,
+    "exp16_conformer": EXP16_CHECKPOINT,
+    "exp17_bigru": EXP17_CHECKPOINT,
+    "legacy_exp14c": PRODUCTION_CHECKPOINT,
     "production_exp7": PRODUCTION_CHECKPOINT,
     "candidate_exp13": EXP13_CHECKPOINT,
     "candidate_exp11": EXP11_CHECKPOINT,
     "candidate_exp9": EXP9_CHECKPOINT,
+    "demo_50": PROJECT_ROOT / "trained_models" / "demo_50" / "exp3_augmented" / "best_model.pth",
 }
 
 
-def get_predictor(model_variant: str = "production_exp13") -> SignBridgePredictor:
+def _use_onnx_backend() -> bool:
+    force_onnx = os.environ.get("SIGNBRIDGE_USE_ONNX", "").strip().lower() in {"1", "true", "yes"}
+    return force_onnx or not _TORCH_AVAILABLE
+
+
+def _onnx_ensemble_available() -> bool:
+    onnx_dirs = [ENSEMBLE_CONFIG_PATH.parent, PROJECT_ROOT / "trained_models" / "onnx_v2"]
+    names = ("exp16.onnx", "exp17.onnx", "exp16.int8.onnx", "exp17.int8.onnx")
+    return any((d / fn).exists() for d in onnx_dirs for fn in names)
+
+
+def _load_onnx_ensemble() -> Optional[KinematicEnsembleONNXPredictor]:
+    onnx_dir = ENSEMBLE_CONFIG_PATH.parent
+    names = ("exp16.onnx", "exp17.onnx", "exp16.int8.onnx", "exp17.int8.onnx")
+    if not any((onnx_dir / fn).exists() for fn in names):
+        alt_dir = PROJECT_ROOT / "trained_models" / "onnx_v2"
+        if any((alt_dir / fn).exists() for fn in names):
+            onnx_dir = alt_dir
+    return KinematicEnsembleONNXPredictor(
+        ensemble_config_path=ENSEMBLE_CONFIG_PATH,
+        onnx_dir=onnx_dir,
+    )
+
+
+def _load_ensemble_from_config(cfg_path: Path):
+    if _use_onnx_backend():
+        return _load_onnx_ensemble()
+    cfg = json.loads(cfg_path.read_text())
+    members = []
+    temps = []
+    for entry in cfg.get("members", []):
+        ckpt_p = Path(entry["checkpoint"])
+        if not ckpt_p.is_absolute():
+            ckpt_p = PROJECT_ROOT / ckpt_p
+        if not ckpt_p.exists():
+            continue
+        w = float(entry.get("weight", 1.0))
+        if w <= 0.0:
+            continue
+        members.append((SignBridgePredictor(checkpoint_path=ckpt_p, ood_threshold=cfg.get("ood_threshold")), w))
+        temps.append(float(entry.get("temperature", 1.0)))
+    if not members:
+        return None
+    if len(members) == 1:
+        return members[0][0]
+    return EnsemblePredictor(
+        members,
+        temperatures=temps,
+        ood_threshold=cfg.get("ood_threshold"),
+    )
+
+
+def get_predictor(model_variant: str = "production_exp13") -> Any:
     if model_variant not in MODEL_CHECKPOINTS:
         model_variant = "production_exp13"
+    if model_variant in _predictors:
+        return _predictors[model_variant]
+
+    if _use_onnx_backend() and _onnx_ensemble_available():
+        try:
+            ens_onnx = _load_onnx_ensemble()
+            if ens_onnx is not None:
+                _predictors[model_variant] = ens_onnx
+                return ens_onnx
+        except Exception as e:
+            logger.warning(f"Failed loading ONNX ensemble_v2: {e}")
+            if not _TORCH_AVAILABLE:
+                raise
+
+    if not _TORCH_AVAILABLE:
+        raise RuntimeError(
+            "PyTorch is not installed and Ensemble V2 ONNX weights could not be loaded."
+        )
+
+    # Route production_exp13 / production_v2 through promoted ensemble_v2 when ready
+    if model_variant in ("production_exp13", "production_v2") and ENSEMBLE_CONFIG_PATH.exists():
+        try:
+            cfg = json.loads(ENSEMBLE_CONFIG_PATH.read_text())
+            if cfg.get("promoted", False):
+                ens = _load_ensemble_from_config(ENSEMBLE_CONFIG_PATH)
+                if ens is not None:
+                    _predictors[model_variant] = ens
+                    return ens
+        except Exception as e:
+            logger.warning(f"Failed loading ensemble_v2 config, falling back cleanly: {e}")
+
     checkpoint = MODEL_CHECKPOINTS[model_variant]
-    if not checkpoint.exists():
+    if checkpoint == ENSEMBLE_CONFIG_PATH:
+        checkpoint = EXP16_CHECKPOINT if EXP16_CHECKPOINT.exists() else DEFAULT_CHECKPOINT
+    elif not checkpoint.exists():
         checkpoint = DEFAULT_CHECKPOINT
-    if model_variant not in _predictors:
-        _predictors[model_variant] = SignBridgePredictor(checkpoint_path=checkpoint)
+    _predictors[model_variant] = SignBridgePredictor(checkpoint_path=checkpoint)
     return _predictors[model_variant]
+
+
+def _read_csv_col(path: Path, col: str) -> List[str]:
+    if not path.exists():
+        return []
+    with open(path, "r", encoding="utf-8-sig", newline="") as f:
+        return [str(row[col]).strip() for row in csv.DictReader(f) if row.get(col)]
 
 
 def init_dataset_mappings():
@@ -98,26 +211,19 @@ def init_dataset_mappings():
     if _gloss_to_videos:
         return
 
-    dfs = []
     for split in ["train.csv", "val.csv", "test.csv"]:
         csv_path = SPLITS_DIR / split
-        if csv_path.exists():
-            dfs.append(pd.read_csv(csv_path))
+        if not csv_path.exists():
+            continue
+        with open(csv_path, "r", encoding="utf-8-sig", newline="") as f:
+            for row in csv.DictReader(f):
+                g = (row.get("Gloss") or "").strip().upper()
+                vf = (row.get("Video file") or "").strip()
+                if g and vf:
+                    _gloss_to_videos.setdefault(g, []).append(vf)
 
-    if dfs:
-        combined_df = pd.concat(dfs, ignore_index=True)
-        for gloss, group in combined_df.groupby("Gloss"):
-            _gloss_to_videos[str(gloss).upper()] = group["Video file"].tolist()
-
-    demo_csv = PROJECT_ROOT / "signbridge_final_demo_glosses.csv"
-    if demo_csv.exists():
-        df_demo = pd.read_csv(demo_csv)
-        _demo_ready_glosses = set(df_demo["Gloss"].str.upper().tolist())
-
-    elite_csv = PROJECT_ROOT / "signbridge_elite_glosses.csv"
-    if elite_csv.exists():
-        df_elite = pd.read_csv(elite_csv)
-        _elite_glosses = set(df_elite["Gloss"].str.upper().tolist())
+    _demo_ready_glosses = {g.upper() for g in _read_csv_col(PROJECT_ROOT / "signbridge_final_demo_glosses.csv", "Gloss")}
+    _elite_glosses = {g.upper() for g in _read_csv_col(PROJECT_ROOT / "signbridge_elite_glosses.csv", "Gloss")}
 
 
 @app.on_event("startup")
@@ -158,11 +264,17 @@ class FlatSequenceRequest(BaseModel):
     personalization_enabled: bool = False
 
 
+class FingerspellingRequest(BaseModel):
+    sequence: List[Any] = Field(..., description="List of frames containing landmarks: (T, 92, 3), (T, 276), (T, 42, 3), or frame dicts")
+    min_char_prob: Optional[float] = Field(default=0.25, ge=0.0, le=1.0)
+    target_len: Optional[int] = Field(default=64, ge=16, le=384)
+
+
 class PersonalizationSampleRequest(BaseModel):
     sequence: List[List[List[float]]] = Field(..., description="Shape (32, 42, 3)")
     gloss: str = Field(..., min_length=1, max_length=100)
     user_id: str = Field(default="default", min_length=1, max_length=64)
-    model_variant: str = "candidate_exp9"
+    model_variant: str = "production_exp13"
 
 
 class PersonalizationUserRequest(BaseModel):
@@ -175,19 +287,70 @@ def _safe_user_id(user_id: str) -> str:
     return user_id
 
 
-def _personalized_result(result: Dict[str, Any], user_id: str, enabled: bool) -> Dict[str, Any]:
+def _personalized_result(
+    result: Dict[str, Any],
+    user_id: str,
+    enabled: bool,
+    sequence_np: Optional[Any] = None,
+) -> Dict[str, Any]:
     uid = _safe_user_id(user_id)
     if not enabled:
         return _personalization_router._no_personalization(result.get("top_k", []))
     prototypes = _personalization_manager.get_all_prototypes(uid)
     if not prototypes:
         return _personalization_router._no_personalization(result.get("top_k", []))
+
+    raw_emb = result.get("embedding")
+    if (not raw_emb or len(raw_emb) == 0) and sequence_np is not None:
+        # Ensure consistent 512-d Conformer embedding even when running Demo 50 fast variant
+        try:
+            pro_pred = get_predictor("production_exp13")
+            emb_vec = pro_pred.extract_embedding(sequence_np, is_normalized=False)
+            raw_emb = emb_vec.astype(np.float32)
+        except Exception:
+            raw_emb = None
+
+    sample_banks = _personalization_manager.get_all_sample_banks(uid)
     return _personalization_router.route_prediction(
         result.get("top_k", []),
-        np.asarray(result.get("embedding"), dtype=np.float32),
+        np.asarray(raw_emb, dtype=np.float32) if raw_emb is not None and len(raw_emb) > 0 else None,
         prototypes,
         user_id=uid,
+        sample_banks=sample_banks,
     )
+
+
+def _apply_personalization_override(
+    result: Dict[str, Any],
+    sequence_np: Any,
+    user_id: str,
+    enabled: bool,
+) -> Dict[str, Any]:
+    pers = _personalized_result(result, user_id, enabled, sequence_np=sequence_np)
+    result["personalization"] = pers
+    result["is_custom_sign"] = False
+    has_motion = (
+        int(result.get("active_frames", 0)) >= 6
+        and float(result.get("motion_score", 0.0)) >= 0.008
+    )
+    can_override = (
+        bool(pers.get("matched"))
+        and bool(pers.get("override_gloss"))
+        and (not result.get("is_no_sign", False) or (pers.get("mode") == "override" and has_motion))
+    )
+    if can_override:
+        ov_g = str(pers["override_gloss"])
+        ov_c = float(pers.get("confidence", result.get("confidence", 0.0)))
+        merged_conf = round(max(float(result.get("confidence", 0.0)) if not result.get("is_no_sign", False) else 0.0, ov_c), 2)
+        result["predicted_gloss"] = ov_g
+        result["gloss"] = ov_g
+        result["confidence"] = merged_conf
+        result["is_no_sign"] = False
+        result["is_custom_sign"] = True
+        result["top_k"] = [{"gloss": ov_g, "confidence": merged_conf, "custom": True}] + [
+            c for c in result.get("top_k", []) if str(c.get("gloss", "")).upper() != ov_g.upper()
+        ][:4]
+    return result
 
 
 # -------------------------------------------------------------------
@@ -204,17 +367,106 @@ async def serve_index():
     return HTMLResponse(content=content)
 
 
+_cached_hardware_device: Optional[str] = None
+_hardware_checked: bool = False
+
+
+def _detect_hardware_device() -> Optional[str]:
+    """Read local hardware compute/chip identifier without inventing values."""
+    global _cached_hardware_device, _hardware_checked
+    if _hardware_checked:
+        return _cached_hardware_device
+    _hardware_checked = True
+    try:
+        if platform.system() == "Darwin":
+            out = subprocess.check_output(
+                ["sysctl", "-n", "machdep.cpu.brand_string"],
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=1.5,
+            ).strip()
+            if out:
+                _cached_hardware_device = out.removeprefix("Apple ").strip()
+                return _cached_hardware_device
+        proc = platform.processor().strip()
+        if proc:
+            _cached_hardware_device = proc
+    except Exception:
+        _cached_hardware_device = None
+    return _cached_hardware_device
+
+
+def _load_evaluation_metrics() -> Dict[str, Any]:
+    """Load verified held-out evaluation metrics from saved experiment artifacts."""
+    metrics: Dict[str, Any] = {}
+    exp13_eval_path = EXP13_CHECKPOINT.parent / "eval_results.json"
+    if exp13_eval_path.exists():
+        try:
+            with open(exp13_eval_path, "r", encoding="utf-8") as f:
+                exp13_data = json.load(f)
+            metrics["exp13"] = {
+                "experiment": exp13_data.get("experiment", "exp13_arcface035_skeletonwarp"),
+                "top1_accuracy": round(float(exp13_data["test_top1_accuracy"]), 2),
+                "top3_accuracy": round(float(exp13_data.get("test_top3_accuracy", 0.0)), 2),
+                "top5_accuracy": round(float(exp13_data["test_top5_accuracy"]), 2),
+            }
+        except Exception:
+            pass
+
+    prod_meta_path = PRODUCTION_CHECKPOINT.parent / "model_metadata.json"
+    if prod_meta_path.exists():
+        try:
+            with open(prod_meta_path, "r", encoding="utf-8") as f:
+                prod_meta = json.load(f)
+            test_m = prod_meta.get("test_metrics", {})
+            metrics["production"] = {
+                "experiment": prod_meta.get("source_experiment", "production"),
+                "top1_accuracy": round(float(test_m["test_top1_accuracy"]), 2) if "test_top1_accuracy" in test_m else None,
+                "top5_accuracy": round(float(test_m["test_top5_accuracy"]), 2) if "test_top5_accuracy" in test_m else None,
+            }
+        except Exception:
+            pass
+
+    if ENSEMBLE_CONFIG_PATH.exists():
+        try:
+            cfg = json.loads(ENSEMBLE_CONFIG_PATH.read_text(encoding="utf-8"))
+            tsum = cfg.get("test_summary", {})
+            if cfg.get("promoted") and "test_top1" in tsum:
+                metrics["production"] = {
+                    "experiment": cfg.get("version", "ensemble_v2_kinematic_476"),
+                    "top1_accuracy": round(float(tsum["test_top1"]), 2),
+                    "top3_accuracy": round(float(tsum.get("test_top3", 0.0)), 2),
+                    "top5_accuracy": round(float(tsum["test_top5"]), 2),
+                    "macro_f1": round(float(tsum.get("test_macro_f1", 0.0)), 2),
+                    "mirrored_2k_top1": round(float(tsum.get("mirrored_2k_top1", 0.0)), 2),
+                    "ood_auroc": round(float(tsum.get("ood_auroc", 0.0)), 5),
+                }
+        except Exception:
+            pass
+    return metrics
+
+
 @app.get("/api/health")
 async def health_check():
     predictor = get_predictor()
     init_dataset_mappings()
+    fs_weights = PROJECT_ROOT / "trained_models" / "fingerspelling" / "asl_alphabet_weights.npz"
+    onnx_ready = _use_onnx_backend() and _onnx_ensemble_available()
     return {
         "status": "healthy",
         "device": str(predictor.device),
+        "hardware_device": _detect_hardware_device(),
+        "engine": "onnxruntime" if str(predictor.device).startswith("onnx") else "pytorch",
         "num_classes": len(predictor.class_names),
         "total_videos_mapped": len(_gloss_to_videos),
+        "fingerspelling_ready": fs_weights.exists(),
+        "evaluation_metrics": _load_evaluation_metrics(),
         "model_variants": {
-            name: path.exists() for name, path in MODEL_CHECKPOINTS.items()
+            name: (
+                path.exists()
+                or (onnx_ready and name in ("production_exp13", "production_v2", "exp16_conformer", "exp17_bigru"))
+            )
+            for name, path in MODEL_CHECKPOINTS.items()
         },
     }
 
@@ -230,15 +482,41 @@ async def get_all_classes():
     return {"count": len(predictor.class_names), "classes": predictor.class_names}
 
 
+_dictionary_cache: Optional[Dict[str, Any]] = None
+
+
+def _get_dictionary_cache() -> Optional[Dict[str, Any]]:
+    """Lazily load precomputed 2,731-gloss 3D hand exemplar cache."""
+    global _dictionary_cache
+    if _dictionary_cache is not None:
+        return _dictionary_cache
+    npz_path = PROJECT_ROOT / "data" / "dictionary_exemplars_32.npz"
+    if not npz_path.exists():
+        return None
+    with np.load(npz_path, allow_pickle=True) as raw:
+        names = [str(g).upper() for g in raw["class_names"].tolist()]
+        frames_arr = raw["frames"]
+        frames = frames_arr if frames_arr.dtype == np.float16 else frames_arr.astype(np.float16)
+        _dictionary_cache = {
+            "index": {g: i for i, g in enumerate(names)},
+            "frames": frames,
+            "two_hand": raw["two_hand"],
+            "handshapes": raw["handshapes"],
+            "steps_json": raw["steps_json"],
+        }
+    return _dictionary_cache
+
+
 @app.get("/api/vocabulary")
 async def get_vocabulary(
     q: Optional[str] = Query(None, description="Search query string"),
-    limit: int = Query(60, ge=1, le=2731),
-    category: Optional[str] = Query(None, description="Filter by category (elite, demo, all)"),
+    limit: int = Query(60, ge=1, le=10000),
+    category: Optional[str] = Query(None, description="Filter by category (elite, demo, one_hand, two_hand, all)"),
 ):
     """Browse or search supported sign vocabulary."""
-    predictor = get_predictor("production_exp7")
+    predictor = get_predictor("production_exp13")
     init_dataset_mappings()
+    dict_cache = _get_dictionary_cache()
 
     glosses = predictor.class_names
     query = (q or "").strip().upper()
@@ -250,6 +528,11 @@ async def get_vocabulary(
         glosses = [g for g in glosses if g in _elite_glosses]
     elif category == "demo" and _demo_ready_glosses:
         glosses = [g for g in glosses if g in _demo_ready_glosses]
+    elif category in ("two_hand", "one_hand") and dict_cache is not None:
+        want_two = category == "two_hand"
+        idx_map = dict_cache["index"]
+        th_arr = dict_cache["two_hand"]
+        glosses = [g for g in glosses if (g in idx_map and bool(th_arr[idx_map[g]]) == want_two)]
 
     glosses_slice = glosses[:limit]
 
@@ -259,12 +542,20 @@ async def get_vocabulary(
         is_elite = g in _elite_glosses
         is_demo = g in _demo_ready_glosses
         tier = "High Precision" if is_elite else ("Verified Demo" if is_demo else "Standard")
+        two_hand = False
+        handshape = ""
+        if dict_cache is not None and g in dict_cache["index"]:
+            ci = dict_cache["index"][g]
+            two_hand = bool(dict_cache["two_hand"][ci])
+            handshape = str(dict_cache["handshapes"][ci])
 
         items.append({
             "gloss": g,
             "video_count": video_count,
             "has_demonstration": video_count > 0,
             "tier": tier,
+            "two_hand": two_hand,
+            "handshape": handshape,
         })
 
     return {
@@ -308,10 +599,10 @@ async def get_demonstration(gloss: str):
 @app.api_route("/api/video/{filename}", methods=["GET", "HEAD"])
 async def stream_video(filename: str):
     """Stream ASL Citizen dataset video file for learning demonstration."""
-    video_path = VIDEOS_DIR / filename
+    video_path = VIDEOS_DIR / Path(filename).name
     if not video_path.exists():
         raise HTTPException(status_code=404, detail="Video asset not found")
-    return FileResponse(path=video_path, media_type="video/mp4", filename=filename)
+    return FileResponse(path=video_path, media_type="video/mp4", filename=video_path.name)
 
 
 @app.get("/api/teach-me")
@@ -324,6 +615,37 @@ async def teach_me_something():
     selected_gloss = random.choice(pool)
 
     return await get_demonstration(selected_gloss)
+
+
+@app.get("/api/dictionary/sign/{gloss:path}")
+async def get_dictionary_sign(gloss: str):
+    """Return 32-frame 3D landmark sequence & anatomical signing guide for any of 2,731 glosses."""
+    predictor = get_predictor()
+    init_dataset_mappings()
+    gloss_upper = gloss.strip().upper()
+    if gloss_upper not in predictor.class_names:
+        raise HTTPException(status_code=404, detail=f"Gloss '{gloss}' not in model vocabulary")
+
+    cache = _get_dictionary_cache()
+    if cache is None or gloss_upper not in cache["index"]:
+        raise HTTPException(status_code=404, detail=f"3D exemplar cache unavailable for '{gloss_upper}'")
+
+    ci = cache["index"][gloss_upper]
+    frames_arr = np.round(cache["frames"][ci].astype(np.float32), 4)
+    steps = json.loads(str(cache["steps_json"][ci]))
+    videos = _gloss_to_videos.get(gloss_upper, [])
+
+    return {
+        "gloss": gloss_upper,
+        "tier": "High Precision" if gloss_upper in _elite_glosses else "Standard",
+        "video_count": len(videos),
+        "video_url": f"/api/video/{videos[0]}" if videos else None,
+        "two_hand": bool(cache["two_hand"][ci]),
+        "handshape": str(cache["handshapes"][ci]),
+        "steps": steps,
+        "total_frames": int(frames_arr.shape[0]),
+        "frames": frames_arr.tolist(),
+    }
 
 
 # -------------------------------------------------------------------
@@ -357,8 +679,8 @@ async def predict_sequence_endpoint(request: Union[SequenceRequest, FlatSequence
             )
 
         result = predictor.predict_sequence(sequence_np, is_normalized=False, top_k=top_k)
-        result["personalization"] = _personalized_result(
-            result, request.user_id, request.personalization_enabled
+        _apply_personalization_override(
+            result, sequence_np, request.user_id, request.personalization_enabled
         )
         if request.diagnostic:
             result["diagnostics"] = build_prediction_diagnostics(
@@ -375,6 +697,196 @@ async def predict_sequence_endpoint(request: Union[SequenceRequest, FlatSequence
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sequence prediction error: {str(e)}")
+
+
+class ContinuousStreamRequest(BaseModel):
+    session_id: str = Field(default="default", min_length=1, max_length=64)
+    frames: List[List[List[float]]] = Field(..., description="Batch of incremental (42, 3) landmark frames")
+    timestamps_ms: Optional[List[float]] = None
+    model_variant: str = "production_exp13"
+    user_id: str = "default"
+    personalization_enabled: bool = False
+    auto_finalize_on_pause: bool = True
+    auto_translate_on_pause: bool = True
+    top_k: int = Field(default=5, ge=1, le=20)
+
+
+class ContinuousFinalizeRequest(BaseModel):
+    session_id: str = Field(default="default", min_length=1, max_length=64)
+    model_variant: str = "production_exp13"
+    user_id: str = "default"
+    personalization_enabled: bool = True
+    translate: bool = True
+    clear_after: bool = True
+
+
+class ContinuousResetRequest(BaseModel):
+    session_id: str = Field(default="default", min_length=1, max_length=64)
+
+
+def _translate_gloss_sequence(
+    glosses: List[str],
+    hypotheses: Optional[List[List[Dict[str, Any]]]] = None,
+    non_manual: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    cleaned = [g.strip().upper().rstrip("0123456789").removesuffix("/IT") for g in glosses if g.strip()]
+    if not cleaned:
+        return {"english": "", "glosses": [], "latency_ms": 0.0, "engine": "None", "status": "empty"}
+
+    res = _groq_service.translate_glosses(cleaned, hypotheses=hypotheses, non_manual=non_manual)
+    if not res.get("english"):
+        res = _qwen_service.translate_glosses(cleaned, hypotheses=hypotheses, non_manual=non_manual)
+    if res.get("status") == "success" and res.get("english"):
+        return {
+            "english": res["english"],
+            "glosses": cleaned,
+            "latency_ms": res["latency_ms"],
+            "engine": res.get("engine", "Groq AI"),
+            "llm_available": _groq_service.is_available() or _qwen_service.is_available(),
+            "status": "success",
+            "error": None,
+        }
+    english = asl_rules_to_english(cleaned, non_manual=non_manual)
+    return {
+        "english": english,
+        "glosses": cleaned,
+        "latency_ms": res.get("latency_ms", 0.0),
+        "engine": "Fast Local ASL-Grammar NLP",
+        "llm_available": False,
+        "status": "fallback",
+        "error": res.get("error"),
+    }
+
+
+def _make_continuous_predict_fn(predictor: Any, user_id: str, personalization_enabled: bool):
+    def _predict_fn(seq32: np.ndarray, k: int) -> Dict[str, Any]:
+        res = predictor.predict_sequence(seq32, is_normalized=False, top_k=k)
+        return _apply_personalization_override(res, seq32, user_id, personalization_enabled)
+    return _predict_fn
+
+
+@app.post("/api/continuous/stream")
+async def continuous_stream_endpoint(req: ContinuousStreamRequest):
+    """Stream incremental webcam frames through the kinematic stroke segmenter and CSLR decoder."""
+    try:
+        sess_id = _safe_user_id(req.session_id)
+        arr = np.asarray(req.frames, dtype=np.float32)
+        if arr.size == 0:
+            raise HTTPException(status_code=400, detail="frames must be non-empty")
+        if arr.ndim == 2 and arr.shape == (42, 3):
+            arr = arr[None, :, :]
+        elif arr.ndim == 2 and arr.shape[1] == 126:
+            arr = arr.reshape(arr.shape[0], 42, 3)
+        if arr.ndim != 3 or arr.shape[1:] != (42, 3):
+            raise HTTPException(status_code=400, detail=f"Expected (N, 42, 3) frames, got {arr.shape}")
+
+        predictor = get_predictor(req.model_variant)
+        predict_fn = _make_continuous_predict_fn(predictor, req.user_id, req.personalization_enabled)
+        state = _continuous_manager.push_frames(
+            session_id=sess_id,
+            frames=arr,
+            predict_fn=predict_fn,
+            timestamps_ms=req.timestamps_ms,
+            auto_finalize_on_pause=req.auto_finalize_on_pause,
+            top_k=req.top_k,
+        )
+        if state.get("finalized_utterance") and req.auto_translate_on_pause:
+            fin = state["finalized_utterance"]
+            fin["translation"] = _translate_gloss_sequence(
+                fin.get("glosses", []),
+                hypotheses=fin.get("hypotheses"),
+            )
+        return JSONResponse(content=state)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Continuous stream error: {str(e)}")
+
+
+@app.post("/api/continuous/finalize")
+async def continuous_finalize_endpoint(req: ContinuousFinalizeRequest):
+    """Flush pending active stroke and finalize the current continuous utterance."""
+    try:
+        sess_id = _safe_user_id(req.session_id)
+        predictor = get_predictor(req.model_variant)
+        predict_fn = _make_continuous_predict_fn(predictor, req.user_id, req.personalization_enabled)
+        out = _continuous_manager.finalize(sess_id, predict_fn=predict_fn, clear_after=req.clear_after)
+        if req.translate and out.get("glosses"):
+            out["translation"] = _translate_gloss_sequence(
+                out.get("glosses", []),
+                hypotheses=out.get("hypotheses"),
+            )
+        return JSONResponse(content=out)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Continuous finalize error: {str(e)}")
+
+
+@app.post("/api/continuous/reset")
+async def continuous_reset_endpoint(req: ContinuousResetRequest):
+    """Reset the continuous CSLR streaming buffer and active glosses."""
+    sess_id = _safe_user_id(req.session_id)
+    _continuous_manager.reset(sess_id)
+    return JSONResponse(content={"session_id": sess_id, "status": "reset"})
+
+
+# -------------------------------------------------------------------
+# ASL Fingerspelling Recognition Endpoints (Google ASLFR)
+# -------------------------------------------------------------------
+
+_fingerspelling_engine = None
+
+
+def get_fingerspelling_engine():
+    global _fingerspelling_engine
+    if _fingerspelling_engine is None:
+        from signbridge.fingerspelling.engine import FingerspellingEngine
+        _fingerspelling_engine = FingerspellingEngine()
+    return _fingerspelling_engine
+
+
+@app.post("/api/fingerspelling/predict")
+async def predict_fingerspelling_endpoint(request: FingerspellingRequest):
+    """
+    Run continuous ASL fingerspelling recognition on streaming landmark sequence.
+    Powered by Squeezeformer/LiteRT on Apple Silicon M2 Pro.
+    """
+    try:
+        engine = get_fingerspelling_engine()
+        result = engine.predict(
+            sequence=request.sequence,
+            min_char_prob=request.min_char_prob or 0.25,
+            target_len=request.target_len or 64,
+        )
+        return JSONResponse(content=result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Fingerspelling prediction failure: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Fingerspelling prediction error: {str(e)}")
+
+
+@app.get("/api/fingerspelling/status")
+async def fingerspelling_status_endpoint():
+    """Return fingerspelling model runtime info and checkpoint status."""
+    try:
+        engine = get_fingerspelling_engine()
+        return {
+            "status": "ready",
+            "model": engine.weights_path.name,
+            "architecture": "ASL Alphabet Landmark MLP (63->128->26) + Isotropic BBox Norm",
+            "device": _detect_hardware_device() or platform.machine(),
+            "vocab_size": 26,
+            "num_landmarks": 21,
+            "num_features": 63,
+            "weights_verified": engine.weights_path.exists(),
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+        }
 
 
 @app.get("/api/personalization/profile")
@@ -400,34 +912,62 @@ async def personalization_enable(request: PersonalizationUserRequest):
     return {"user_id": uid, "enabled": True}
 
 
+@app.post("/api/personalization/disable")
+async def personalization_disable(request: PersonalizationUserRequest):
+    uid = _safe_user_id(request.user_id)
+    state = _personalization_manager.get_model_state(uid)
+    state["enabled"] = False
+    state["last_updated"] = datetime.now(timezone.utc).isoformat()
+    user_dir = _personalization_manager._user_dir(uid)
+    user_dir.mkdir(parents=True, exist_ok=True)
+    with open(_personalization_manager._model_state_path(uid), "w") as f:
+        json.dump(state, f, indent=2)
+    return {"user_id": uid, "enabled": False}
+
+
+@app.post("/api/personalization/train")
+async def personalization_train(request: PersonalizationUserRequest):
+    uid = _safe_user_id(request.user_id)
+    return _personalization_manager.train_custom_model(uid)
+
+
 @app.post("/api/personalization/sample")
 async def personalization_sample(request: PersonalizationSampleRequest):
     uid = _safe_user_id(request.user_id)
-    gloss = request.gloss.strip().upper()
-    predictor = get_predictor("candidate_exp9")
+    raw_gloss = re.sub(r"[\s-]+", "_", request.gloss.strip().upper())
+    if not raw_gloss or not re.fullmatch(r"[A-Z0-9_]{1,40}", raw_gloss):
+        raise HTTPException(
+            status_code=400,
+            detail="Custom sign name must be 1-40 letters, numbers, spaces, hyphens, or underscores.",
+        )
+    gloss = raw_gloss
+    predictor = get_predictor("production_exp13")
     sequence_np = np.asarray(request.sequence, dtype=np.float32)
     if sequence_np.shape != (32, 42, 3):
         raise HTTPException(status_code=400, detail=f"Expected sequence shape (32, 42, 3), got {sequence_np.shape}.")
-    if gloss not in predictor.class_names:
-        raise HTTPException(status_code=400, detail=f"Gloss '{gloss}' is not in the 2,731-class vocabulary.")
     quality = _personalization_manager.check_sample_quality(sequence_np)
     if not quality["valid"]:
         return JSONResponse(status_code=422, content={"accepted": False, "quality": quality})
     result = predictor.predict_sequence(sequence_np, is_normalized=False, top_k=5)
+    emb = np.asarray(result.get("embedding"), dtype=np.float32)
+    if emb.size == 0:
+        emb = predictor.extract_embedding(sequence_np, is_normalized=False)
     saved = _personalization_manager.save_sample(
         gloss=gloss,
         sequence=sequence_np,
-        embedding=np.asarray(result["embedding"], dtype=np.float32),
+        embedding=emb,
         quality=quality,
         user_id=uid,
     )
     state = _personalization_manager.get_model_state(uid)
     state["enabled"] = True
+    state["last_updated"] = datetime.now(timezone.utc).isoformat()
     with open(_personalization_manager._model_state_path(uid), "w") as f:
         json.dump(state, f, indent=2)
     return {
         "accepted": True,
         "gloss": gloss,
+        "in_base_vocab": gloss in predictor.class_names,
         "sample": saved,
         "learned": saved["total_samples"] >= _personalization_manager.config.min_samples_required,
         "quality": quality,
@@ -443,7 +983,8 @@ async def personalization_forget(gloss: str, user_id: str = Query("default")):
 @app.delete("/api/personalization")
 async def personalization_reset(user_id: str = Query("default")):
     uid = _safe_user_id(user_id)
-    return _personalization_manager.delete_all_personalization(uid)
+    remove_dir = uid != _personalization_manager.default_user
+    return _personalization_manager.delete_all_personalization(uid, remove_user_dir=remove_dir)
 
 
 # -------------------------------------------------------------------
@@ -821,6 +1362,7 @@ async def debug_sequence_endpoint(request: Union[SequenceRequest, FlatSequenceRe
 async def predict_video_endpoint(
     file: UploadFile = File(...),
     top_k: int = Form(5),
+    model_variant: str = Form("production_exp13"),
 ):
     """Run inference on uploaded video file."""
     if not file.filename:
@@ -837,11 +1379,13 @@ async def predict_video_endpoint(
         with open(temp_video_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        predictor = get_predictor()
+        predictor = get_predictor(model_variant)
         result = predictor.predict_video(temp_video_path, top_k=top_k)
         result["filename"] = file.filename
         return JSONResponse(content=result)
 
+    except RuntimeError as e:
+        raise HTTPException(status_code=501, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Video processing error: {str(e)}")
 
@@ -851,6 +1395,14 @@ async def predict_video_endpoint(
 
 class NLPSmoothRequest(BaseModel):
     glosses: List[str] = Field(..., description="List of recognized ASL gloss tokens")
+    hypotheses: Optional[List[List[Dict[str, Any]]]] = Field(
+        default=None,
+        description="Optional per-slot Top-K candidate distributions from continuous CSLR",
+    )
+    non_manual: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Optional non-manual markers (wh_question, yn_question, negative)",
+    )
 
 
 class TTSRequest(BaseModel):
@@ -861,77 +1413,20 @@ class TTSRequest(BaseModel):
 @app.post("/api/nlp/smooth")
 async def nlp_smooth_endpoint(req: NLPSmoothRequest):
     """
-    NLP Gloss-to-English translation endpoint using local PyTorch Qwen Instruct.
-    Converts raw ASL gloss sequence into natural, fluent English.
+    NLP Gloss-to-English translation endpoint with Top-K hypothesis disambiguation
+    and ASL grammar ordering.
     """
     raw_glosses = req.glosses
     if not raw_glosses:
         return JSONResponse(content={"english": "", "glosses": [], "latency_ms": 0.0, "engine": "None"})
 
-    cleaned = [g.strip().upper().rstrip("0123456789").removesuffix("/IT") for g in raw_glosses if g.strip()]
-    if not cleaned:
-        return JSONResponse(content={"english": "", "glosses": [], "latency_ms": 0.0, "engine": "None"})
-
-    # Primary: Groq AI Language Service (or local NLP fallback)
-    res = _groq_service.translate_glosses(cleaned)
-    if not res.get("english"):
-        res = _qwen_service.translate_glosses(cleaned)
-
-    if res.get("status") == "success" and res.get("english"):
-        return JSONResponse(content={
-            "english": res["english"],
-            "glosses": cleaned,
-            "latency_ms": res["latency_ms"],
-            "engine": res.get("engine", "Groq AI"),
-            "llm_available": _groq_service.is_available() or _qwen_service.is_available(),
-            "status": "success",
-            "error": None
-        })
-
-    # Fallback to rule assembly only if Groq/Qwen is unreachable or has error
-    logger.warning(f"Translation failed or empty: {res.get('error')}. Using rule fallback.")
-    idioms = {
-        ("NICE", "MEET", "YOU"): "Nice to meet you!",
-        ("HELLO", "MEET", "YOU"): "Hello, nice to meet you!",
-        ("SEE", "YOU", "LATER"): "See you later!",
-        ("GOOD", "MORNING"): "Good morning!",
-        ("GOOD", "NIGHT"): "Good night!",
-        ("HOW", "YOU"): "How are you?",
-        ("YOU", "HOW"): "How are you?",
-        ("HELLO", "HOW", "YOU"): "Hello, how are you?",
-        ("NAME", "YOU", "WHAT"): "What is your name?",
-        ("YOU", "NAME", "WHAT"): "What is your name?",
-        ("TIME", "WHAT"): "What time is it?",
-        ("WHERE", "BATHROOM"): "Where is the bathroom?",
-        ("BATHROOM", "WHERE"): "Where is the bathroom?",
-        ("HELP", "ME"): "Can you please help me?",
-        ("THANK", "YOU", "HELP", "ME"): "Thank you for helping me.",
-        ("THANKYOU",): "Thank you very much!",
-        ("THANK", "YOU"): "Thank you very much!",
-        ("SORRY",): "I am sorry.",
-        ("PLEASE",): "Please.",
-        ("HELLO",): "Hello!",
-        ("YES",): "Yes, absolutely.",
-        ("NO",): "No, thank you."
-    }
-
-    key = tuple(cleaned)
-    if key in idioms:
-        english = idioms[key]
-    else:
-        pronouns = {"ME": "I", "I": "I", "MY": "my", "YOU": "you", "YOUR": "your", "WE": "we", "THEY": "they"}
-        tokens = [pronouns.get(w, w.lower()) for w in cleaned]
-        english = " ".join(tokens).capitalize() + "."
-
-    return JSONResponse(content={
-        "english": english,
-        "glosses": cleaned,
-        "latency_ms": res.get("latency_ms", 0.0),
-        "engine": "Rule Fallback",
-        "llm_available": False,
-        "status": res.get("status", "fallback"),
-        "error": res.get("error")
-    })
+    return JSONResponse(
+        content=_translate_gloss_sequence(
+            raw_glosses,
+            hypotheses=req.hypotheses,
+            non_manual=req.non_manual,
+        )
+    )
 
 
 @app.post("/api/tts/speak")

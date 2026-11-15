@@ -1,0 +1,73 @@
+# Local environments, secrets, caches & personal state (never upload to Railway)
+.git/
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Personal user data & generated audio cache
+data/personalization/
+data/ncslgr_annotations/
+signbridge/web/static/audio/*.wav
+/api/
+/public/
+/docs/
+trained_models/production/model.onnx
+trained_models/production/model.onnx.data
+trained_models/tts/kokoro-v0_19.onnx
+trained_models/tts/test_speech.wav
+!signbridge/web/static/audio/.gitkeep
+
+# Raw datasets & landmark caches
+/dataset/
+/tests/fixtures/
+/MS-ASL/
+/msasl_matching_train.json
+landmark_cache/
+landmark_cache_full/
+landmark_cache_packed/
+landmark_interpolation_cache/
+landmark_pose_cache/
+pose_cache_full/
+
+# Dev artifacts & unused bundles
+.kilo/
+stitch_designs/
+SignBridge-UI-Prototype/
+lets-scroll-main/
+
+# Historical training runs & large resume checkpoints
+latest.pth
+**/latest.pth
+training_log.jsonl
+**/training_log.jsonl
+trained_models/full_2731/exp1_*/
+trained_models/full_2731/exp2_*/
+trained_models/full_2731/exp3_*/
+trained_models/full_2731/exp4_*/
+trained_models/full_2731/exp5_*/
+trained_models/full_2731/exp6_*/
+trained_models/full_2731/exp7_*/
+trained_models/full_2731/exp8_*/
+trained_models/full_2731/exp9_*/
+trained_models/full_2731/exp10_*/
+trained_models/full_2731/exp11_*/
+trained_models/full_2731/exp12_*/
+trained_models/full_2731/exp13_*/
+trained_models/full_2731/exp14*/
+trained_models/full_2731/exp15*/
+trained_models/full_2731/exp16_diag5/
+
+# Build / IDE / logs
+signbridge-web/node_modules/
+signbridge-web/.next/
+node_modules/
+.next/
+/dist/
+/logs/
+*.log
+__pycache__/
+*.pyc
+.DS_Store

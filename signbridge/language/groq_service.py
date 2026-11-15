@@ -50,10 +50,11 @@ class GroqLanguageService:
             "You are an ASL gloss to natural English translator.\n"
             "Convert the input ASL glosses into a single fluent, natural English sentence.\n"
             "Rules:\n"
-            "- Preserve the exact meaning of the ASL glosses.\n"
-            "- Correct grammar, verb tenses, and word order.\n"
-            "- Do NOT add facts, names, or emotions not present in the glosses.\n"
-            "- Return ONLY the final plain English sentence without any explanation or markdown formatting."
+            "- Preserve the exact meaning of unambiguous ASL glosses.\n"
+            "- When a slot lists uncertain visual alternatives [A|B|C], pick whichever candidate makes the best real-world semantic and grammatical sense.\n"
+            "- Correct grammar, verb tenses, and word order (e.g. ASL Topic-Comment / Time-First / WH-Final).\n"
+            "- Do NOT invent extra unrelated facts, names, or emotions.\n"
+            "- Return ONLY the final plain English sentence without thinking tags, explanation, or markdown."
         )
 
         # High-frequency fallback dictionary for local instant rules
@@ -113,11 +114,18 @@ class GroqLanguageService:
                 sentence += "."
         return sentence
 
-    def translate_glosses(self, glosses: List[str]) -> Dict[str, Any]:
+    def translate_glosses(
+        self,
+        glosses: List[str],
+        hypotheses: Optional[List[List[Dict[str, Any]]]] = None,
+        non_manual: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """
         Translate a list of ASL glosses into a natural English sentence via Groq API,
-        or fall back to local rule-based NLP if key is missing/invalid.
+        or fall back to local ASL-grammar NLP rules if key is missing/invalid.
         """
+        from signbridge.language.asl_grammar import asl_rules_to_english, build_translation_prompt
+
         if not glosses:
             return {"english": "", "latency_ms": 0.0, "status": "empty_input", "error": None}
 
@@ -130,16 +138,18 @@ class GroqLanguageService:
         # Call Groq API if available and key present
         if self.is_available():
             try:
+                user_prompt = build_translation_prompt(glosses, hypotheses=hypotheses, non_manual=non_manual)
                 chat_completion = self.client.chat.completions.create(
                     messages=[
                         {"role": "system", "content": self.system_prompt},
-                        {"role": "user", "content": f"ASL Glosses: {gloss_text}"}
+                        {"role": "user", "content": user_prompt}
                     ],
                     model=self.model_name,
                     temperature=0.1,
-                    max_tokens=64
+                    max_tokens=80
                 )
                 raw_response = chat_completion.choices[0].message.content.strip()
+                raw_response = re.sub(r"<think>[\s\S]*?</think>", "", raw_response).strip()
                 clean_sentence = re.sub(r'[*_#`]', '', raw_response).strip()
                 if (clean_sentence.startswith('"') and clean_sentence.endswith('"')) or (clean_sentence.startswith("'") and clean_sentence.endswith("'")):
                     clean_sentence = clean_sentence[1:-1].strip()
@@ -156,14 +166,16 @@ class GroqLanguageService:
             except Exception as e:
                 logger.warning(f"Groq API call failed: {e}. Falling back to local NLP rules.")
 
-        # Fallback to local rule engine if Groq API key is missing or call failed
-        english_sentence = self._rule_based_translation(glosses)
+        # Fallback to deterministic ASL grammar rules if Groq API key is missing or call failed
+        english_sentence = asl_rules_to_english(glosses, non_manual=non_manual)
+        if not english_sentence:
+            english_sentence = self._rule_based_translation(glosses)
         latency_ms = round((time.time() - start_time) * 1000.0, 2)
 
         return {
             "english": english_sentence,
             "latency_ms": latency_ms,
             "status": "success",
-            "engine": "Fast Local Rule-based NLP (Groq key unconfigured or fallback)",
+            "engine": "Fast Local ASL-Grammar NLP (Groq fallback)",
             "error": None
         }

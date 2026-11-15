@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 export interface MenuBarItem {
   icon: (props: React.SVGProps<SVGSVGElement>) => React.ReactNode
   label: string
+  onClick?: () => void
 }
 
 interface MenuBarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -87,6 +88,7 @@ export function MenuBar({ items, className, ...props }: MenuBarProps) {
           <button 
             key={index}
             className="w-8 h-8 px-3 py-1 rounded-full flex justify-center items-center gap-2 hover:bg-muted/80 transition-colors"
+            onClick={() => item.onClick?.()}
             onMouseEnter={() => setActiveIndex(index)}
             onMouseLeave={() => setActiveIndex(null)}
           >
