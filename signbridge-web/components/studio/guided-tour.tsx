@@ -477,3 +477,88 @@ function GuidedTourOverlay({
     </div>
   )
 }
+
+interface TourAskPromptProps {
+  open: boolean
+  badge?: string
+  title: string
+  description: string
+  stepCount: number
+  onStartTour: () => void
+  onDismiss: () => void
+  onDontShowAgain: () => void
+}
+
+/** Non-blocking first-visit card asking whether the user wants a guided tour or opts out. */
+export function TourAskPrompt({
+  open,
+  badge = "Quick Guide",
+  title,
+  description,
+  stepCount,
+  onStartTour,
+  onDismiss,
+  onDontShowAgain,
+}: TourAskPromptProps) {
+  if (!open) return null
+
+  return (
+    <div
+      data-tour-prompt="true"
+      role="dialog"
+      aria-label={title}
+      className="fixed bottom-5 right-5 z-[90] w-[min(380px,calc(100vw-2rem))] rounded-2xl border border-amber-400/45 bg-[#1B1628]/96 p-4 text-[#FAF6F0] shadow-[0_24px_64px_rgba(0,0,0,0.75)] backdrop-blur-xl"
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/35 bg-amber-400/15 px-2.5 py-0.5 text-[11px] font-bold text-amber-300">
+          <Sparkles className="h-3 w-3" />
+          <span>{badge}</span>
+          <span className="text-amber-200/75">· {stepCount} steps</span>
+        </span>
+        <button
+          type="button"
+          aria-label="Close tour prompt"
+          onClick={onDismiss}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white/55 transition hover:bg-white/10 hover:text-white cursor-pointer"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <h2 className="font-display text-sm font-bold text-white leading-snug">
+        {title}
+      </h2>
+      <p className="mt-1 text-xs leading-relaxed text-[#CFC8DF]">
+        {description}
+      </p>
+
+      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-white/10">
+        <button
+          type="button"
+          onClick={onDontShowAgain}
+          className="text-[11px] font-medium text-[#9F98B2] transition hover:text-white cursor-pointer"
+        >
+          Don&apos;t show again
+        </button>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="rounded-full border border-white/12 bg-white/6 px-3 py-1.5 text-[11px] font-semibold text-white/80 transition hover:bg-white/12 cursor-pointer"
+          >
+            Not now
+          </button>
+          <button
+            type="button"
+            onClick={onStartTour}
+            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-3.5 py-1.5 text-[11px] font-bold text-[#17110B] shadow-[0_6px_18px_rgba(245,158,11,0.4)] transition hover:brightness-105 cursor-pointer"
+          >
+            <span>Start Tour</span>
+            <ArrowRight className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

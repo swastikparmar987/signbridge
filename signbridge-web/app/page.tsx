@@ -5,7 +5,11 @@ import { ArrowLeft, ArrowRight, Command, HelpCircle } from "lucide-react"
 import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { CommandPalette } from "@/components/navigation/command-palette"
 import { CommunicationCanvas } from "@/components/studio/communication-canvas"
-import { GuidedTour, type TourStep } from "@/components/studio/guided-tour"
+import {
+  GuidedTour,
+  TourAskPrompt,
+  type TourStep,
+} from "@/components/studio/guided-tour"
 import { UnifiedModeMenu } from "@/components/studio/unified-mode-menu"
 import { CustomSignsView } from "@/components/views/custom-signs-view"
 import { DictionaryView } from "@/components/views/dictionary-view"
@@ -18,9 +22,29 @@ import {
 
 type StudioStage = "menu" | "communicate" | StudioWindowId
 type TourScope = "none" | "menu" | "studio" | "custom-learner"
+type TourPromptScope = "none" | "menu" | "custom-learner"
 
 const TOUR_STORAGE_KEY = "signbridge.tour.seen.v1"
 const CUSTOM_TOUR_STORAGE_KEY = "signbridge.custom-tour.seen.v1"
+const TOUR_OPT_OUT_KEY = "signbridge.tour.optout.v1"
+
+function readStorageFlag(key: string): string | null {
+  try {
+    return typeof window !== "undefined" ? window.localStorage.getItem(key) : null
+  } catch {
+    return null
+  }
+}
+
+function writeStorageFlag(key: string, value: string) {
+  try {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(key, value)
+    }
+  } catch {
+    // Ignore storage quota or private browsing errors
+  }
+}
 
 const STUDIO_WINDOW_META: Record<
   StudioWindowId,
@@ -83,6 +107,7 @@ export default function SignBridgeAppPage() {
   const [customGlossSeed, setCustomGlossSeed] = React.useState<string | null>(null)
   const [dictionaryGlossSeed, setDictionaryGlossSeed] = React.useState<string | undefined>(undefined)
   const [tourScope, setTourScope] = React.useState<TourScope>("none")
+  const [tourPromptScope, setTourPromptScope] = React.useState<TourPromptScope>("none")
   const [tourRunId, setTourRunId] = React.useState(0)
   const [forceToolsMenuOpen, setForceToolsMenuOpen] = React.useState<boolean | null>(null)
   const [forceStudioPopoverOpen, setForceStudioPopoverOpen] = React.useState<boolean | null>(null)
@@ -103,9 +128,10 @@ export default function SignBridgeAppPage() {
       const initialStage = stageFromHash(window.location.hash)
       if (initialStage !== "menu") {
         setStudioStage(initialStage)
-      } else if (!window.localStorage.getItem(TOUR_STORAGE_KEY)) {
+      } else if (!readStorageFlag(TOUR_OPT_OUT_KEY) && !readStorageFlag(TOUR_STORAGE_KEY)) {
         autoTourTimer = window.setTimeout(() => {
-          setTourScope("menu")
+          writeStorageFlag(TOUR_STORAGE_KEY, "1")
+          setTourPromptScope("menu")
         }, 550)
       }
       window.history.replaceState(
@@ -125,6 +151,7 @@ export default function SignBridgeAppPage() {
         setSelectedMode(state.selectedMode)
       }
       setTourScope("none")
+      setTourPromptScope("none")
       setForceToolsMenuOpen(null)
       setForceStudioPopoverOpen(null)
       setStudioStage(targetStage)
@@ -151,10 +178,12 @@ export default function SignBridgeAppPage() {
 
   React.useEffect(() => {
     if (studioStage !== "custom-learner" || typeof window === "undefined") return
-    if (window.localStorage.getItem(CUSTOM_TOUR_STORAGE_KEY)) return
+    if (readStorageFlag(TOUR_OPT_OUT_KEY) || readStorageFlag(CUSTOM_TOUR_STORAGE_KEY)) {
+      return
+    }
     const timer = window.setTimeout(() => {
-      setTourRunId((k) => k + 1)
-      setTourScope("custom-learner")
+      writeStorageFlag(CUSTOM_TOUR_STORAGE_KEY, "1")
+      setTourPromptScope("custom-learner")
     }, 450)
     return () => window.clearTimeout(timer)
   }, [studioStage])
@@ -166,6 +195,7 @@ export default function SignBridgeAppPage() {
         setSelectedMode(nextMode)
       }
       setTourScope("none")
+      setTourPromptScope("none")
       if (typeof window !== "undefined") {
         const sameStage = stageRef.current === nextStage
         const sameMode = modeRef.current === resolvedMode
@@ -198,14 +228,13 @@ export default function SignBridgeAppPage() {
 
   const goBackToMenu = React.useCallback(() => {
     setTourScope("none")
+    setTourPromptScope("none")
     setForceStudioPopoverOpen(null)
     navigateToStage("menu")
   }, [navigateToStage])
 
   const markTourSeen = React.useCallback(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(TOUR_STORAGE_KEY, "1")
-    }
+    writeStorageFlag(TOUR_STORAGE_KEY, "1")
   }, [])
 
   const closeTour = React.useCallback(() => {
@@ -216,12 +245,15 @@ export default function SignBridgeAppPage() {
   }, [markTourSeen])
 
   const startMenuTour = React.useCallback(() => {
+    markTourSeen()
+    setTourPromptScope("none")
     setForceToolsMenuOpen(null)
     setTourRunId((k) => k + 1)
     setTourScope("menu")
-  }, [])
+  }, [markTourSeen])
 
   const startStudioTour = React.useCallback(() => {
+    setTourPromptScope("none")
     setForceStudioPopoverOpen(null)
     setTourRunId((k) => k + 1)
     setTourScope("studio")
@@ -229,6 +261,7 @@ export default function SignBridgeAppPage() {
 
   const startStudioTourFromMenu = React.useCallback(() => {
     markTourSeen()
+    setTourPromptScope("none")
     setForceToolsMenuOpen(null)
     setForceStudioPopoverOpen(null)
     navigateToStage("communicate", modeRef.current)
@@ -237,9 +270,7 @@ export default function SignBridgeAppPage() {
   }, [markTourSeen, navigateToStage])
 
   const markCustomTourSeen = React.useCallback(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(CUSTOM_TOUR_STORAGE_KEY, "1")
-    }
+    writeStorageFlag(CUSTOM_TOUR_STORAGE_KEY, "1")
   }, [])
 
   const closeCustomTour = React.useCallback(() => {
@@ -248,17 +279,42 @@ export default function SignBridgeAppPage() {
   }, [markCustomTourSeen])
 
   const startCustomTour = React.useCallback(() => {
+    markCustomTourSeen()
+    setTourPromptScope("none")
     setTourRunId((k) => k + 1)
     setTourScope("custom-learner")
-  }, [])
+  }, [markCustomTourSeen])
 
   const startStudioTourFromCustom = React.useCallback(() => {
     markCustomTourSeen()
+    setTourPromptScope("none")
     setForceStudioPopoverOpen(null)
     navigateToStage("communicate", modeRef.current)
     setTourRunId((k) => k + 1)
     setTourScope("studio")
   }, [markCustomTourSeen, navigateToStage])
+
+  const dismissTourPrompt = React.useCallback(() => {
+    if (tourPromptScope === "menu") markTourSeen()
+    if (tourPromptScope === "custom-learner") markCustomTourSeen()
+    setTourPromptScope("none")
+  }, [tourPromptScope, markTourSeen, markCustomTourSeen])
+
+  const dontShowToursAgain = React.useCallback(() => {
+    writeStorageFlag(TOUR_OPT_OUT_KEY, "1")
+    markTourSeen()
+    markCustomTourSeen()
+    setTourPromptScope("none")
+    setTourScope("none")
+  }, [markTourSeen, markCustomTourSeen])
+
+  const acceptTourPrompt = React.useCallback(() => {
+    if (tourPromptScope === "custom-learner") {
+      startCustomTour()
+      return
+    }
+    startMenuTour()
+  }, [tourPromptScope, startCustomTour, startMenuTour])
 
   const menuTourSteps = React.useMemo<TourStep[]>(
     () => [
@@ -823,6 +879,38 @@ export default function SignBridgeAppPage() {
           onClick: startStudioTourFromCustom,
         }}
         onClose={closeCustomTour}
+      />
+
+      <TourAskPrompt
+        open={
+          tourScope === "none" &&
+          ((studioStage === "menu" && tourPromptScope === "menu") ||
+            (studioStage === "custom-learner" &&
+              tourPromptScope === "custom-learner"))
+        }
+        badge={
+          tourPromptScope === "custom-learner"
+            ? "Custom Learner Guide"
+            : "Welcome Tour"
+        }
+        title={
+          tourPromptScope === "custom-learner"
+            ? "Want a quick tour of Custom Sign Learner?"
+            : "New to SignBridge? Take a quick tour"
+        }
+        description={
+          tourPromptScope === "custom-learner"
+            ? "See what each button does and learn how 3 short clips turn into a custom sign. You can replay anytime via Tour."
+            : "Walk button-by-button through every feature in floating bubbles. You can replay anytime from the Tour button."
+        }
+        stepCount={
+          tourPromptScope === "custom-learner"
+            ? customTourSteps.length
+            : menuTourSteps.length
+        }
+        onStartTour={acceptTourPrompt}
+        onDismiss={dismissTourPrompt}
+        onDontShowAgain={dontShowToursAgain}
       />
     </SignBridgeStoreProvider>
   )
