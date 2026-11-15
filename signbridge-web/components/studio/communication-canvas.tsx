@@ -8,6 +8,7 @@ import {
   Copy,
   Delete,
   FlipHorizontal2,
+  HelpCircle,
   Pause,
   Play,
   RotateCcw,
@@ -24,6 +25,9 @@ interface CommunicationCanvasProps {
   initialMode: RecognitionMode
   onBackToMenu: () => void
   onOpenWindow: (win: import("@/lib/signbridge-store").StudioWindowId) => void
+  tourOpen?: boolean
+  forceSettingsPopoverOpen?: boolean | null
+  onStartTour?: () => void
 }
 
 const MODE_TABS: Array<{ mode: RecognitionMode; label: string }> = [
@@ -36,6 +40,9 @@ export function CommunicationCanvas({
   initialMode,
   onBackToMenu,
   onOpenWindow,
+  tourOpen = false,
+  forceSettingsPopoverOpen = null,
+  onStartTour,
 }: CommunicationCanvasProps) {
   const {
     videoRef,
@@ -71,6 +78,7 @@ export function CommunicationCanvas({
 
   const [mirrored, setMirrored] = React.useState(true)
   const [settingsOpen, setSettingsOpen] = React.useState(false)
+  const effectiveSettingsOpen = forceSettingsPopoverOpen ?? settingsOpen
   const [copied, setCopied] = React.useState(false)
   const [autoSpeak, setAutoSpeak] = React.useState(true)
   const [backendHealth, setBackendHealth] = React.useState<{
@@ -117,6 +125,7 @@ export function CommunicationCanvas({
   // Global keyboard shortcuts: Spacebar switches modes anytime; Enter triggers Word capture
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (tourOpen) return
       const target = e.target as HTMLElement | null
       if (
         target &&
@@ -140,25 +149,27 @@ export function CommunicationCanvas({
       } else if (e.code === "Backspace" && mode === "Fingerspelling") {
         e.preventDefault()
         backspaceFingerspelling()
-      } else if (e.code === "Escape" && settingsOpen) {
+      } else if (e.code === "Escape" && effectiveSettingsOpen) {
         setSettingsOpen(false)
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [mode, setMode, captureState, startWordCapture, backspaceFingerspelling, settingsOpen])
+  }, [mode, setMode, captureState, startWordCapture, backspaceFingerspelling, effectiveSettingsOpen, tourOpen])
 
   // Close quick camera/model popover on outside click
   React.useEffect(() => {
-    if (!settingsOpen) return
+    if (!effectiveSettingsOpen) return
     const onDown = (e: MouseEvent) => {
-      if (settingsPanelRef.current && !settingsPanelRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement | null
+      if (target?.closest?.('[data-tour-overlay="true"]')) return
+      if (settingsPanelRef.current && !settingsPanelRef.current.contains(target)) {
         setSettingsOpen(false)
       }
     }
     window.addEventListener("mousedown", onDown)
     return () => window.removeEventListener("mousedown", onDown)
-  }, [settingsOpen])
+  }, [effectiveSettingsOpen])
 
   const handleCopy = async () => {
     await copyOutput()
@@ -292,6 +303,7 @@ export function CommunicationCanvas({
         <div className="pointer-events-auto flex items-center gap-2.5">
           <button
             type="button"
+            data-tour="studio-menu"
             onClick={onBackToMenu}
             className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-[#1B1726]/75 px-3.5 py-2 text-xs font-medium text-white/90 backdrop-blur-xl transition hover:border-white/25 hover:bg-[#252034]"
           >
@@ -307,6 +319,7 @@ export function CommunicationCanvas({
 
         {/* Center: Clean Pill Mode Switcher */}
         <nav
+          data-tour="studio-mode-switcher"
           aria-label="Signing mode switcher"
           className="pointer-events-auto flex items-center rounded-full border border-white/12 bg-[#1A1625]/78 p-1 backdrop-blur-xl shadow-lg"
         >
@@ -371,7 +384,10 @@ export function CommunicationCanvas({
           </div>
 
           {/* Subtle hand tracking status dot pill */}
-          <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-white/10 bg-[#1B1726]/70 px-3 py-1.5 text-[11px] font-medium text-white/75 backdrop-blur-xl">
+          <div
+            data-tour="studio-tracking"
+            className="hidden lg:flex items-center gap-1.5 rounded-full border border-white/10 bg-[#1B1726]/70 px-3 py-1.5 text-[11px] font-medium text-white/75 backdrop-blur-xl"
+          >
             <span
               className={[
                 "h-2 w-2 rounded-full transition-colors",
@@ -387,6 +403,7 @@ export function CommunicationCanvas({
 
           <button
             type="button"
+            data-tour="studio-auto-tts"
             aria-pressed={autoSpeak}
             aria-label={autoSpeak ? "Auto-speak enabled" : "Auto-speak muted"}
             title={autoSpeak ? "Auto-speak TTS: On" : "Auto-speak TTS: Off"}
@@ -404,6 +421,7 @@ export function CommunicationCanvas({
 
           <button
             type="button"
+            data-tour="studio-pause"
             aria-label={isPaused ? "Resume camera" : "Pause camera"}
             title={isPaused ? "Resume camera" : "Pause camera"}
             onClick={togglePause}
@@ -414,6 +432,7 @@ export function CommunicationCanvas({
 
           <button
             type="button"
+            data-tour="studio-speak"
             aria-label="Speak translation aloud"
             title="Speak aloud"
             onClick={() => speakOutput()}
@@ -427,8 +446,22 @@ export function CommunicationCanvas({
             <Volume2 className="h-4 w-4" />
           </button>
 
+          {onStartTour && (
+            <button
+              type="button"
+              data-tour="studio-tour"
+              aria-label="Take studio tour"
+              title="Take studio tour"
+              onClick={onStartTour}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-[#1B1726]/75 text-amber-300 backdrop-blur-xl transition hover:border-amber-400/40 hover:bg-amber-400/15 cursor-pointer"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
+          )}
+
           <button
             type="button"
+            data-tour="studio-settings"
             aria-label="Camera and recognition settings"
             onClick={() => setSettingsOpen((prev) => !prev)}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-[#1B1726]/75 text-white/85 backdrop-blur-xl transition hover:border-white/25 hover:bg-[#252034]"
@@ -436,9 +469,9 @@ export function CommunicationCanvas({
             <Settings className="h-4 w-4" />
           </button>
 
-          {settingsOpen && (
+          {effectiveSettingsOpen && (
             <div className="absolute right-0 top-12 w-72 rounded-2xl border border-white/15 bg-[#1D182A]/95 p-3.5 text-xs shadow-2xl backdrop-blur-xl z-50 space-y-3">
-              <div>
+              <div data-tour="studio-camera-select">
                 <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/50">
                   Camera Source
                 </div>
@@ -461,6 +494,7 @@ export function CommunicationCanvas({
 
               <button
                 type="button"
+                data-tour="studio-mirror"
                 onClick={() => setMirrored((m) => !m)}
                 className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/85 hover:bg-white/10"
               >
@@ -475,6 +509,7 @@ export function CommunicationCanvas({
 
               <button
                 type="button"
+                data-tour="studio-train-custom"
                 onClick={() => {
                   setSettingsOpen(false)
                   onOpenWindow("custom-learner")
@@ -539,7 +574,10 @@ export function CommunicationCanvas({
           )}
 
           {/* High-Contrast Cream Sentence Caption Card */}
-          <div className="relative flex w-full items-center gap-3 rounded-2xl bg-[#FAF6F0] px-4 sm:px-5 py-3.5 text-[#18141C] shadow-[0_24px_65px_-12px_rgba(0,0,0,0.8)] ring-1 ring-white/50">
+          <div
+            data-tour="studio-caption-bar"
+            className="relative flex w-full items-center gap-3 rounded-2xl bg-[#FAF6F0] px-4 sm:px-5 py-3.5 text-[#18141C] shadow-[0_24px_65px_-12px_rgba(0,0,0,0.8)] ring-1 ring-white/50"
+          >
             {/* Subtle recording progress bar across top of card */}
             {mode === "Word" && captureState === "recording" && (
               <div className="absolute top-0 left-3 right-3 h-[3px] overflow-hidden rounded-full bg-amber-900/10">
@@ -664,7 +702,10 @@ export function CommunicationCanvas({
       </footer>
 
       {/* Corner Interactive 3D Hand Guide */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 hidden md:block">
+      <div
+        data-tour="studio-hand-guide"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 hidden md:block"
+      >
         <InteractiveHandGuide mode={mode} activeLabel={activePrediction?.label ?? null} />
       </div>
     </div>

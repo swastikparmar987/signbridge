@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ArrowRight, BookOpen, Command, FolderOpen, Settings, Sparkles } from "lucide-react"
+import { ArrowRight, BookOpen, Command, FolderOpen, HelpCircle, Settings, Sparkles } from "lucide-react"
 import type { RecognitionMode, StudioWindowId } from "@/lib/signbridge-store"
 import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { InteractiveMenuHand, type ModePointerRef } from "./menu-3d-hands"
@@ -12,6 +12,9 @@ interface UnifiedModeMenuProps {
   onStartCommunicating: (mode: RecognitionMode) => void
   onOpenWindow: (win: StudioWindowId) => void
   onOpenCommandPalette: () => void
+  tourOpen?: boolean
+  forceToolsMenuOpen?: boolean | null
+  onStartTour?: () => void
 }
 
 interface ModeCardMeta {
@@ -46,10 +49,14 @@ export function UnifiedModeMenu({
   onStartCommunicating,
   onOpenWindow,
   onOpenCommandPalette,
+  tourOpen = false,
+  forceToolsMenuOpen = null,
+  onStartTour,
 }: UnifiedModeMenuProps) {
   const [hoveredMode, setHoveredMode] = React.useState<RecognitionMode | null>(null)
   const [cameraReadyLabel, setCameraReadyLabel] = React.useState<"Checking..." | "Camera Ready" | "Grant Camera">("Camera Ready")
   const [menuOpen, setMenuOpen] = React.useState(false)
+  const effectiveMenuOpen = forceToolsMenuOpen ?? menuOpen
 
   const settingsBtnRef = React.useRef<HTMLDivElement | null>(null)
 
@@ -82,6 +89,7 @@ export function UnifiedModeMenu({
   // Keyboard shortcuts: Spacebar cycles modes, Arrow keys switch, Enter starts communicating
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (tourOpen) return
       const target = e.target as HTMLElement | null
       if (
         target &&
@@ -104,28 +112,30 @@ export function UnifiedModeMenu({
         e.preventDefault()
         const idx = MODE_ORDER.indexOf(selectedMode)
         onSelectMode(MODE_ORDER[(idx - 1 + MODE_ORDER.length) % MODE_ORDER.length])
-      } else if (e.code === "Enter" && !menuOpen) {
+      } else if (e.code === "Enter" && !effectiveMenuOpen) {
         e.preventDefault()
         onStartCommunicating(selectedMode)
-      } else if (e.code === "Escape" && menuOpen) {
+      } else if (e.code === "Escape" && effectiveMenuOpen) {
         setMenuOpen(false)
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [selectedMode, onSelectMode, onStartCommunicating, menuOpen])
+  }, [selectedMode, onSelectMode, onStartCommunicating, effectiveMenuOpen, tourOpen])
 
   // Close settings dropdown on outside click
   React.useEffect(() => {
-    if (!menuOpen) return
+    if (!effectiveMenuOpen) return
     const onClick = (e: MouseEvent) => {
-      if (settingsBtnRef.current && !settingsBtnRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement | null
+      if (target?.closest?.('[data-tour-overlay="true"]')) return
+      if (settingsBtnRef.current && !settingsBtnRef.current.contains(target)) {
         setMenuOpen(false)
       }
     }
     window.addEventListener("mousedown", onClick)
     return () => window.removeEventListener("mousedown", onClick)
-  }, [menuOpen])
+  }, [effectiveMenuOpen])
 
   const handleCardPointerMove = (mode: RecognitionMode, e: React.PointerEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -171,6 +181,7 @@ export function UnifiedModeMenu({
         <div className="flex items-center gap-2.5" ref={settingsBtnRef}>
           <button
             type="button"
+            data-tour="menu-dictionary"
             onClick={() => onOpenWindow("dictionary")}
             className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/6 px-3.5 py-1.5 text-xs font-medium text-[#FAF6F0] transition hover:border-amber-400/40 hover:bg-amber-400/12 hover:text-amber-200 cursor-pointer"
           >
@@ -180,6 +191,7 @@ export function UnifiedModeMenu({
 
           <button
             type="button"
+            data-tour="menu-custom"
             onClick={() => onOpenWindow("custom-learner")}
             className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-3.5 py-1.5 text-xs font-medium text-amber-200 transition hover:bg-amber-400/20"
           >
@@ -189,6 +201,7 @@ export function UnifiedModeMenu({
 
           <button
             type="button"
+            data-tour="menu-camera"
             onClick={() => onStartCommunicating(selectedMode)}
             className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-[#1B3A2C]/85 px-3.5 py-1.5 text-xs font-medium text-emerald-200 transition hover:bg-[#1E4534]"
           >
@@ -196,9 +209,23 @@ export function UnifiedModeMenu({
             <span>{cameraReadyLabel}</span>
           </button>
 
+          {onStartTour && (
+            <button
+              type="button"
+              data-tour="menu-tour"
+              onClick={onStartTour}
+              title="Take interactive feature tour"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/6 px-3 py-1.5 text-xs font-medium text-[#E8E3F2] transition hover:border-amber-400/40 hover:bg-amber-400/12 hover:text-amber-200 cursor-pointer"
+            >
+              <HelpCircle className="h-3.5 w-3.5 text-amber-300" />
+              <span className="hidden sm:inline">Tour</span>
+            </button>
+          )}
+
           <div className="relative">
             <button
               type="button"
+              data-tour="menu-tools"
               aria-label="Open Studio tools menu"
               onClick={() => setMenuOpen((prev) => !prev)}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#C9C3D8] transition hover:border-white/20 hover:bg-white/10 hover:text-white"
@@ -206,7 +233,7 @@ export function UnifiedModeMenu({
               <Settings className="h-4 w-4" />
             </button>
 
-            {menuOpen && (
+            {effectiveMenuOpen && (
               <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-white/12 bg-[#1D192B]/95 p-1.5 shadow-2xl backdrop-blur-xl z-50">
                 <button
                   type="button"
@@ -232,6 +259,7 @@ export function UnifiedModeMenu({
                 </button>
                 <button
                   type="button"
+                  data-tour="menu-tool-video"
                   onClick={() => {
                     setMenuOpen(false)
                     onOpenWindow("video")
@@ -244,6 +272,7 @@ export function UnifiedModeMenu({
                 <div className="my-1 h-px bg-white/10" />
                 <button
                   type="button"
+                  data-tour="menu-tool-command"
                   onClick={() => {
                     setMenuOpen(false)
                     onOpenCommandPalette()
@@ -283,6 +312,7 @@ export function UnifiedModeMenu({
               <button
                 key={card.mode}
                 type="button"
+                data-tour={`mode-${card.mode}`}
                 aria-pressed={isSelected}
                 onClick={() => handleCardClick(card.mode)}
                 onDoubleClick={() => onStartCommunicating(card.mode)}
@@ -334,6 +364,7 @@ export function UnifiedModeMenu({
         <div className="mt-8 sm:mt-10 flex flex-col items-center gap-3">
           <button
             type="button"
+            data-tour="menu-start"
             onClick={() => onStartCommunicating(selectedMode)}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-7 py-3 text-sm font-bold text-[#1A130D] shadow-[0_12px_36px_-6px_rgba(245,158,11,0.62)] transition duration-200 hover:brightness-105 hover:scale-[1.02] active:scale-[0.98]"
           >

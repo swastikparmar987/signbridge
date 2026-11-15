@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Command } from "lucide-react"
 import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { CommandPalette } from "@/components/navigation/command-palette"
 import { CommunicationCanvas } from "@/components/studio/communication-canvas"
+import { GuidedTour, type TourStep } from "@/components/studio/guided-tour"
 import { UnifiedModeMenu } from "@/components/studio/unified-mode-menu"
 import { CustomSignsView } from "@/components/views/custom-signs-view"
 import { DictionaryView } from "@/components/views/dictionary-view"
@@ -16,6 +17,9 @@ import {
 } from "@/lib/signbridge-store"
 
 type StudioStage = "menu" | "communicate" | StudioWindowId
+type TourScope = "none" | "menu" | "studio"
+
+const TOUR_STORAGE_KEY = "signbridge.tour.seen.v1"
 
 const STUDIO_WINDOW_META: Record<
   StudioWindowId,
@@ -77,6 +81,10 @@ export default function SignBridgeAppPage() {
   const [isCommandOpen, setIsCommandOpen] = React.useState(false)
   const [customGlossSeed, setCustomGlossSeed] = React.useState<string | null>(null)
   const [dictionaryGlossSeed, setDictionaryGlossSeed] = React.useState<string | undefined>(undefined)
+  const [tourScope, setTourScope] = React.useState<TourScope>("none")
+  const [tourRunId, setTourRunId] = React.useState(0)
+  const [forceToolsMenuOpen, setForceToolsMenuOpen] = React.useState<boolean | null>(null)
+  const [forceStudioPopoverOpen, setForceStudioPopoverOpen] = React.useState<boolean | null>(null)
 
   const stageRef = React.useRef<StudioStage>(studioStage)
   const modeRef = React.useRef<RecognitionMode>(selectedMode)
@@ -89,10 +97,15 @@ export default function SignBridgeAppPage() {
 
   React.useEffect(() => {
     if (typeof window === "undefined") return
+    let autoTourTimer: number | undefined
     const syncTimer = window.setTimeout(() => {
       const initialStage = stageFromHash(window.location.hash)
       if (initialStage !== "menu") {
         setStudioStage(initialStage)
+      } else if (!window.localStorage.getItem(TOUR_STORAGE_KEY)) {
+        autoTourTimer = window.setTimeout(() => {
+          setTourScope("menu")
+        }, 550)
       }
       window.history.replaceState(
         { studioStage: initialStage, selectedMode: modeRef.current },
@@ -110,12 +123,16 @@ export default function SignBridgeAppPage() {
       if (state?.selectedMode) {
         setSelectedMode(state.selectedMode)
       }
+      setTourScope("none")
+      setForceToolsMenuOpen(null)
+      setForceStudioPopoverOpen(null)
       setStudioStage(targetStage)
     }
 
     window.addEventListener("popstate", onPopState)
     return () => {
       window.clearTimeout(syncTimer)
+      if (autoTourTimer !== undefined) window.clearTimeout(autoTourTimer)
       window.removeEventListener("popstate", onPopState)
     }
   }, [])
@@ -168,8 +185,298 @@ export default function SignBridgeAppPage() {
   )
 
   const goBackToMenu = React.useCallback(() => {
+    setTourScope("none")
+    setForceStudioPopoverOpen(null)
     navigateToStage("menu")
   }, [navigateToStage])
+
+  const markTourSeen = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(TOUR_STORAGE_KEY, "1")
+    }
+  }, [])
+
+  const closeTour = React.useCallback(() => {
+    markTourSeen()
+    setTourScope("none")
+    setForceToolsMenuOpen(null)
+    setForceStudioPopoverOpen(null)
+  }, [markTourSeen])
+
+  const startMenuTour = React.useCallback(() => {
+    setForceToolsMenuOpen(null)
+    setTourRunId((k) => k + 1)
+    setTourScope("menu")
+  }, [])
+
+  const startStudioTour = React.useCallback(() => {
+    setForceStudioPopoverOpen(null)
+    setTourRunId((k) => k + 1)
+    setTourScope("studio")
+  }, [])
+
+  const startStudioTourFromMenu = React.useCallback(() => {
+    markTourSeen()
+    setForceToolsMenuOpen(null)
+    setForceStudioPopoverOpen(null)
+    navigateToStage("communicate", modeRef.current)
+    setTourRunId((k) => k + 1)
+    setTourScope("studio")
+  }, [markTourSeen, navigateToStage])
+
+  const menuTourSteps = React.useMemo<TourStep[]>(
+    () => [
+      {
+        id: "menu-dictionary",
+        target: '[data-tour="menu-dictionary"]',
+        badge: "Reference",
+        title: "3D Sign Dictionary (2,731 Words)",
+        description:
+          "Browse all 2,731 ASL signs as animated 3D hand poses. Search any word, scrub frames, and orbit between Front, Side, Top, or Signer POV.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "menu-custom",
+        target: '[data-tour="menu-custom"]',
+        badge: "Personalize",
+        title: "Custom Sign Learner",
+        description:
+          "Teach SignBridge your own gestures or regional signs by recording 3 quick clips and training your private custom profile.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "menu-camera",
+        target: '[data-tour="menu-camera"]',
+        badge: "Quick Launch",
+        title: "Camera Readiness & Instant Start",
+        description:
+          "Shows when your webcam is ready. Click this pill anytime to jump straight into Live Studio with your active signing mode.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "menu-tools",
+        target: '[data-tour="menu-tools"]',
+        badge: "Menu",
+        title: "Studio Tools Menu",
+        description:
+          "Opens extra tools including Video Analysis, Custom Sign Learner, 3D Dictionary, and the quick Command Palette.",
+        placement: "bottom",
+        radius: 14,
+        onBeforeEnter: () => setForceToolsMenuOpen(null),
+      },
+      {
+        id: "menu-tool-video",
+        target: '[data-tour="menu-tool-video"]',
+        badge: "Offline Clips",
+        title: "Analyze Uploaded Video",
+        description:
+          "Upload a saved MP4, MOV, or WebM recording to recognize ASL signs directly from video files without needing a live webcam.",
+        placement: "left",
+        radius: 12,
+        onBeforeEnter: () => setForceToolsMenuOpen(true),
+      },
+      {
+        id: "menu-tool-command",
+        target: '[data-tour="menu-tool-command"]',
+        badge: "Shortcut",
+        title: "Command Palette (⌘K)",
+        description:
+          "Press ⌘K (or Ctrl+K) from anywhere to search the 2,731-sign dictionary or jump straight to any signing mode or tool.",
+        placement: "left",
+        radius: 12,
+        onBeforeEnter: () => setForceToolsMenuOpen(true),
+      },
+      {
+        id: "mode-Word",
+        target: '[data-tour="mode-Word"]',
+        badge: "Mode 1 of 3",
+        title: "Words Mode",
+        description:
+          "Recognize one distinct ASL vocabulary sign at a time with top-3 quick match candidates so you can confirm or practice signs.",
+        placement: "bottom",
+        radius: 18,
+        onBeforeEnter: () => setForceToolsMenuOpen(false),
+      },
+      {
+        id: "mode-Continuous",
+        target: '[data-tour="mode-Continuous"]',
+        badge: "Mode 2 of 3",
+        title: "Continuous Mode",
+        description:
+          "Sign naturally phrase after phrase. Pause briefly (~1 second) and SignBridge turns your recognized glosses into smooth English sentences.",
+        placement: "bottom",
+        radius: 18,
+        onBeforeEnter: () => setForceToolsMenuOpen(null),
+      },
+      {
+        id: "mode-Fingerspelling",
+        target: '[data-tour="mode-Fingerspelling"]',
+        badge: "Mode 3 of 3",
+        title: "Fingerspelling Mode",
+        description:
+          "Spell names, acronyms, and custom words letter-by-letter from A to Z using static ASL handshapes.",
+        placement: "bottom",
+        radius: 18,
+      },
+      {
+        id: "menu-tour",
+        target: '[data-tour="menu-tour"]',
+        badge: "Help",
+        title: "Replay Tour Anytime",
+        description:
+          "Click Tour whenever you want a quick refresher on every SignBridge button or shortcut.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "menu-start",
+        target: '[data-tour="menu-start"]',
+        badge: "Go Live",
+        title: "Start Communicating",
+        description:
+          "Opens the Live Studio webcam view in your selected mode — or click Tour Live Studio to step through every button inside the camera workspace.",
+        placement: "top",
+        radius: 999,
+      },
+    ],
+    []
+  )
+
+  const studioTourSteps = React.useMemo<TourStep[]>(
+    () => [
+      {
+        id: "studio-menu",
+        target: '[data-tour="studio-menu"]',
+        badge: "Navigation",
+        title: "Back to Mode Menu",
+        description:
+          "Return to the home mode menu, 3D Dictionary, Custom Sign Learner, or Video Analysis anytime.",
+        placement: "bottom",
+        radius: 999,
+        onBeforeEnter: () => setForceStudioPopoverOpen(null),
+      },
+      {
+        id: "studio-mode-switcher",
+        target: '[data-tour="studio-mode-switcher"]',
+        badge: "Modes",
+        title: "Live Mode Switcher",
+        description:
+          "Switch seamlessly between Words, Continuous, and Fingerspelling (or press Spacebar) without interrupting your camera.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "studio-tracking",
+        target: '[data-tour="studio-tracking"]',
+        badge: "Vision",
+        title: "Hand Tracking Status",
+        description:
+          "Turns green as soon as your hands are tracked in frame so you know SignBridge sees your gestures clearly.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "studio-auto-tts",
+        target: '[data-tour="studio-auto-tts"]',
+        badge: "Voice",
+        title: "Auto TTS",
+        description:
+          "Automatically speak completed English sentences and signed words out loud as you finish signing.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "studio-pause",
+        target: '[data-tour="studio-pause"]',
+        badge: "Camera",
+        title: "Pause / Resume Camera",
+        description:
+          "Freeze or resume live webcam recognition whenever you want to take a break.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "studio-speak",
+        target: '[data-tour="studio-speak"]',
+        badge: "Audio",
+        title: "Speak Translation Aloud",
+        description:
+          "Play back the current translated text out loud anytime with one click.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "studio-settings",
+        target: '[data-tour="studio-settings"]',
+        badge: "Controls",
+        title: "Camera & Custom Shortcuts",
+        description:
+          "Switch webcam devices, flip Mirror Preview, or jump directly into Custom Sign Training.",
+        placement: "bottom",
+        radius: 999,
+        onBeforeEnter: () => setForceStudioPopoverOpen(null),
+      },
+      {
+        id: "studio-camera-select",
+        target: '[data-tour="studio-camera-select"]',
+        badge: "Hardware",
+        title: "Camera Source",
+        description:
+          "Choose which built-in or external webcam SignBridge reads from.",
+        placement: "left",
+        radius: 12,
+        onBeforeEnter: () => setForceStudioPopoverOpen(true),
+      },
+      {
+        id: "studio-mirror",
+        target: '[data-tour="studio-mirror"]',
+        badge: "Preview",
+        title: "Mirror Camera Preview",
+        description:
+          "Flip your webcam horizontally like a mirror while keeping ASL hand orientation accurate for recognition.",
+        placement: "left",
+        radius: 12,
+        onBeforeEnter: () => setForceStudioPopoverOpen(true),
+      },
+      {
+        id: "studio-train-custom",
+        target: '[data-tour="studio-train-custom"]',
+        badge: "Personalize",
+        title: "Train Custom Signs",
+        description:
+          "Jump directly to Custom Sign Learner to record and train your own custom signs.",
+        placement: "left",
+        radius: 12,
+        onBeforeEnter: () => setForceStudioPopoverOpen(true),
+      },
+      {
+        id: "studio-caption-bar",
+        target: '[data-tour="studio-caption-bar"]',
+        badge: "Output",
+        title: "Live Caption & Output Bar",
+        description:
+          "Watch recognized words, letters, and smoothed English sentences appear live — plus quick Sign Word, Space, Backspace, Clear, Copy, and Speak buttons.",
+        placement: "top",
+        radius: 18,
+        onBeforeEnter: () => setForceStudioPopoverOpen(false),
+      },
+      {
+        id: "studio-hand-guide",
+        target: '[data-tour="studio-hand-guide"]',
+        badge: "3D Guide",
+        title: "Interactive 3D Sign Guide",
+        description:
+          "Preview the current sign or handshape in 3D — drag to rotate or click to expand.",
+        placement: "left",
+        radius: 18,
+        onBeforeEnter: () => setForceStudioPopoverOpen(null),
+      },
+    ],
+    []
+  )
 
   const renderStudioWindow = (win: StudioWindowId) => {
     switch (win) {
@@ -200,12 +507,18 @@ export default function SignBridgeAppPage() {
           onStartCommunicating={openMode}
           onOpenWindow={openWindow}
           onOpenCommandPalette={() => setIsCommandOpen(true)}
+          tourOpen={tourScope === "menu"}
+          forceToolsMenuOpen={forceToolsMenuOpen}
+          onStartTour={startMenuTour}
         />
       ) : studioStage === "communicate" ? (
         <CommunicationCanvas
           initialMode={selectedMode}
           onBackToMenu={goBackToMenu}
           onOpenWindow={openWindow}
+          tourOpen={tourScope === "studio"}
+          forceSettingsPopoverOpen={forceStudioPopoverOpen}
+          onStartTour={startStudioTour}
         />
       ) : (
         <div className="relative min-h-screen w-full overflow-x-hidden bg-[#15121E] text-[#FAF6F0]">
@@ -285,6 +598,26 @@ export default function SignBridgeAppPage() {
         onOpenWindow={openWindow}
         onSelectCustomGloss={(gloss) => setCustomGlossSeed(gloss)}
         onSelectDictionaryGloss={(gloss) => setDictionaryGlossSeed(gloss)}
+      />
+
+      <GuidedTour
+        key={`menu-${tourRunId}`}
+        open={studioStage === "menu" && tourScope === "menu"}
+        steps={menuTourSteps}
+        finishLabel="Finish"
+        secondaryFinishAction={{
+          label: "Tour Live Studio",
+          onClick: startStudioTourFromMenu,
+        }}
+        onClose={closeTour}
+      />
+
+      <GuidedTour
+        key={`studio-${tourRunId}`}
+        open={studioStage === "communicate" && tourScope === "studio"}
+        steps={studioTourSteps}
+        finishLabel="Start Signing"
+        onClose={closeTour}
       />
     </SignBridgeStoreProvider>
   )
