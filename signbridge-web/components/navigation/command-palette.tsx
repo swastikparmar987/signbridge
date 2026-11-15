@@ -8,7 +8,6 @@ import {
   Hand,
   Sparkles,
   UploadCloud,
-  Settings,
   X,
   ArrowRight,
   Cpu,
@@ -36,8 +35,7 @@ const ROUTE_ITEMS: StudioRouteItem[] = [
   { kind: "mode", id: "Fingerspelling", label: "Fingerspelling Studio", desc: "A–Z alphabet landmark recognition", icon: Hand },
   { kind: "window", id: "dictionary", label: "3D Sign Dictionary", desc: "Browse all 2,731 animated 3D ASL signs & step guides", icon: BookOpen },
   { kind: "window", id: "custom-learner", label: "Custom Sign Learner", desc: "Record, train & live-test your personal custom signs", icon: Sparkles },
-  { kind: "window", id: "video", label: "Analyze Uploaded Video", desc: "Upload MP4/MOV/WebM clips for ASL recognition", icon: UploadCloud },
-  { kind: "window", id: "settings", label: "Audio & Engine Settings", desc: "Kokoro TTS voice, confidence cutoff & custom routing", icon: Settings }
+  { kind: "window", id: "video", label: "Analyze Uploaded Video", desc: "Upload MP4/MOV/WebM clips for ASL recognition", icon: UploadCloud }
 ]
 
 export function CommandPalette({

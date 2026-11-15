@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ArrowRight, BookOpen, Camera, Command, FolderOpen, Settings, Sparkles } from "lucide-react"
+import { ArrowRight, BookOpen, Command, FolderOpen, Settings, Sparkles } from "lucide-react"
 import type { RecognitionMode, StudioWindowId } from "@/lib/signbridge-store"
 import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { InteractiveMenuHand, type ModePointerRef } from "./menu-3d-hands"
@@ -199,7 +199,7 @@ export function UnifiedModeMenu({
           <div className="relative">
             <button
               type="button"
-              aria-label="Open Studio tools and settings menu"
+              aria-label="Open Studio tools menu"
               onClick={() => setMenuOpen((prev) => !prev)}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#C9C3D8] transition hover:border-white/20 hover:bg-white/10 hover:text-white"
             >
@@ -229,17 +229,6 @@ export function UnifiedModeMenu({
                 >
                   <Sparkles className="h-3.5 w-3.5 text-amber-400" />
                   Custom Sign Learner
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false)
-                    onOpenWindow("settings")
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-[#E8E3F2] hover:bg-white/10"
-                >
-                  <Camera className="h-3.5 w-3.5 text-amber-400" />
-                  Audio &amp; Engine Settings
                 </button>
                 <button
                   type="button"

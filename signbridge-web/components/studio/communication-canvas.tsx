@@ -42,8 +42,6 @@ export function CommunicationCanvas({
     canvasRef,
     mode,
     setMode,
-    modelVariant,
-    setModelVariant,
     devices,
     selectedDeviceId,
     selectCamera,
@@ -461,38 +459,6 @@ export function CommunicationCanvas({
                 </select>
               </div>
 
-              <div>
-                <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/50">
-                  Recognition Engine
-                </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setModelVariant("production_exp13")}
-                    className={[
-                      "rounded-xl px-2.5 py-1.5 font-medium transition border",
-                      modelVariant === "production_exp13"
-                        ? "border-amber-400 bg-amber-400/15 text-amber-200"
-                        : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10",
-                    ].join(" ")}
-                  >
-                    ASL 2731 Pro
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setModelVariant("demo_50")}
-                    className={[
-                      "rounded-xl px-2.5 py-1.5 font-medium transition border",
-                      modelVariant === "demo_50"
-                        ? "border-amber-400 bg-amber-400/15 text-amber-200"
-                        : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10",
-                    ].join(" ")}
-                  >
-                    Demo 50 Fast
-                  </button>
-                </div>
-              </div>
-
               <button
                 type="button"
                 onClick={() => setMirrored((m) => !m)}
@@ -507,28 +473,16 @@ export function CommunicationCanvas({
                 </span>
               </button>
 
-              <div className="space-y-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSettingsOpen(false)
-                    onOpenWindow("custom-learner")
-                  }}
-                  className="w-full rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-left font-medium text-amber-200 hover:bg-amber-400/20"
-                >
-                  Train Custom Signs →
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSettingsOpen(false)
-                    onOpenWindow("settings")
-                  }}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left font-medium text-white/75 hover:bg-white/10 hover:text-white"
-                >
-                  Audio &amp; Engine Settings →
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsOpen(false)
+                  onOpenWindow("custom-learner")
+                }}
+                className="w-full rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-left font-medium text-amber-200 hover:bg-amber-400/20"
+              >
+                Train Custom Signs →
+              </button>
             </div>
           )}
         </div>

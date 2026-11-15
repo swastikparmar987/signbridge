@@ -8,7 +8,6 @@ import { CommunicationCanvas } from "@/components/studio/communication-canvas"
 import { UnifiedModeMenu } from "@/components/studio/unified-mode-menu"
 import { CustomSignsView } from "@/components/views/custom-signs-view"
 import { DictionaryView } from "@/components/views/dictionary-view"
-import { SettingsView } from "@/components/views/settings-view"
 import { VideoAnalysisView } from "@/components/views/video-view"
 import {
   RecognitionMode,
@@ -27,11 +26,6 @@ const STUDIO_WINDOW_META: Record<
     subtitle: "Record samples, train your personal signs, and verify live prediction",
     badge: "Personal Model",
   },
-  settings: {
-    title: "Audio & Engine Settings",
-    subtitle: "Model engine, Kokoro ONNX voice, confidence threshold & routing",
-    badge: "Studio Engine",
-  },
   video: {
     title: "Analyze Uploaded Video",
     subtitle: "Upload saved MP4, MOV, or WebM clips for landmark ASL inference",
@@ -47,7 +41,6 @@ const STUDIO_WINDOW_META: Record<
 function isStudioWindow(stage: StudioStage): stage is StudioWindowId {
   return (
     stage === "custom-learner" ||
-    stage === "settings" ||
     stage === "video" ||
     stage === "dictionary"
   )
@@ -56,7 +49,6 @@ function isStudioWindow(stage: StudioStage): stage is StudioWindowId {
 const HASH_TO_STAGE: Record<string, StudioStage> = {
   "#live": "communicate",
   "#custom-learner": "custom-learner",
-  "#settings": "settings",
   "#video": "video",
   "#dictionary": "dictionary",
 }
@@ -65,7 +57,6 @@ const STAGE_TO_HASH: Record<StudioStage, string> = {
   menu: "",
   communicate: "#live",
   "custom-learner": "#custom-learner",
-  settings: "#settings",
   video: "#video",
   dictionary: "#dictionary",
 }
@@ -184,8 +175,6 @@ export default function SignBridgeAppPage() {
     switch (win) {
       case "custom-learner":
         return <CustomSignsView initialGloss={customGlossSeed} />
-      case "settings":
-        return <SettingsView />
       case "video":
         return <VideoAnalysisView />
       case "dictionary":

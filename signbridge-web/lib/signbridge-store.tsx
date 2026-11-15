@@ -3,7 +3,7 @@
 import * as React from "react"
 
 export type RecognitionMode = "Continuous" | "Word" | "Fingerspelling"
-export type StudioWindowId = "custom-learner" | "settings" | "video" | "dictionary"
+export type StudioWindowId = "custom-learner" | "video" | "dictionary"
 
 export const DEFAULT_DISPLAY_NAME = "Learner"
 
