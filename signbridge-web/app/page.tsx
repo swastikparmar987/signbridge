@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ArrowLeft, ArrowRight, Command } from "lucide-react"
+import { ArrowLeft, ArrowRight, Command, HelpCircle } from "lucide-react"
 import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { CommandPalette } from "@/components/navigation/command-palette"
 import { CommunicationCanvas } from "@/components/studio/communication-canvas"
@@ -17,9 +17,10 @@ import {
 } from "@/lib/signbridge-store"
 
 type StudioStage = "menu" | "communicate" | StudioWindowId
-type TourScope = "none" | "menu" | "studio"
+type TourScope = "none" | "menu" | "studio" | "custom-learner"
 
 const TOUR_STORAGE_KEY = "signbridge.tour.seen.v1"
+const CUSTOM_TOUR_STORAGE_KEY = "signbridge.custom-tour.seen.v1"
 
 const STUDIO_WINDOW_META: Record<
   StudioWindowId,
@@ -148,12 +149,23 @@ export default function SignBridgeAppPage() {
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [])
 
+  React.useEffect(() => {
+    if (studioStage !== "custom-learner" || typeof window === "undefined") return
+    if (window.localStorage.getItem(CUSTOM_TOUR_STORAGE_KEY)) return
+    const timer = window.setTimeout(() => {
+      setTourRunId((k) => k + 1)
+      setTourScope("custom-learner")
+    }, 450)
+    return () => window.clearTimeout(timer)
+  }, [studioStage])
+
   const navigateToStage = React.useCallback(
     (nextStage: StudioStage, nextMode?: RecognitionMode) => {
       const resolvedMode = nextMode ?? modeRef.current
       if (nextMode) {
         setSelectedMode(nextMode)
       }
+      setTourScope("none")
       if (typeof window !== "undefined") {
         const sameStage = stageRef.current === nextStage
         const sameMode = modeRef.current === resolvedMode
@@ -223,6 +235,30 @@ export default function SignBridgeAppPage() {
     setTourRunId((k) => k + 1)
     setTourScope("studio")
   }, [markTourSeen, navigateToStage])
+
+  const markCustomTourSeen = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(CUSTOM_TOUR_STORAGE_KEY, "1")
+    }
+  }, [])
+
+  const closeCustomTour = React.useCallback(() => {
+    markCustomTourSeen()
+    setTourScope("none")
+  }, [markCustomTourSeen])
+
+  const startCustomTour = React.useCallback(() => {
+    setTourRunId((k) => k + 1)
+    setTourScope("custom-learner")
+  }, [])
+
+  const startStudioTourFromCustom = React.useCallback(() => {
+    markCustomTourSeen()
+    setForceStudioPopoverOpen(null)
+    navigateToStage("communicate", modeRef.current)
+    setTourRunId((k) => k + 1)
+    setTourScope("studio")
+  }, [markCustomTourSeen, navigateToStage])
 
   const menuTourSteps = React.useMemo<TourStep[]>(
     () => [
@@ -478,10 +514,151 @@ export default function SignBridgeAppPage() {
     []
   )
 
+  const customTourSteps = React.useMemo<TourStep[]>(
+    () => [
+      {
+        id: "custom-guide",
+        target: '[data-tour="custom-guide"]',
+        badge: "Overview",
+        title: "How Few-Shot Custom Learning Works",
+        description:
+          "SignBridge encodes just 3 short 2.2s clips per sign into personal 512-D Conformer prototypes saved strictly to your profile — ready in seconds with zero cloud GPU wait.",
+        placement: "bottom",
+        radius: 22,
+      },
+      {
+        id: "custom-gloss-input",
+        target: '[data-tour="custom-gloss-input"]',
+        badge: "Step 1 · Name",
+        title: "Name or Search a Sign",
+        description:
+          "Type any brand-new sign label (like COFFEE or MY_NAME) or search all 2,731 ASL glosses. Press Enter or click Use to set your recording target.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "custom-gloss-pills",
+        target: '[data-tour="custom-gloss-pills"]',
+        badge: "Quick Select",
+        title: "Starter & Saved Sign Chips",
+        description:
+          "Click any pill to switch targets fast. Custom signs you record automatically appear at the front of this row.",
+        placement: "bottom",
+        radius: 16,
+      },
+      {
+        id: "custom-camera-stage",
+        target: '[data-tour="custom-camera-stage"]',
+        badge: "Step 2 · Preview",
+        title: "Live Hand-Tracked Camera",
+        description:
+          "Watch live MediaPipe hand keypoints over your webcam feed. Wait until the top-left badge shows Hands Detected in green before capturing.",
+        placement: "right",
+        radius: 20,
+      },
+      {
+        id: "custom-record-sample",
+        target: '[data-tour="custom-record-sample"]',
+        badge: "Capture",
+        title: "Record Sample (2.2s)",
+        description:
+          "Captures a 2.2-second clip (32 resampled frames) for your target sign. Motion quality is checked automatically and 3 valid clips unlock prototype readiness.",
+        placement: "top",
+        radius: 999,
+      },
+      {
+        id: "custom-test-sign",
+        target: '[data-tour="custom-test-sign"]',
+        badge: "Verify",
+        title: "Live Test Sign (2.2s)",
+        description:
+          "Sign once without saving to check confidence, top-K matches, and confirm whether your Custom Model or Base Model recognized the gesture.",
+        placement: "top",
+        radius: 999,
+      },
+      {
+        id: "custom-pause-camera",
+        target: '[data-tour="custom-pause-camera"]',
+        badge: "Camera",
+        title: "Pause / Resume Camera",
+        description:
+          "Temporarily turns off the webcam and MediaPipe tracker anytime you need to step away or switch setups.",
+        placement: "top",
+        radius: 999,
+      },
+      {
+        id: "custom-train-model",
+        target: '[data-tour="custom-train-model"]',
+        badge: "Step 3 · Compile",
+        title: "Train Custom Model",
+        description:
+          "Unlocks once you record samples. Click here to compile personal few-shot prototypes across all your saved custom signs and activate them.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "custom-prediction-toggle",
+        target: '[data-tour="custom-prediction-toggle"]',
+        badge: "Live Routing",
+        title: "Prediction: Active in Live / Standby",
+        description:
+          "Controls whether your personal prototypes override base vocabulary inside Live Studio (glows orange when Active in Live).",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "custom-saved-panel",
+        target: '[data-tour="custom-saved-panel"]',
+        badge: "Library",
+        title: "Saved Personalized Signs",
+        description:
+          "Track each sign from 0/3 to Model Ready, click any card to record more clips, remove a sign with its trash icon, sync via Refresh, or Reset All.",
+        placement: "left",
+        radius: 24,
+      },
+      {
+        id: "custom-tour",
+        target: '[data-tour="custom-tour"]',
+        badge: "Help",
+        title: "Replay This Tour Anytime",
+        description:
+          "Click Tour in the top bar (or Take Button Tour above) whenever you want to review Custom Sign Learner controls.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "custom-back",
+        target: '[data-tour="custom-back"]',
+        badge: "Navigation",
+        title: "Back to Menu",
+        description:
+          "Return to the home mode selector, 3D Sign Dictionary, or Video Analysis anytime.",
+        placement: "bottom",
+        radius: 999,
+      },
+      {
+        id: "custom-open-live",
+        target: '[data-tour="custom-open-live"]',
+        badge: "Step 4 · Go Live",
+        title: "Open Live Studio",
+        description:
+          "Jump straight into real-time webcam translation using your trained custom signs — or click Tour Live Studio to tour the live canvas.",
+        placement: "bottom",
+        radius: 999,
+      },
+    ],
+    []
+  )
+
   const renderStudioWindow = (win: StudioWindowId) => {
     switch (win) {
       case "custom-learner":
-        return <CustomSignsView initialGloss={customGlossSeed} />
+        return (
+          <CustomSignsView
+            initialGloss={customGlossSeed}
+            onStartTour={startCustomTour}
+          />
+        )
       case "video":
         return <VideoAnalysisView />
       case "dictionary":
@@ -536,6 +713,7 @@ export default function SignBridgeAppPage() {
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   type="button"
+                  data-tour={studioStage === "custom-learner" ? "custom-back" : undefined}
                   onClick={goBackToMenu}
                   className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-[#E8E3F2] transition hover:border-white/25 hover:bg-white/10 hover:text-white shrink-0 cursor-pointer"
                 >
@@ -558,6 +736,20 @@ export default function SignBridgeAppPage() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
+                {studioStage === "custom-learner" && (
+                  <button
+                    type="button"
+                    data-tour="custom-tour"
+                    onClick={startCustomTour}
+                    title="Take Custom Sign Learner guided tour"
+                    aria-label="Take Custom Sign Learner guided tour"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/35 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-400/20 cursor-pointer"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>Tour</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setIsCommandOpen(true)}
@@ -569,6 +761,7 @@ export default function SignBridgeAppPage() {
 
                 <button
                   type="button"
+                  data-tour={studioStage === "custom-learner" ? "custom-open-live" : undefined}
                   onClick={() => openMode(modeRef.current)}
                   className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-4 py-1.5 text-xs font-bold text-[#1A130D] shadow-[0_8px_24px_-6px_rgba(245,158,11,0.55)] transition hover:brightness-105 cursor-pointer"
                 >
@@ -618,6 +811,18 @@ export default function SignBridgeAppPage() {
         steps={studioTourSteps}
         finishLabel="Start Signing"
         onClose={closeTour}
+      />
+
+      <GuidedTour
+        key={`custom-${tourRunId}`}
+        open={studioStage === "custom-learner" && tourScope === "custom-learner"}
+        steps={customTourSteps}
+        finishLabel="Start Training"
+        secondaryFinishAction={{
+          label: "Tour Live Studio",
+          onClick: startStudioTourFromCustom,
+        }}
+        onClose={closeCustomTour}
       />
     </SignBridgeStoreProvider>
   )

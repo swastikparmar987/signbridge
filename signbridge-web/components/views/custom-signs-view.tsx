@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   Play,
   Cpu,
-  Plus
+  Plus,
+  HelpCircle
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -59,7 +60,36 @@ function resampleTo32Frames(frames: number[][][]): number[][][] {
   return out
 }
 
-export function CustomSignsView({ initialGloss }: { initialGloss?: string | null }) {
+const CUSTOM_WORKFLOW_STEPS = [
+  {
+    step: "1",
+    title: "Name or Pick Gloss",
+    detail: "Type a custom label (e.g. COFFEE, MY_NAME) or pick any of the 2,731 ASL signs.",
+  },
+  {
+    step: "2",
+    title: "Record 3+ Clips",
+    detail: "Show hands in view and sign for 2.2s; low-motion or duplicate clips are filtered out.",
+  },
+  {
+    step: "3",
+    title: "Train Prototypes",
+    detail: "Click Train Custom Model to compile personal 512-D embeddings for your profile.",
+  },
+  {
+    step: "4",
+    title: "Test & Sign Live",
+    detail: "Verify here with Live Test Sign (2.2s), then sign seamlessly inside Live Studio.",
+  },
+] as const
+
+export function CustomSignsView({
+  initialGloss,
+  onStartTour,
+}: {
+  initialGloss?: string | null
+  onStartTour?: () => void
+}) {
   const prefersReduced = useReducedMotion()
   const {
     customSigns,
@@ -552,6 +582,7 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <button
             type="button"
+            data-tour="custom-train-model"
             disabled={isTraining || customSigns.length === 0}
             onClick={() => void handleTrainCustomModel()}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold border border-amber-400/40 bg-amber-400/15 text-amber-200 hover:bg-amber-400/25 disabled:opacity-45 transition cursor-pointer"
@@ -562,6 +593,7 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
 
           <button
             type="button"
+            data-tour="custom-prediction-toggle"
             onClick={() => void handleTogglePersonalization(!isRoutingActive)}
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold border transition cursor-pointer ${
               isRoutingActive
@@ -574,6 +606,54 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
               Prediction: {isRoutingActive ? "Active in Live" : "Standby"}
             </span>
           </button>
+        </div>
+      </section>
+
+      {/* Workflow Explanation Strip */}
+      <section
+        data-tour="custom-guide"
+        className="rounded-[22px] border border-white/10 bg-[#1B1628]/85 px-4 sm:px-5 py-3.5 space-y-3"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
+              How Custom Learning Works
+            </span>
+            <span className="text-xs text-[#ACA5BC]">
+              Few-shot Conformer embeds 3 short clips per sign into 512-D personal prototypes — ready in seconds with no cloud wait.
+            </span>
+          </div>
+          {onStartTour && (
+            <button
+              type="button"
+              onClick={onStartTour}
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/35 bg-amber-400/12 px-3 py-1 text-[11px] font-bold text-amber-200 transition hover:bg-amber-400/22 shrink-0 cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Take Button Tour</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {CUSTOM_WORKFLOW_STEPS.map((item) => (
+            <div
+              key={item.step}
+              className="rounded-xl border border-white/8 bg-[#151120]/85 px-3 py-2.5 space-y-1"
+            >
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/18 text-[11px] font-extrabold text-amber-300 shrink-0">
+                  {item.step}
+                </span>
+                <span className="text-xs font-bold text-[#FAF6F0]">
+                  {item.title}
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-[#ACA5BC]">
+                {item.detail}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -591,7 +671,7 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div data-tour="custom-gloss-input" className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-[#7E7890] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
@@ -622,7 +702,7 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
               )}
             </div>
 
-            <div className="flex flex-wrap gap-1.5">
+            <div data-tour="custom-gloss-pills" className="flex flex-wrap gap-1.5">
               {filteredGlosses.map((g) => (
                 <button
                   key={g}
@@ -641,7 +721,10 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
           </div>
 
           {/* Camera Stage */}
-          <div className="relative aspect-video rounded-[20px] bg-[#120F1B] border border-white/10 overflow-hidden flex items-center justify-center">
+          <div
+            data-tour="custom-camera-stage"
+            className="relative aspect-video rounded-[20px] bg-[#120F1B] border border-white/10 overflow-hidden flex items-center justify-center"
+          >
             <video
               ref={videoRef}
               autoPlay
@@ -696,6 +779,7 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <button
               type="button"
+              data-tour="custom-pause-camera"
               onClick={() => setIsCameraOn((v) => !v)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#161221] border border-white/10 text-xs font-bold text-[#FAF6F0] hover:bg-[#251F35] cursor-pointer"
             >
@@ -706,6 +790,7 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
+                data-tour="custom-test-sign"
                 disabled={!isCameraOn || Boolean(cameraError) || recordingState !== "idle"}
                 onClick={() => startTimedCapture("test")}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#241E34] border border-white/15 text-xs font-bold text-[#FAF6F0] hover:bg-[#2E2642] disabled:opacity-45 transition cursor-pointer"
@@ -720,6 +805,7 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
 
               <motion.button
                 type="button"
+                data-tour="custom-record-sample"
                 whileTap={prefersReduced ? undefined : { scale: 0.97 }}
                 disabled={!isCameraOn || Boolean(cameraError) || recordingState !== "idle"}
                 onClick={() => startTimedCapture("sample")}
@@ -801,7 +887,10 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
         </section>
 
         {/* Right: Saved Personalized Signs & Prototypes (5 cols) */}
-        <section className="lg:col-span-5 sb-surface-card rounded-[26px] p-5 flex flex-col justify-between gap-4">
+        <section
+          data-tour="custom-saved-panel"
+          className="lg:col-span-5 sb-surface-card rounded-[26px] p-5 flex flex-col justify-between gap-4"
+        >
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -814,6 +903,7 @@ export function CustomSignsView({ initialGloss }: { initialGloss?: string | null
               </div>
               <button
                 type="button"
+                data-tour="custom-refresh"
                 onClick={() => void refreshPersonalization()}
                 aria-label="Refresh personalized signs"
                 className="p-2 rounded-full bg-[#161221] border border-white/10 text-[#ACA5BC] hover:text-amber-400 cursor-pointer"

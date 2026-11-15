@@ -59,6 +59,17 @@ function isElementVisible(el: HTMLElement | null): el is HTMLElement {
   return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0"
 }
 
+function scrollTargetIntoViewIfNeeded(selector: string) {
+  const el = document.querySelector<HTMLElement>(selector)
+  if (!isElementVisible(el)) return
+  const r = el.getBoundingClientRect()
+  const topSafe = el.closest("header") ? 4 : 76
+  const bottomSafe = window.innerHeight - 24
+  if (r.top < topSafe || r.bottom > bottomSafe) {
+    el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" })
+  }
+}
+
 function measureTarget(selector: string): BoxRect | null {
   const el = document.querySelector<HTMLElement>(selector)
   if (!isElementVisible(el)) return null
@@ -187,9 +198,16 @@ function GuidedTourOverlay({
       }
     }
 
-    const raf = window.requestAnimationFrame(() => updateMeasurement(false))
-    const t1 = window.setTimeout(() => updateMeasurement(false), 60)
+    const raf = window.requestAnimationFrame(() => {
+      scrollTargetIntoViewIfNeeded(activeStep.target)
+      updateMeasurement(false)
+    })
+    const t1 = window.setTimeout(() => {
+      scrollTargetIntoViewIfNeeded(activeStep.target)
+      updateMeasurement(false)
+    }, 60)
     const t2 = window.setTimeout(() => updateMeasurement(true), 220)
+    const t3 = window.setTimeout(() => updateMeasurement(false), 420)
 
     const onReflow = () => updateMeasurement(false)
     window.addEventListener("resize", onReflow)
@@ -200,6 +218,7 @@ function GuidedTourOverlay({
       window.cancelAnimationFrame(raf)
       window.clearTimeout(t1)
       window.clearTimeout(t2)
+      window.clearTimeout(t3)
       window.removeEventListener("resize", onReflow)
       window.removeEventListener("scroll", onReflow, true)
     }
