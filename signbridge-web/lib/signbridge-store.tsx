@@ -68,6 +68,14 @@ export interface SignBridgePreferences {
   personalizationEnabled: boolean
   userId: string
   displayName: string
+  /** Optional sound cues — off by default (Deaf-first: visuals and vibration carry every signal). */
+  soundEffects: boolean
+  /** Vibration patterns on supported devices (Android Chrome). */
+  haptics: boolean
+  /** Peripheral edge-glow alerts and recognition bursts. */
+  visualAlerts: boolean
+  effectsLevel: "full" | "subtle" | "off"
+  captionSize: "md" | "lg" | "xl"
 }
 
 export interface PipelineServiceState {
@@ -117,7 +125,12 @@ const DEFAULT_PREFERENCES: SignBridgePreferences = {
   telemetryHud: true,
   personalizationEnabled: false,
   userId: "",
-  displayName: DEFAULT_DISPLAY_NAME
+  displayName: DEFAULT_DISPLAY_NAME,
+  soundEffects: false,
+  haptics: true,
+  visualAlerts: true,
+  effectsLevel: "full",
+  captionSize: "lg"
 }
 
 const DEFAULT_PERSISTED: PersistedState = {

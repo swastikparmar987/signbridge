@@ -16,7 +16,10 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react"
-import type { RecognitionMode } from "@/lib/signbridge-store"
+import { useSignBridgeStore, type RecognitionMode, type SignBridgePreferences } from "@/lib/signbridge-store"
+import { FeedbackLayer } from "@/components/feedback/feedback-layer"
+import { emitFeedback } from "@/lib/feedback/bus"
+import { playFor, unlockSound } from "@/lib/feedback/sound"
 import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
 import { useAslRecognition } from "@/lib/use-asl-recognition"
 import { InteractiveHandGuide } from "./interactive-hand-guide"
@@ -75,6 +78,18 @@ export function CommunicationCanvas({
     copyOutput,
     speakOutput,
   } = useAslRecognition(initialMode)
+
+  const { preferences, updatePreferences } = useSignBridgeStore()
+  const captionSizeClass =
+    preferences.captionSize === "xl"
+      ? "text-lg sm:text-2xl"
+      : preferences.captionSize === "md"
+        ? "text-sm sm:text-base"
+        : "text-base sm:text-lg"
+  const setPref = (patch: Partial<SignBridgePreferences>) => {
+    updatePreferences(patch)
+    emitFeedback({ type: "ui", kind: "toggle" })
+  }
 
   const [mirrored, setMirrored] = React.useState(true)
   const [settingsOpen, setSettingsOpen] = React.useState(false)
@@ -240,6 +255,16 @@ export function CommunicationCanvas({
             background:
               "linear-gradient(to bottom, rgba(21,18,30,0.58) 0%, rgba(21,18,30,0) 22%, rgba(21,18,30,0) 68%, rgba(21,18,30,0.74) 100%)",
           }}
+        />
+
+        {/* Deaf-first visual feedback: edge alerts, recognition bursts, speaking indicator */}
+        <FeedbackLayer
+          mirrored={mirrored}
+          isStreaming={isStreaming}
+          isHandDetected={isHandDetected}
+          isStrokeActive={isStrokeActive || captureState === "recording"}
+          isSpeaking={isSpeaking}
+          hasCameraError={Boolean(cameraError)}
         />
 
         {/* Camera initializing / permission overlay */}
@@ -470,7 +495,7 @@ export function CommunicationCanvas({
           </button>
 
           {effectiveSettingsOpen && (
-            <div className="absolute right-0 top-12 w-72 rounded-2xl border border-white/15 bg-[#1D182A]/95 p-3.5 text-xs shadow-2xl backdrop-blur-xl z-50 space-y-3">
+            <div className="absolute right-0 top-12 w-72 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border border-white/15 bg-[#1D182A]/95 p-3.5 text-xs shadow-2xl backdrop-blur-xl z-50 space-y-3">
               <div data-tour="studio-camera-select">
                 <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/50">
                   Camera Source
@@ -506,6 +531,114 @@ export function CommunicationCanvas({
                   {mirrored ? "On" : "Off"}
                 </span>
               </button>
+
+              <div className="space-y-1.5 border-t border-white/10 pt-3">
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-white/50">
+                  Feedback
+                </div>
+                {(
+                  [
+                    { key: "visualAlerts", label: "Visual alerts", hint: "Glowing edges & bursts" },
+                    { key: "haptics", label: "Vibration", hint: "On supported phones" },
+                    { key: "soundEffects", label: "Sound effects", hint: "For hearing companions" },
+                  ] as const
+                ).map((opt) => {
+                  const on = preferences[opt.key]
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      role="switch"
+                      aria-checked={on}
+                      onClick={() => {
+                        const next = !on
+                        if (opt.key === "soundEffects" && next) {
+                          unlockSound()
+                          playFor({ type: "ui", kind: "start" })
+                        }
+                        if (opt.key === "haptics" && next && typeof navigator !== "undefined") {
+                          try {
+                            navigator.vibrate?.([30, 40, 30])
+                          } catch {
+                            // ignore
+                          }
+                        }
+                        setPref({ [opt.key]: next } as Partial<SignBridgePreferences>)
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-white/85 hover:bg-white/10"
+                    >
+                      <span>
+                        <span className="block">{opt.label}</span>
+                        <span className="block text-[10px] text-white/45">{opt.hint}</span>
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={[
+                          "relative h-5 w-9 shrink-0 rounded-full transition-colors",
+                          on ? "bg-amber-500" : "bg-white/15",
+                        ].join(" ")}
+                      >
+                        <span
+                          className={[
+                            "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all",
+                            on ? "left-[18px]" : "left-0.5",
+                          ].join(" ")}
+                        />
+                      </span>
+                    </button>
+                  )
+                })}
+
+                <div className="pt-1.5">
+                  <div className="mb-1 text-[10px] text-white/50">Effects</div>
+                  <div className="grid grid-cols-3 gap-1 rounded-xl bg-white/5 p-1" role="radiogroup" aria-label="Effects level">
+                    {(["full", "subtle", "off"] as const).map((lv) => (
+                      <button
+                        key={lv}
+                        type="button"
+                        role="radio"
+                        aria-checked={preferences.effectsLevel === lv}
+                        onClick={() => setPref({ effectsLevel: lv })}
+                        className={[
+                          "rounded-lg py-1.5 text-[11px] font-semibold capitalize transition",
+                          preferences.effectsLevel === lv ? "bg-amber-500 text-[#1B1726]" : "text-white/70 hover:bg-white/10",
+                        ].join(" ")}
+                      >
+                        {lv}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-1.5">
+                  <div className="mb-1 text-[10px] text-white/50">Caption size</div>
+                  <div className="grid grid-cols-3 gap-1 rounded-xl bg-white/5 p-1" role="radiogroup" aria-label="Caption size">
+                    {(
+                      [
+                        ["md", "A", "text-[11px]"],
+                        ["lg", "A", "text-[13px]"],
+                        ["xl", "A", "text-[16px]"],
+                      ] as const
+                    ).map(([size, glyph, cls]) => (
+                      <button
+                        key={size}
+                        type="button"
+                        role="radio"
+                        aria-checked={preferences.captionSize === size}
+                        aria-label={`Caption size ${size === "md" ? "medium" : size === "lg" ? "large" : "extra large"}`}
+                        onClick={() => setPref({ captionSize: size })}
+                        className={[
+                          "rounded-lg py-1 font-bold transition",
+                          cls,
+                          preferences.captionSize === size ? "bg-amber-500 text-[#1B1726]" : "text-white/70 hover:bg-white/10",
+                        ].join(" ")}
+                      >
+                        {glyph}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <button
                 type="button"
@@ -600,8 +733,11 @@ export function CommunicationCanvas({
             />
 
             <p
+              role="status"
+              aria-live="polite"
               className={[
-                "flex-1 text-sm sm:text-base font-medium leading-snug break-words",
+                "flex-1 font-medium leading-snug break-words transition-[font-size]",
+                captionSizeClass,
                 displaySentence
                   ? "text-[#16121A]"
                   : mode === "Continuous" && activePrediction

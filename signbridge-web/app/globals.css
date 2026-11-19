@@ -207,6 +207,54 @@
   background: rgba(245, 158, 11, 0.48);
 }
 
+/* ── Deaf-first feedback: peripheral edge alerts & speaking waveform ── */
+@keyframes sb-edge-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.sb-edge-breathe { animation: sb-edge-breathe 2.8s ease-in-out infinite; }
+.sb-edge-breathe-fast { animation: sb-edge-breathe 0.9s ease-in-out infinite; }
+
+@keyframes sb-edge-pulse {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.sb-edge-pulse-word {
+  box-shadow: inset 0 0 0 7px rgba(255, 170, 80, 1), inset 0 0 170px rgba(255, 122, 69, 0.6);
+  animation: sb-edge-pulse 0.9s ease-out forwards;
+}
+.sb-edge-pulse-letter {
+  box-shadow: inset 0 0 0 4px rgba(255, 196, 120, 0.9), inset 0 0 90px rgba(255, 170, 80, 0.35);
+  animation: sb-edge-pulse 0.5s ease-out forwards;
+}
+/* Sentence: two gentle pulses (2 Hz max) in amber → green */
+@keyframes sb-edge-pulse-double {
+  0% { opacity: 0; box-shadow: inset 0 0 0 7px rgba(255, 181, 71, 1), inset 0 0 180px rgba(255, 181, 71, 0.55); }
+  15% { opacity: 1; }
+  45% { opacity: 0.15; }
+  65% { opacity: 1; box-shadow: inset 0 0 0 7px rgba(52, 211, 153, 1), inset 0 0 180px rgba(52, 211, 153, 0.5); }
+  100% { opacity: 0; box-shadow: inset 0 0 0 7px rgba(52, 211, 153, 1), inset 0 0 180px rgba(52, 211, 153, 0.5); }
+}
+.sb-edge-pulse-sentence { animation: sb-edge-pulse-double 1.4s ease-out forwards; }
+@keyframes sb-edge-pulse-warn {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  40% { opacity: 0.1; }
+  60% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+.sb-edge-pulse-warn {
+  box-shadow: inset 0 0 0 6px rgba(248, 113, 113, 1), inset 0 0 140px rgba(248, 113, 113, 0.45);
+  animation: sb-edge-pulse-warn 1.1s ease-out forwards;
+}
+
+@keyframes sb-wave {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+.sb-wave-bar { height: 4px; animation: sb-wave 0.8s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

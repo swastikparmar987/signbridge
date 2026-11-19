@@ -14,6 +14,7 @@ import {
   sendVideoFrameToSharedHands,
   setMediaPipeHandsListener
 } from "@/lib/mediapipe-hands"
+import { emitFeedback, type FeedbackPoint } from "@/lib/feedback/bus"
 
 export interface TopCandidateItem {
   gloss: string
@@ -107,6 +108,11 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
   const handsDetectorRef = React.useRef<boolean>(false)
   const animFrameRef = React.useRef<number | null>(null)
   const isMountedRef = React.useRef(true)
+  // Feedback: last palm position (normalized video coords) + hand presence hysteresis
+  const handPointRef = React.useRef<FeedbackPoint | null>(null)
+  const handShownRef = React.useRef(false)
+  const lastHandSeenMsRef = React.useRef(0)
+  const continuousInStrokeRef = React.useRef(false)
   const isStreamingRef = React.useRef(false)
   const isPausedRef = React.useRef(false)
   const isProcessingFrameRef = React.useRef(false)
@@ -334,6 +340,7 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
         typeof fin.translation?.english === "string" ? fin.translation.english.trim() : ""
       const finalDisplay = translated || finFormatted.join(" ")
       setSmoothedText(finalDisplay)
+      emitFeedback({ type: "sentence", text: finalDisplay })
       if (preferencesRef.current.autoSpeakTTS && finalDisplay) {
         void speakOutputRef.current(finalDisplay, true)
       }
@@ -411,6 +418,7 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
             charHoldCountRef.current += 1
             if (charHoldCountRef.current === 2) {
               setFingerspellingWord((prev) => `${prev}${ch}`.slice(-64))
+              emitFeedback({ type: "letter", label: ch, confidence: conf, at: handPointRef.current ?? undefined })
             }
           } else {
             lastEmittedCharRef.current = ch
@@ -476,11 +484,25 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
 
       const inStroke = Boolean(data.in_stroke)
       setIsStrokeActive(inStroke)
+      if (inStroke && !continuousInStrokeRef.current) {
+        emitFeedback({ type: "strokeStart", at: handPointRef.current ?? undefined })
+      }
+      continuousInStrokeRef.current = inStroke
       if (inStroke) {
         hasUnfinalizedContinuousRef.current = true
       }
 
       const committedList = Array.isArray(data.newly_committed) ? data.newly_committed : []
+      committedList.forEach((item: { gloss?: string; confidence?: number }) => {
+        if (typeof item?.gloss === "string" && item.gloss.trim()) {
+          emitFeedback({
+            type: "gloss",
+            label: formatGlossLabel(item.gloss),
+            confidence: normalizeContinuousConfPct(item.confidence),
+            at: handPointRef.current ?? undefined
+          })
+        }
+      })
       const liveSource =
         data.live_candidate ||
         (committedList.length > 0 ? committedList[committedList.length - 1] : null)
@@ -632,6 +654,7 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
             setActivePrediction(null)
             setTopCandidates([])
             toast.info("No distinct ASL sign detected in clip. Perform a clear sign and retry.")
+            emitFeedback({ type: "noSign" })
           }
           return
         }
@@ -661,6 +684,7 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
         if (conf >= minAcceptConf) {
           lastPredictedGlossRef.current = formatted
           lastCommitTimeRef.current = performance.now()
+          emitFeedback({ type: "gloss", label: formatted, confidence: conf, at: handPointRef.current ?? undefined })
           setGlosses((prev) => {
             const next = [...prev, formatted]
             if (next.length >= 2) {
@@ -680,6 +704,7 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
       } catch {
         if (source === "manual") {
           toast.error("Backend unreachable while analyzing sign")
+          emitFeedback({ type: "error", kind: "backend" })
         }
       } finally {
         isInferencingRef.current = false
@@ -762,6 +787,26 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
         results?.multiHandLandmarks && results.multiHandLandmarks.length > 0
       )
       setIsHandDetected(hasHands)
+
+      {
+        const nowMs = performance.now()
+        const firstHand = hasHands ? results.multiHandLandmarks?.[0] : undefined
+        if (firstHand && firstHand.length >= 18) {
+          const palm = [0, 5, 9, 13, 17]
+          handPointRef.current = {
+            x: palm.reduce((a, i) => a + (firstHand[i]?.x ?? 0), 0) / palm.length,
+            y: palm.reduce((a, i) => a + (firstHand[i]?.y ?? 0), 0) / palm.length
+          }
+          lastHandSeenMsRef.current = nowMs
+          if (!handShownRef.current) {
+            handShownRef.current = true
+            emitFeedback({ type: "handFound", at: handPointRef.current })
+          }
+        } else if (handShownRef.current && nowMs - lastHandSeenMsRef.current > 450) {
+          handShownRef.current = false
+          emitFeedback({ type: "handLost" })
+        }
+      }
 
       const frameLandmarks: number[][] = Array.from({ length: 42 }, () => [0, 0, 0])
       const nowTs = performance.now()
@@ -862,11 +907,16 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
               [13, 17], [17, 18], [18, 19], [19, 20],
               [0, 17]
             ]
+            const energized =
+              wordAutoStateRef.current.inStroke ||
+              captureStateRef.current === "recording" ||
+              continuousInStrokeRef.current
+            const TIPS = new Set([4, 8, 12, 16, 20])
             ctx.save()
-            ctx.shadowColor = "rgba(251, 191, 36, 0.75)"
-            ctx.shadowBlur = 10
-            ctx.strokeStyle = "rgba(251, 191, 36, 0.92)"
-            ctx.lineWidth = 2.6
+            ctx.shadowColor = energized ? "rgba(255, 122, 69, 0.95)" : "rgba(251, 191, 36, 0.75)"
+            ctx.shadowBlur = energized ? 18 : 10
+            ctx.strokeStyle = energized ? "rgba(255, 138, 92, 0.98)" : "rgba(251, 191, 36, 0.92)"
+            ctx.lineWidth = energized ? 3.4 : 2.6
             ctx.lineCap = "round"
             ctx.lineJoin = "round"
             results.multiHandLandmarks.forEach((hand) => {
@@ -881,10 +931,20 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
                 }
               })
               hand.forEach((pt, idx) => {
+                const tip = TIPS.has(idx)
                 ctx.beginPath()
-                ctx.arc(pt.x * canvas.width, pt.y * canvas.height, idx === 0 ? 5.2 : 3.6, 0, 2 * Math.PI)
-                ctx.fillStyle = idx === 0 ? "#F59E0B" : "#FFF8EB"
+                ctx.arc(pt.x * canvas.width, pt.y * canvas.height, idx === 0 ? 5.2 : tip ? 4.8 : 3.4, 0, 2 * Math.PI)
+                ctx.fillStyle = idx === 0 ? "#F59E0B" : tip ? (energized ? "#FFD2BF" : "#FFE7B3") : "#FFF8EB"
                 ctx.fill()
+                if (tip) {
+                  ctx.beginPath()
+                  ctx.arc(pt.x * canvas.width, pt.y * canvas.height, energized ? 9 : 7, 0, 2 * Math.PI)
+                  ctx.strokeStyle = energized ? "rgba(255, 138, 92, 0.55)" : "rgba(251, 191, 36, 0.35)"
+                  ctx.lineWidth = 1.4
+                  ctx.stroke()
+                  ctx.strokeStyle = energized ? "rgba(255, 138, 92, 0.98)" : "rgba(251, 191, 36, 0.92)"
+                  ctx.lineWidth = energized ? 3.4 : 2.6
+                }
               })
             })
             ctx.restore()
@@ -898,6 +958,7 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
         const elapsed = nowTs - wordCaptureStartRef.current
         const pct = Math.min(100, Math.round((elapsed / 2200) * 100))
         setCaptureProgress(pct)
+        emitFeedback({ type: "captureProgress", progress: pct })
         if (elapsed >= 2200) {
           void finishWordCapture()
         }
@@ -929,6 +990,7 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
             w.lastMotionMs = nowTs
             w.lastHandMs = nowTs
             setIsStrokeActive(true)
+            emitFeedback({ type: "strokeStart", at: handPointRef.current ?? undefined })
           }
         } else {
           w.frames.push(entry)

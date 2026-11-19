@@ -4,6 +4,7 @@ import * as React from "react"
 import { ArrowRight, BookOpen, Command, FolderOpen, HelpCircle, Settings, Sparkles } from "lucide-react"
 import type { RecognitionMode, StudioWindowId } from "@/lib/signbridge-store"
 import { SignBridgeLogoMark } from "@/components/brand/signbridge-bridge-logo"
+import { emitFeedback } from "@/lib/feedback/bus"
 import { InteractiveMenuHand, type ModePointerRef } from "./menu-3d-hands"
 
 interface UnifiedModeMenuProps {
@@ -86,6 +87,24 @@ export function UnifiedModeMenu({
     }
   }, [])
 
+  const startWithFeedback = React.useCallback(
+    (mode: RecognitionMode) => {
+      emitFeedback({ type: "ui", kind: "start" })
+      onStartCommunicating(mode)
+    },
+    [onStartCommunicating]
+  )
+
+  // Feedback (vibration / optional sound) whenever the selected mode changes
+  const firstModeRef = React.useRef(true)
+  React.useEffect(() => {
+    if (firstModeRef.current) {
+      firstModeRef.current = false
+      return
+    }
+    emitFeedback({ type: "modeChange", mode: selectedMode })
+  }, [selectedMode])
+
   // Keyboard shortcuts: Spacebar cycles modes, Arrow keys switch, Enter starts communicating
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -114,14 +133,14 @@ export function UnifiedModeMenu({
         onSelectMode(MODE_ORDER[(idx - 1 + MODE_ORDER.length) % MODE_ORDER.length])
       } else if (e.code === "Enter" && !effectiveMenuOpen) {
         e.preventDefault()
-        onStartCommunicating(selectedMode)
+        startWithFeedback(selectedMode)
       } else if (e.code === "Escape" && effectiveMenuOpen) {
         setMenuOpen(false)
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [selectedMode, onSelectMode, onStartCommunicating, effectiveMenuOpen, tourOpen])
+  }, [selectedMode, onSelectMode, startWithFeedback, effectiveMenuOpen, tourOpen])
 
   // Close settings dropdown on outside click
   React.useEffect(() => {
@@ -151,7 +170,7 @@ export function UnifiedModeMenu({
 
   const handleCardClick = (mode: RecognitionMode) => {
     if (selectedMode === mode) {
-      onStartCommunicating(mode)
+      startWithFeedback(mode)
       return
     }
     onSelectMode(mode)
@@ -202,7 +221,7 @@ export function UnifiedModeMenu({
           <button
             type="button"
             data-tour="menu-camera"
-            onClick={() => onStartCommunicating(selectedMode)}
+            onClick={() => startWithFeedback(selectedMode)}
             className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-[#1B3A2C]/85 px-3.5 py-1.5 text-xs font-medium text-emerald-200 transition hover:bg-[#1E4534]"
           >
             <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
@@ -315,7 +334,7 @@ export function UnifiedModeMenu({
                 data-tour={`mode-${card.mode}`}
                 aria-pressed={isSelected}
                 onClick={() => handleCardClick(card.mode)}
-                onDoubleClick={() => onStartCommunicating(card.mode)}
+                onDoubleClick={() => startWithFeedback(card.mode)}
                 onPointerEnter={() => setHoveredMode(card.mode)}
                 onPointerMove={(e) => handleCardPointerMove(card.mode, e)}
                 onPointerLeave={() => handleCardPointerLeave(card.mode)}
@@ -365,7 +384,7 @@ export function UnifiedModeMenu({
           <button
             type="button"
             data-tour="menu-start"
-            onClick={() => onStartCommunicating(selectedMode)}
+            onClick={() => startWithFeedback(selectedMode)}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-7 py-3 text-sm font-bold text-[#1A130D] shadow-[0_12px_36px_-6px_rgba(245,158,11,0.62)] transition duration-200 hover:brightness-105 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Start Communicating</span>

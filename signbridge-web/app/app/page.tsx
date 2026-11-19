@@ -13,6 +13,7 @@ import {
 import { UnifiedModeMenu } from "@/components/studio/unified-mode-menu"
 import { CustomSignsView } from "@/components/views/custom-signs-view"
 import { DictionaryView } from "@/components/views/dictionary-view"
+import { FeedbackDispatcher } from "@/components/feedback/feedback-dispatcher"
 import { VideoAnalysisView } from "@/components/views/video-view"
 import {
   RecognitionMode,
@@ -733,6 +734,7 @@ export default function SignBridgeAppPage() {
 
   return (
     <SignBridgeStoreProvider>
+      <FeedbackDispatcher />
       {studioStage === "menu" ? (
         <UnifiedModeMenu
           selectedMode={selectedMode}
