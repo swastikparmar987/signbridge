@@ -48,10 +48,17 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-PYTHONPATH=. python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8080
+# Terminal 1 — FastAPI backend (port 8001)
+PYTHONPATH=. python -m uvicorn signbridge.web.app:app --host 127.0.0.1 --port 8001
+
+# Terminal 2 — Next.js frontend (port 3000)
+cd signbridge-web
+npm install
+npm run dev
 ```
 
-👉 Then open [http://localhost:8080](http://localhost:8080) in your browser.
+👉 Then open [http://localhost:3000](http://localhost:3000) in your browser. The landing page is at `/` and the app is at `/app`.
+The frontend proxies `/api/*` to the backend on port 8001 (override with `SIGNBRIDGE_API_URL`).
 
 > **🖥️ System requirements**: Python 3.10+. CPU-only inference works out of the box; Apple Silicon uses Metal (`mps`) automatically; NVIDIA GPUs use CUDA if PyTorch with cuDNN is installed.
 

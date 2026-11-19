@@ -18,13 +18,21 @@ uv pip install --python .venv -r requirements.txt
 
 ### 2. Start the SignBridge Web Application
 
-Run the production web server:
+Start the FastAPI backend on port 8001:
 
 ```bash
-PYTHONPATH=. .venv/bin/python -m uvicorn signbridge.web.app:app --host 0.0.0.0 --port 8080
+PYTHONPATH=. .venv/bin/python -m uvicorn signbridge.web.app:app --host 127.0.0.1 --port 8001
 ```
 
-Open your browser at: `http://localhost:8080`
+Then start the Next.js frontend in a second terminal:
+
+```bash
+cd signbridge-web
+npm install
+npm run dev
+```
+
+Open your browser at: `http://localhost:3000` (landing page at `/`, app at `/app`).
 
 ---
 
