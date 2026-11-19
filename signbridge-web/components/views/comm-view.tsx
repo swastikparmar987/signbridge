@@ -348,7 +348,7 @@ export function CommunicationHubView() {
 
             {/* Live Prediction Pill */}
             <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/65 backdrop-blur-md text-white text-xs font-semibold border border-white/15">
-              <span className="w-2 h-2 rounded-full bg-[#D97706]" />
+              <span className="w-2 h-2 rounded-full bg-[#E5560B]" />
               <span>
                 {activePrediction
                   ? `${activePrediction.label} (${activePrediction.confidence.toFixed(1)}%)`
@@ -486,7 +486,7 @@ export function CommunicationHubView() {
                     key={`${tok.upper}-${i}`}
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold ${
                       tok.inVocab
-                        ? "bg-[#D97706]/25 text-[#FFB347] border border-amber-400/45"
+                        ? "bg-[#E5560B]/25 text-[#FFB347] border border-amber-400/45"
                         : "bg-white/10 text-white/70"
                     }`}
                     title={

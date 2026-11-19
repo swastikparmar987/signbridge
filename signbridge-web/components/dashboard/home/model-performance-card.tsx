@@ -135,7 +135,7 @@ export function ModelPerformanceCard({
           displayText={top1Val !== null ? `${top1Val.toFixed(2)}%` : "—"}
           label="Top-1 Accuracy"
           color="#FF7900"
-          trackColor="rgba(245, 158, 11, 0.18)"
+          trackColor="rgba(251, 106, 24, 0.18)"
           subtitle="Verified active model held-out 2,731-class Top-1 test accuracy"
         />
         <CircularGauge

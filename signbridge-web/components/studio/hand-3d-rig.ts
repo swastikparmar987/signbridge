@@ -430,7 +430,7 @@ export function addWarmStudioLights(scene: THREE.Scene): void {
   warmFill.position.set(-3.5, -1.2, 3.0)
   scene.add(warmFill)
 
-  const rimLight = new THREE.DirectionalLight(0xfbbf24, 1.35)
+  const rimLight = new THREE.DirectionalLight(0xff8a3d, 1.35)
   rimLight.position.set(0.2, 3.2, -3.5)
   scene.add(rimLight)
 }

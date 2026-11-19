@@ -195,7 +195,7 @@ export function TopHeader({
             >
               <Bell className="w-[18px] h-[18px]" strokeWidth={2} />
               {unreadCount > 0 && (
-                <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#D97706] ring-2 ring-[#1D1829]" />
+                <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#E5560B] ring-2 ring-[#1D1829]" />
               )}
             </motion.button>
 

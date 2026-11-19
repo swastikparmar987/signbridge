@@ -139,9 +139,9 @@ export function InteractiveMenuHand({
   }, [mode, pointerRef, prefersReduced])
 
   const glowIntensity = isHovered
-    ? "drop-shadow(0 16px 28px rgba(245, 158, 11, 0.36))"
+    ? "drop-shadow(0 16px 28px rgba(251, 106, 24, 0.36))"
     : isSelected
-      ? "drop-shadow(0 14px 24px rgba(245, 158, 11, 0.25))"
+      ? "drop-shadow(0 14px 24px rgba(251, 106, 24, 0.25))"
       : "drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45))"
 
   return (
@@ -188,13 +188,13 @@ export function InteractiveMenuHand({
             >
               <defs>
                 <linearGradient id="sbOrbitGradA" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#FDE68A" stopOpacity="0.95" />
-                  <stop offset="55%" stopColor="#F59E0B" stopOpacity="0.65" />
-                  <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.05" />
+                  <stop offset="0%" stopColor="#FFC9A5" stopOpacity="0.95" />
+                  <stop offset="55%" stopColor="#FB6A18" stopOpacity="0.65" />
+                  <stop offset="100%" stopColor="#FB6A18" stopOpacity="0.05" />
                 </linearGradient>
                 <linearGradient id="sbOrbitGradB" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.85" />
-                  <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.08" />
+                  <stop offset="0%" stopColor="#FF8A3D" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#FB6A18" stopOpacity="0.08" />
                 </linearGradient>
               </defs>
               <g ref={ringOuterRef} style={{ transformOrigin: "100px 75px" }}>
@@ -274,7 +274,7 @@ export function InteractiveMenuHand({
               className={[
                 "pointer-events-none absolute top-2 right-4 sm:right-6 flex h-7 min-w-7 items-center justify-center rounded-full border px-2 font-mono text-[11px] font-bold tracking-wider backdrop-blur-md transition-all duration-300",
                 isHovered || isSelected
-                  ? "border-amber-300/60 bg-amber-400/20 text-amber-200 shadow-[0_0_16px_rgba(245,158,11,0.35)] scale-105"
+                  ? "border-amber-300/60 bg-amber-400/20 text-amber-200 shadow-[0_0_16px_rgba(251,106,24,0.35)] scale-105"
                   : "border-white/15 bg-white/8 text-white/60 scale-95",
               ].join(" ")}
             >

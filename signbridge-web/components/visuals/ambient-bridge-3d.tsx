@@ -194,13 +194,13 @@ export function AmbientBridge3D() {
       >
         <defs>
           <linearGradient id="sbAmbientRibbonA" x1="0" y1="0" x2="1" y2="0.4">
-            <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.16" />
-            <stop offset="48%" stopColor="#D97706" stopOpacity="0.24" />
+            <stop offset="0%" stopColor="#FB6A18" stopOpacity="0.16" />
+            <stop offset="48%" stopColor="#E5560B" stopOpacity="0.24" />
             <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.14" />
           </linearGradient>
           <linearGradient id="sbAmbientRibbonB" x1="1" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.18" />
-            <stop offset="55%" stopColor="#FBBF24" stopOpacity="0.14" />
+            <stop offset="0%" stopColor="#FB6A18" stopOpacity="0.18" />
+            <stop offset="55%" stopColor="#FF8A3D" stopOpacity="0.14" />
             <stop offset="100%" stopColor="#15121E" stopOpacity="0.02" />
           </linearGradient>
         </defs>

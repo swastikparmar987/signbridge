@@ -184,7 +184,7 @@ export function UnifiedModeMenu({
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 50% 48%, rgba(245, 158, 11, 0.11) 0%, rgba(45, 36, 68, 0.24) 40%, rgba(16, 13, 25, 0.92) 82%)",
+            "radial-gradient(circle at 50% 48%, rgba(251, 106, 24, 0.11) 0%, rgba(45, 36, 68, 0.24) 40%, rgba(16, 13, 25, 0.92) 82%)",
         }}
       />
 
@@ -342,7 +342,7 @@ export function UnifiedModeMenu({
                   "group relative flex flex-col items-center justify-between rounded-2xl px-5 pt-4 pb-6 text-center transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80",
                   "h-[250px] sm:h-[268px]",
                   isSelected
-                    ? "bg-[#272136]/85 border border-amber-400/80 shadow-[0_0_45px_-10px_rgba(245,158,11,0.45),inset_0_1px_0_rgba(255,255,255,0.12)] -translate-y-0.5"
+                    ? "bg-[#272136]/85 border border-amber-400/80 shadow-[0_0_45px_-10px_rgba(251,106,24,0.45),inset_0_1px_0_rgba(255,255,255,0.12)] -translate-y-0.5"
                     : "bg-[#221D30]/70 border border-white/10 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-amber-300/45 hover:bg-[#272136]/85 hover:-translate-y-1",
                 ].join(" ")}
               >
@@ -385,7 +385,7 @@ export function UnifiedModeMenu({
             type="button"
             data-tour="menu-start"
             onClick={() => startWithFeedback(selectedMode)}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-7 py-3 text-sm font-bold text-[#1A130D] shadow-[0_12px_36px_-6px_rgba(245,158,11,0.62)] transition duration-200 hover:brightness-105 hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[#FF8A3D] to-[#FB6A18] px-7 py-3 text-sm font-bold text-[#1A130D] shadow-[0_12px_36px_-6px_rgba(251,106,24,0.62)] transition duration-200 hover:brightness-105 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Start Communicating</span>
             <ArrowRight className="h-4 w-4" />

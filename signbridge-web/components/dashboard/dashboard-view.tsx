@@ -78,7 +78,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
                 isOnline
                   ? "bg-[#1FA968] shadow-[0_0_0_3px_rgba(31,169,104,0.18)]"
                   : isChecking
-                    ? "bg-[#F59E0B] animate-pulse"
+                    ? "bg-[#FB6A18] animate-pulse"
                     : "bg-[#EF4444]"
               }`}
             />

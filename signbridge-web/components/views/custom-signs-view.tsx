@@ -767,7 +767,7 @@ export function CustomSignsView({
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-white/20 overflow-hidden">
                   <div
-                    className="h-full bg-[#D97706] transition-all duration-75"
+                    className="h-full bg-[#E5560B] transition-all duration-75"
                     style={{ width: `${recordProgress}%` }}
                   />
                 </div>
@@ -974,7 +974,7 @@ export function CustomSignsView({
                       <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${
-                            isLearned ? "bg-[#1FA968]" : "bg-[#D97706]"
+                            isLearned ? "bg-[#1FA968]" : "bg-[#E5560B]"
                           }`}
                           style={{ width: `${pct}%` }}
                         />

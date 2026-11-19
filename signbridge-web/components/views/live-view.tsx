@@ -901,7 +901,7 @@ export function LiveRecognitionView({ onOpenMobileMenu, onSwitchToFingerspelling
                 </div>
                 <button
                   onClick={toggleCamera}
-                  className="mt-2 px-5 py-2 rounded-xl bg-[#D97706] hover:bg-[#B45309] text-white font-bold text-xs shadow-md transition cursor-pointer"
+                  className="mt-2 px-5 py-2 rounded-xl bg-[#E5560B] hover:bg-[#BE420A] text-white font-bold text-xs shadow-md transition cursor-pointer"
                 >
                   Start Camera
                 </button>
@@ -987,10 +987,10 @@ export function LiveRecognitionView({ onOpenMobileMenu, onSwitchToFingerspelling
                   disabled={captureState !== "idle"}
                   className={`pointer-events-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md backdrop-blur-md border transition cursor-pointer ${
                     captureState === "recording"
-                      ? "bg-[#D97706] text-white border-[#FF9E44]"
+                      ? "bg-[#E5560B] text-white border-[#FF9E44]"
                       : captureState === "analyzing"
                         ? "bg-black/75 text-white border-white/15"
-                        : "bg-black/65 hover:bg-[#D97706] text-white border-white/15"
+                        : "bg-black/65 hover:bg-[#E5560B] text-white border-white/15"
                   }`}
                   title="Record an isolated 2.2-second sign (or press Space)"
                 >
@@ -1182,7 +1182,7 @@ export function LiveRecognitionView({ onOpenMobileMenu, onSwitchToFingerspelling
             )}
 
             {/* Blinking text cursor */}
-            <span className="w-0.5 h-5 bg-[#D97706] animate-pulse inline-block align-middle ml-0.5" />
+            <span className="w-0.5 h-5 bg-[#E5560B] animate-pulse inline-block align-middle ml-0.5" />
           </div>
         </div>
 
@@ -1214,7 +1214,7 @@ export function LiveRecognitionView({ onOpenMobileMenu, onSwitchToFingerspelling
           <button
             onClick={handleSpeakSentence}
             disabled={sentenceWords.length === 0 || isPlayingTTS}
-            className="px-5 py-2.5 rounded-xl bg-[#D97706] hover:bg-[#B45309] text-white font-bold text-sm shadow-xs flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-[#E5560B] hover:bg-[#BE420A] text-white font-bold text-sm shadow-xs flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
             title="Speak Sentence with Kokoro TTS"
           >
             <Volume2 className="w-4.5 h-4.5" />

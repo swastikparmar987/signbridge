@@ -584,7 +584,7 @@ export function FingerspellingView({ onOpenMobileMenu, onSwitchToIsolated }: Fin
                 </p>
                 <button
                   onClick={() => setIsCameraOn(true)}
-                  className="mt-4 px-5 py-2.5 rounded-xl bg-[#D97706] text-white font-bold text-sm shadow-md hover:bg-[#F58B35] transition"
+                  className="mt-4 px-5 py-2.5 rounded-xl bg-[#E5560B] text-white font-bold text-sm shadow-md hover:bg-[#F58B35] transition"
                 >
                   Start Camera
                 </button>
@@ -610,7 +610,7 @@ export function FingerspellingView({ onOpenMobileMenu, onSwitchToIsolated }: Fin
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                   isCameraOn
                     ? "bg-[#251F35] text-amber-400 hover:bg-amber-400/18"
-                    : "bg-[#D97706] text-white hover:bg-[#F58B35]"
+                    : "bg-[#E5560B] text-white hover:bg-[#F58B35]"
                 }`}
               >
                 {isCameraOn ? <CameraOff className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
@@ -632,7 +632,7 @@ export function FingerspellingView({ onOpenMobileMenu, onSwitchToIsolated }: Fin
             </div>
 
             <div className="text-xs font-semibold text-[#ACA5BC] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#D97706]" />
+              <span className="w-2 h-2 rounded-full bg-[#E5560B]" />
               <span>21-Landmark 63→128→26 MLP</span>
             </div>
           </div>
@@ -644,7 +644,7 @@ export function FingerspellingView({ onOpenMobileMenu, onSwitchToIsolated }: Fin
           <div className="sb-surface-card rounded-[26px] p-6 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#D97706]" />
+                <span className="w-2 h-2 rounded-full bg-[#E5560B]" />
                 <span className="text-xs font-bold uppercase tracking-wider text-[#ACA5BC]">
                   Live Recognized Letter
                 </span>
@@ -703,7 +703,7 @@ export function FingerspellingView({ onOpenMobileMenu, onSwitchToIsolated }: Fin
                       key={i}
                       className={`px-3 py-1.5 rounded-xl font-mono text-sm font-black transition ${
                         i === charHistory.length - 1
-                          ? "bg-[#D97706] text-white shadow-xs scale-105"
+                          ? "bg-[#E5560B] text-white shadow-xs scale-105"
                           : "bg-[#251F35] text-[#FAF6F0] border border-amber-400/30"
                       }`}
                     >
@@ -790,7 +790,7 @@ export function FingerspellingView({ onOpenMobileMenu, onSwitchToIsolated }: Fin
             <button
               onClick={handleSpeakTTS}
               disabled={isPlayingTTS || (sentenceWords.length === 0 && !currentWord)}
-              className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl bg-[#D97706] text-white font-bold text-sm shadow-sm hover:bg-[#F58B35] transition disabled:opacity-40 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl bg-[#E5560B] text-white font-bold text-sm shadow-sm hover:bg-[#F58B35] transition disabled:opacity-40 cursor-pointer"
             >
               <Volume2 className={`w-4 h-4 ${isPlayingTTS ? "animate-bounce" : ""}`} />
               <span>{isPlayingTTS ? "Playing Speech..." : "Speak (Kokoro TTS)"}</span>

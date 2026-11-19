@@ -341,7 +341,7 @@ function GuidedTourOverlay({
             height: box.height,
             borderRadius: spotRadius,
           }}
-          className="pointer-events-none fixed border-2 border-amber-400 shadow-[0_0_0_4px_rgba(245,158,11,0.22),0_0_32px_rgba(245,158,11,0.5)] transition-all duration-200 ease-out"
+          className="pointer-events-none fixed border-2 border-amber-400 shadow-[0_0_0_4px_rgba(251,106,24,0.22),0_0_32px_rgba(251,106,24,0.5)] transition-all duration-200 ease-out"
         />
       )}
 
@@ -455,7 +455,7 @@ function GuidedTourOverlay({
                 <button
                   type="button"
                   onClick={secondaryFinishAction.onClick}
-                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-3.5 py-1.5 text-[11px] font-bold text-[#17110B] shadow-[0_6px_18px_rgba(245,158,11,0.4)] transition hover:brightness-105 cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#FF8A3D] to-[#FB6A18] px-3.5 py-1.5 text-[11px] font-bold text-[#17110B] shadow-[0_6px_18px_rgba(251,106,24,0.4)] transition hover:brightness-105 cursor-pointer"
                 >
                   <span>{secondaryFinishAction.label}</span>
                   <ArrowRight className="h-3 w-3" />
@@ -465,7 +465,7 @@ function GuidedTourOverlay({
               <button
                 type="button"
                 onClick={handleNext}
-                className="inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-3.5 py-1.5 text-[11px] font-bold text-[#17110B] shadow-[0_6px_18px_rgba(245,158,11,0.4)] transition hover:brightness-105 cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#FF8A3D] to-[#FB6A18] px-3.5 py-1.5 text-[11px] font-bold text-[#17110B] shadow-[0_6px_18px_rgba(251,106,24,0.4)] transition hover:brightness-105 cursor-pointer"
               >
                 <span>{isLast ? finishLabel : "Next"}</span>
                 {!isLast && <ArrowRight className="h-3 w-3" />}
@@ -552,7 +552,7 @@ export function TourAskPrompt({
           <button
             type="button"
             onClick={onStartTour}
-            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-3.5 py-1.5 text-[11px] font-bold text-[#17110B] shadow-[0_6px_18px_rgba(245,158,11,0.4)] transition hover:brightness-105 cursor-pointer"
+            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#FF8A3D] to-[#FB6A18] px-3.5 py-1.5 text-[11px] font-bold text-[#17110B] shadow-[0_6px_18px_rgba(251,106,24,0.4)] transition hover:brightness-105 cursor-pointer"
           >
             <span>Start Tour</span>
             <ArrowRight className="h-3 w-3" />

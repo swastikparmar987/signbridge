@@ -280,7 +280,7 @@ export function DictionaryView({ initialGloss, onTrySigningLive }: DictionaryVie
           }
           ctx.clearRect(0, 0, canvas.width, canvas.height)
           if (results.multiHandLandmarks) {
-            ctx.fillStyle = "#F59E0B"
+            ctx.fillStyle = "#FB6A18"
             for (const hand of results.multiHandLandmarks) {
               for (const pt of hand) {
                 ctx.beginPath()
@@ -427,7 +427,7 @@ export function DictionaryView({ initialGloss, onTrySigningLive }: DictionaryVie
                   onClick={() => setSelectedGloss(item.gloss)}
                   className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-amber-500/14 border-amber-400/50 text-amber-200 shadow-[0_0_24px_-10px_rgba(245,158,11,0.55)]"
+                      ? "bg-amber-500/14 border-amber-400/50 text-amber-200 shadow-[0_0_24px_-10px_rgba(251,106,24,0.55)]"
                       : "bg-white/[0.025] border-white/6 text-[#EBE6F4] hover:bg-white/[0.06] hover:border-white/15"
                   }`}
                 >
@@ -584,7 +584,7 @@ export function DictionaryView({ initialGloss, onTrySigningLive }: DictionaryVie
               stopPracticeCam()
               onTrySigningLive?.(selectedGloss)
             }}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-4 py-2.5 text-xs font-bold text-[#1A130D] shadow-[0_8px_24px_-6px_rgba(245,158,11,0.5)] transition hover:brightness-105 cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#FF8A3D] to-[#FB6A18] px-4 py-2.5 text-xs font-bold text-[#1A130D] shadow-[0_8px_24px_-6px_rgba(251,106,24,0.5)] transition hover:brightness-105 cursor-pointer"
           >
             <span className="truncate">Try Signing {selectedGloss} Live</span>
             <ArrowRight className="w-3.5 h-3.5 shrink-0" />

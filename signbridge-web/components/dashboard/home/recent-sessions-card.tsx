@@ -105,7 +105,7 @@ export function RecentSessionsCard({
                   className="w-full py-2.5 flex items-center justify-between gap-3 text-left group cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="w-7 h-7 rounded-full bg-[#251F35] text-amber-400 group-hover:bg-[#D97706] group-hover:text-white flex items-center justify-center transition-colors shrink-0">
+                    <span className="w-7 h-7 rounded-full bg-[#251F35] text-amber-400 group-hover:bg-[#E5560B] group-hover:text-white flex items-center justify-center transition-colors shrink-0">
                       <Play className="w-3 h-3 fill-current translate-x-[0.5px]" />
                     </span>
                     <div className="min-w-0">

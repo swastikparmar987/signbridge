@@ -204,11 +204,11 @@ export function Dictionary3DStage({
     fillLight.position.set(-2.1, 1.0, 1.5)
     scene.add(fillLight)
 
-    const amberRim = new THREE.DirectionalLight(0xf59e0b, 0.92)
+    const amberRim = new THREE.DirectionalLight(0xfb6a18, 0.92)
     amberRim.position.set(-0.7, -0.5, -2.1)
     scene.add(amberRim)
 
-    const underPool = new THREE.PointLight(0xf59e0b, 0.85, 2.8)
+    const underPool = new THREE.PointLight(0xfb6a18, 0.85, 2.8)
     underPool.position.set(0, -0.55, 0.25)
     scene.add(underPool)
 
@@ -263,7 +263,7 @@ export function Dictionary3DStage({
         trailDisposables.push(geo, mat)
         trailGroup.add(mesh)
       }
-      addTrail(analysis.wristTrail0, 0xf59e0b)
+      addTrail(analysis.wristTrail0, 0xfb6a18)
       if (analysis.twoHand && analysis.wristTrail1.length >= 3) {
         addTrail(analysis.wristTrail1, 0x38bdf8)
       }
@@ -432,7 +432,7 @@ export function Dictionary3DStage({
       className="relative flex flex-col w-full h-full min-h-[480px] rounded-[24px] border border-white/10 overflow-hidden shadow-[0_24px_64px_-16px_rgba(0,0,0,0.75)]"
       style={{
         background:
-          "radial-gradient(circle at 50% 42%, rgba(245,158,11,0.14) 0%, rgba(28,23,40,0.92) 48%, rgba(16,13,24,0.98) 100%)"
+          "radial-gradient(circle at 50% 42%, rgba(251,106,24,0.14) 0%, rgba(28,23,40,0.92) 48%, rgba(16,13,24,0.98) 100%)"
       }}
     >
       {/* Top Overlay: Sign Title & Camera POV Presets */}
@@ -495,7 +495,7 @@ export function Dictionary3DStage({
             type="button"
             onClick={handleTogglePlay}
             aria-label={isPlaying ? "Pause animation" : "Play animation"}
-            className="w-9 h-9 shrink-0 rounded-full bg-[#F59E0B] hover:bg-[#FBBF24] text-[#14101B] flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.45)] transition-colors cursor-pointer"
+            className="w-9 h-9 shrink-0 rounded-full bg-[#FB6A18] hover:bg-[#FF8A3D] text-[#14101B] flex items-center justify-center shadow-[0_0_20px_rgba(251,106,24,0.45)] transition-colors cursor-pointer"
           >
             {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
           </button>
@@ -512,7 +512,7 @@ export function Dictionary3DStage({
                 handleScrub(parseFloat(e.target.value))
               }}
               aria-label="Scrub sign animation frame"
-              className="w-full h-1.5 rounded-full accent-[#F59E0B] bg-white/15 cursor-pointer"
+              className="w-full h-1.5 rounded-full accent-[#FB6A18] bg-white/15 cursor-pointer"
             />
             <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-[#9B94AC] tabular-nums">
               <span className="whitespace-nowrap shrink-0">

@@ -5,6 +5,18 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Brand orange (from the SignBridge logo). Remaps every amber-* utility to the brand scale. */
+  --color-amber-50: #FFF4EC;
+  --color-amber-100: #FFE6D3;
+  --color-amber-200: #FFC9A5;
+  --color-amber-300: #FFA66D;
+  --color-amber-400: #FF8A3D;
+  --color-amber-500: #FB6A18;
+  --color-amber-600: #E5560B;
+  --color-amber-700: #BE420A;
+  --color-amber-800: #973610;
+  --color-amber-900: #7A2F11;
+  --color-amber-950: #421506;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
@@ -50,10 +62,10 @@
 
 :root {
   /* SignBridge Dark Velvet Studio Design Tokens */
-  --sb-primary: #F59E0B;
-  --sb-primary-dark: #D97706;
-  --sb-primary-light: rgba(245, 158, 11, 0.22);
-  --sb-primary-soft: rgba(245, 158, 11, 0.14);
+  --sb-primary: #FB6A18;
+  --sb-primary-dark: #E5560B;
+  --sb-primary-light: rgba(251, 106, 24, 0.22);
+  --sb-primary-soft: rgba(251, 106, 24, 0.14);
 
   --sb-background: #15121E;
   --sb-surface: #1D1829;
@@ -62,7 +74,7 @@
   --sb-surface-muted: #261F36;
 
   --sb-border: rgba(255, 255, 255, 0.11);
-  --sb-border-warm: rgba(245, 158, 11, 0.25);
+  --sb-border-warm: rgba(251, 106, 24, 0.25);
 
   --sb-text-primary: #FAF6F0;
   --sb-text-secondary: #ACA5BC;
@@ -86,16 +98,16 @@
   --muted: #261F36;
   --muted-foreground: var(--sb-text-secondary);
   --accent: var(--sb-primary-soft);
-  --accent-foreground: #FDE68A;
+  --accent-foreground: #FFC9A5;
   --destructive: var(--sb-error);
   --border: var(--sb-border);
   --input: rgba(255, 255, 255, 0.14);
   --ring: var(--sb-primary);
 
-  --chart-1: #F59E0B;
+  --chart-1: #FB6A18;
   --chart-2: #34D399;
   --chart-3: #A78BFA;
-  --chart-4: #FBBF24;
+  --chart-4: #FF8A3D;
   --chart-5: #60A5FA;
 
   --radius: 1.15rem;
@@ -105,7 +117,7 @@
   --sidebar-primary: var(--sb-primary);
   --sidebar-primary-foreground: #17110B;
   --sidebar-accent: var(--sb-primary-soft);
-  --sidebar-accent-foreground: #FDE68A;
+  --sidebar-accent-foreground: #FFC9A5;
   --sidebar-border: var(--sb-border);
   --sidebar-ring: var(--sb-primary);
 }
@@ -139,7 +151,7 @@
 .sb-ambient-cream {
   background-color: var(--sb-background);
   background-image:
-    radial-gradient(ellipse 68% 48% at 15% 0%, rgba(245, 158, 11, 0.11) 0%, transparent 62%),
+    radial-gradient(ellipse 68% 48% at 15% 0%, rgba(251, 106, 24, 0.11) 0%, transparent 62%),
     radial-gradient(ellipse 56% 44% at 88% 8%, rgba(139, 92, 246, 0.12) 0%, transparent 60%),
     radial-gradient(ellipse 65% 52% at 50% 96%, rgba(45, 36, 68, 0.28) 0%, transparent 68%);
 }
@@ -156,7 +168,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow:
     0 20px 48px -16px rgba(0, 0, 0, 0.72),
-    0 6px 20px -6px rgba(245, 158, 11, 0.12),
+    0 6px 20px -6px rgba(251, 106, 24, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -177,14 +189,14 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow:
     0 18px 42px -20px rgba(0, 0, 0, 0.7),
-    0 4px 14px -4px rgba(245, 158, 11, 0.08),
+    0 4px 14px -4px rgba(251, 106, 24, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .sb-orange-pill {
-  background: linear-gradient(135deg, #F59E0B 0%, #EA580C 58%, #C2410C 100%);
+  background: linear-gradient(135deg, #FB6A18 0%, #EA580C 58%, #C2410C 100%);
   box-shadow:
-    0 10px 26px -8px rgba(245, 158, 11, 0.55),
+    0 10px 26px -8px rgba(251, 106, 24, 0.55),
     inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 
@@ -204,7 +216,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 0.48);
+  background: rgba(251, 106, 24, 0.48);
 }
 
 /* ── Deaf-first feedback: peripheral edge alerts & speaking waveform ── */
@@ -221,11 +233,11 @@
   100% { opacity: 0; }
 }
 .sb-edge-pulse-word {
-  box-shadow: inset 0 0 0 7px rgba(251, 191, 36, 1), inset 0 0 170px rgba(245, 158, 11, 0.6);
+  box-shadow: inset 0 0 0 7px rgba(255, 138, 61, 1), inset 0 0 170px rgba(251, 106, 24, 0.6);
   animation: sb-edge-pulse 0.9s ease-out forwards;
 }
 .sb-edge-pulse-letter {
-  box-shadow: inset 0 0 0 4px rgba(252, 211, 77, 0.9), inset 0 0 90px rgba(251, 191, 36, 0.35);
+  box-shadow: inset 0 0 0 4px rgba(255, 166, 109, 0.9), inset 0 0 90px rgba(255, 138, 61, 0.35);
   animation: sb-edge-pulse 0.5s ease-out forwards;
 }
 /* Sentence: two gentle pulses (2 Hz max) in amber → green */

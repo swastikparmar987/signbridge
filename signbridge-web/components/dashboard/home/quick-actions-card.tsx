@@ -123,7 +123,7 @@ export function QuickActionsCard({ onNavigate }: QuickActionsCardProps) {
         <BridgeScene3D className="h-[78px]" />
         <div className="pointer-events-none flex items-center justify-between px-3 pb-1.5 -mt-2 text-[10px] font-bold tracking-wide text-[#ACA5BC]">
           <span className="inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E5560B]" />
             ASL Gestures
           </span>
           <span className="inline-flex items-center gap-1">

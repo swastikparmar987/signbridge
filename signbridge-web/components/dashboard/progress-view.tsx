@@ -173,8 +173,8 @@ export function ProgressView({ onBackToHome }: ProgressViewProps) {
     {
       label: "EXP13 Held-Out Top-5 Recall",
       value: modelHealth.exp13Top5,
-      barClass: "bg-gradient-to-r from-[#F59E0B] to-[#D97706]",
-      textClass: "text-[#B45309]"
+      barClass: "bg-gradient-to-r from-[#FB6A18] to-[#E5560B]",
+      textClass: "text-[#BE420A]"
     }
   ]
 

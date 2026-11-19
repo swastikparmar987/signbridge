@@ -762,7 +762,7 @@ export default function SignBridgeAppPage() {
             className="pointer-events-none fixed inset-0"
             style={{
               background:
-                "radial-gradient(circle at 50% 18%, rgba(245, 158, 11, 0.08) 0%, rgba(45, 36, 68, 0.22) 45%, rgba(16, 13, 25, 0.96) 85%)",
+                "radial-gradient(circle at 50% 18%, rgba(251, 106, 24, 0.08) 0%, rgba(45, 36, 68, 0.22) 45%, rgba(16, 13, 25, 0.96) 85%)",
             }}
           />
 
@@ -821,7 +821,7 @@ export default function SignBridgeAppPage() {
                   type="button"
                   data-tour={studioStage === "custom-learner" ? "custom-open-live" : undefined}
                   onClick={() => openMode(modeRef.current)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] px-4 py-1.5 text-xs font-bold text-[#1A130D] shadow-[0_8px_24px_-6px_rgba(245,158,11,0.55)] transition hover:brightness-105 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[#FF8A3D] to-[#FB6A18] px-4 py-1.5 text-xs font-bold text-[#1A130D] shadow-[0_8px_24px_-6px_rgba(251,106,24,0.55)] transition hover:brightness-105 cursor-pointer"
                 >
                   <span>Open Live Studio</span>
                   <ArrowRight className="h-3.5 w-3.5" />

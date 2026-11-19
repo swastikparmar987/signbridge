@@ -184,7 +184,7 @@ export function LiveRecognitionCard({
                 onClick={() => setModelVariant("production_exp13")}
                 className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
                   modelVariant === "production_exp13"
-                    ? "bg-[#D97706] text-white shadow-2xs"
+                    ? "bg-[#E5560B] text-white shadow-2xs"
                     : "text-[#ACA5BC] hover:text-[#FAF6F0]"
                 }`}
               >
@@ -195,7 +195,7 @@ export function LiveRecognitionCard({
                 onClick={() => setModelVariant("demo_50")}
                 className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
                   modelVariant === "demo_50"
-                    ? "bg-[#D97706] text-white shadow-2xs"
+                    ? "bg-[#E5560B] text-white shadow-2xs"
                     : "text-[#ACA5BC] hover:text-[#FAF6F0]"
                 }`}
               >
@@ -281,7 +281,7 @@ export function LiveRecognitionCard({
           </div>
 
           {isStreaming && isHandDetected && (
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D97706]/90 text-white text-[11px] font-bold shadow-sm">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E5560B]/90 text-white text-[11px] font-bold shadow-sm">
               <Hand className="w-3 h-3" />
               <span>Hand tracked</span>
             </div>
@@ -349,7 +349,7 @@ export function LiveRecognitionCard({
                 <span className="shrink-0">Signing...</span>
                 <div className="flex-1 h-1.5 rounded-full bg-white/20 overflow-hidden">
                   <div
-                    className="h-full bg-[#D97706] transition-all duration-100"
+                    className="h-full bg-[#E5560B] transition-all duration-100"
                     style={{ width: `${captureProgress}%` }}
                   />
                 </div>
@@ -565,7 +565,7 @@ export function LiveRecognitionCard({
             aria-label="Speak recognized text"
             className={`w-9 h-9 rounded-full border flex items-center justify-center transition cursor-pointer ${
               isSpeaking
-                ? "bg-[#D97706] border-amber-500 text-white"
+                ? "bg-[#E5560B] border-amber-500 text-white"
                 : "bg-[#1D1829] border-white/10 text-[#FAF6F0] hover:bg-amber-400/20 hover:border-amber-400/40"
             }`}
           >
