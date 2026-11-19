@@ -171,12 +171,12 @@ export function UnifiedModeMenu({
 
       {/* Minimal Header */}
       <header className="relative z-30 flex items-center justify-between px-6 sm:px-10 pt-6 pb-2">
-        <div className="flex items-center gap-3">
+        <a href="/" aria-label="SignBridge home" className="flex items-center gap-3 transition-opacity hover:opacity-80">
           <SignBridgeLogoMark size="sm" priority />
           <span className="font-display text-lg font-bold tracking-tight text-white">
             SignBridge
           </span>
-        </div>
+        </a>
 
         <div className="flex items-center gap-2.5" ref={settingsBtnRef}>
           <button

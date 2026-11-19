@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
     const apiOrigin = (process.env.SIGNBRIDGE_API_URL || "http://127.0.0.1:8001").replace(/\/+$/, "");
     return [
       {
+        source: "/",
+        destination: "/landing.html",
+      },
+      {
         source: "/api/:path*",
         destination: `${apiOrigin}/api/:path*`,
       },
