@@ -913,9 +913,9 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
               continuousInStrokeRef.current
             const TIPS = new Set([4, 8, 12, 16, 20])
             ctx.save()
-            ctx.shadowColor = energized ? "rgba(255, 122, 69, 0.95)" : "rgba(251, 191, 36, 0.75)"
+            ctx.shadowColor = energized ? "rgba(252, 211, 77, 0.95)" : "rgba(251, 191, 36, 0.75)"
             ctx.shadowBlur = energized ? 18 : 10
-            ctx.strokeStyle = energized ? "rgba(255, 138, 92, 0.98)" : "rgba(251, 191, 36, 0.92)"
+            ctx.strokeStyle = energized ? "rgba(252, 211, 77, 1)" : "rgba(251, 191, 36, 0.92)"
             ctx.lineWidth = energized ? 3.4 : 2.6
             ctx.lineCap = "round"
             ctx.lineJoin = "round"
@@ -934,15 +934,15 @@ export function useAslRecognition(initialMode: RecognitionMode = "Continuous") {
                 const tip = TIPS.has(idx)
                 ctx.beginPath()
                 ctx.arc(pt.x * canvas.width, pt.y * canvas.height, idx === 0 ? 5.2 : tip ? 4.8 : 3.4, 0, 2 * Math.PI)
-                ctx.fillStyle = idx === 0 ? "#F59E0B" : tip ? (energized ? "#FFD2BF" : "#FFE7B3") : "#FFF8EB"
+                ctx.fillStyle = idx === 0 ? "#F59E0B" : tip ? (energized ? "#FFFFFF" : "#FFE7B3") : "#FFF8EB"
                 ctx.fill()
                 if (tip) {
                   ctx.beginPath()
                   ctx.arc(pt.x * canvas.width, pt.y * canvas.height, energized ? 9 : 7, 0, 2 * Math.PI)
-                  ctx.strokeStyle = energized ? "rgba(255, 138, 92, 0.55)" : "rgba(251, 191, 36, 0.35)"
+                  ctx.strokeStyle = energized ? "rgba(252, 211, 77, 0.6)" : "rgba(251, 191, 36, 0.35)"
                   ctx.lineWidth = 1.4
                   ctx.stroke()
-                  ctx.strokeStyle = energized ? "rgba(255, 138, 92, 0.98)" : "rgba(251, 191, 36, 0.92)"
+                  ctx.strokeStyle = energized ? "rgba(252, 211, 77, 1)" : "rgba(251, 191, 36, 0.92)"
                   ctx.lineWidth = energized ? 3.4 : 2.6
                 }
               })

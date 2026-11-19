@@ -31,7 +31,7 @@ interface FeedbackLayerProps {
   hasCameraError: boolean
 }
 
-const BURST_COLORS = ["#FFB547", "#FF7A45", "#FFD9A8", "#F59E0B", "#FFF3E0"]
+const BURST_COLORS = ["#FCD34D", "#FBBF24", "#F59E0B", "#FFF1C9", "#FAF6F0"]
 
 export function FeedbackLayer({
   mirrored,
@@ -97,7 +97,7 @@ export function FeedbackLayer({
       if (p.ring) {
         ctx.beginPath()
         ctx.arc(p.x * w, p.y * h, p.r + t * 120, 0, Math.PI * 2)
-        ctx.strokeStyle = `rgba(255, 150, 80, ${(1 - t) * 0.85})`
+        ctx.strokeStyle = `rgba(251, 191, 36, ${(1 - t) * 0.85})`
         ctx.lineWidth = 3 * (1 - t) + 0.5
         ctx.stroke()
         continue
@@ -207,7 +207,7 @@ export function FeedbackLayer({
     } else if (capture > 0 || isStrokeActive) {
       const width = 2.5 + (capture / 100) * 4
       ringStyle = {
-        boxShadow: `inset 0 0 0 ${width}px rgba(255,138,92,0.85), inset 0 0 ${50 + capture}px rgba(255,122,69,0.3)`,
+        boxShadow: `inset 0 0 0 ${width}px rgba(251,191,36,0.9), inset 0 0 ${50 + capture}px rgba(245,158,11,0.32)`,
       }
       ringClass = "sb-edge-breathe-fast"
     } else if (isHandDetected) {
@@ -275,7 +275,7 @@ export function FeedbackLayer({
               >
                 <div
                   className={[
-                    "flex items-center whitespace-nowrap rounded-full border border-amber-300/40 bg-[#15121E]/80 shadow-[0_12px_50px_-8px_rgba(255,122,69,0.7)] backdrop-blur-md",
+                    "flex items-center whitespace-nowrap rounded-full border border-amber-300/40 bg-[#15121E]/80 shadow-[0_12px_50px_-8px_rgba(245,158,11,0.7)] backdrop-blur-md",
                     pop.small ? "gap-2 py-1.5 pl-1.5 pr-4" : "gap-3 py-2 pl-2 pr-6",
                   ].join(" ")}
                 >
@@ -288,7 +288,7 @@ export function FeedbackLayer({
                         cy={r + 3}
                         r={r}
                         fill="none"
-                        stroke="#FFA94D"
+                        stroke="#FBBF24"
                         strokeWidth={4}
                         strokeLinecap="round"
                         strokeDasharray={c}
@@ -301,7 +301,7 @@ export function FeedbackLayer({
                   </span>
                   <span
                     className={[
-                      "font-display font-extrabold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(255,122,69,0.65)]",
+                      "font-display font-extrabold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(245,158,11,0.6)]",
                       pop.small ? "text-2xl" : "text-3xl sm:text-4xl",
                     ].join(" ")}
                   >

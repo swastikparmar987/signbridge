@@ -221,11 +221,11 @@
   100% { opacity: 0; }
 }
 .sb-edge-pulse-word {
-  box-shadow: inset 0 0 0 7px rgba(255, 170, 80, 1), inset 0 0 170px rgba(255, 122, 69, 0.6);
+  box-shadow: inset 0 0 0 7px rgba(251, 191, 36, 1), inset 0 0 170px rgba(245, 158, 11, 0.6);
   animation: sb-edge-pulse 0.9s ease-out forwards;
 }
 .sb-edge-pulse-letter {
-  box-shadow: inset 0 0 0 4px rgba(255, 196, 120, 0.9), inset 0 0 90px rgba(255, 170, 80, 0.35);
+  box-shadow: inset 0 0 0 4px rgba(252, 211, 77, 0.9), inset 0 0 90px rgba(251, 191, 36, 0.35);
   animation: sb-edge-pulse 0.5s ease-out forwards;
 }
 /* Sentence: two gentle pulses (2 Hz max) in amber → green */
