@@ -258,6 +258,82 @@ const ARC_PAIRS = [[4, 8], [8, 12], [12, 16], [16, 20], [4, 12]], ARC_N = 12;
 const arcMat = new THREE.LineBasicMaterial({ color: new THREE.Color(2.6, 1.3, 0.55), ...additive, opacity: 0, depthTest: false });
 const arcs = ARC_PAIRS.map(() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ARC_N * 3), 3)); const l = new THREE.Line(g, arcMat); l.frustumCulled = false; l.renderOrder = 15; scene.add(l); return l });
 
+/* ---------- Finale: the bridge spells its name ----------
+   Points sampled from "SignBridge" (Sign in cream, Bridge in orange) start on the bridge's own curve,
+   fly into formation in a staggered wave, and scatter away from the cursor before settling again. */
+const WN = mobile ? 2600 : 5200;
+const wGeo = new THREE.BufferGeometry();
+const wTarget = new Float32Array(WN * 3), wSeed = new Float32Array(WN), wCol = new Float32Array(WN);
+wGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(WN * 3), 3));
+wGeo.setAttribute('aTarget', new THREE.BufferAttribute(wTarget, 3));
+wGeo.setAttribute('aSeed', new THREE.BufferAttribute(wSeed, 1));
+wGeo.setAttribute('aCol', new THREE.BufferAttribute(wCol, 1));
+const wordMat = new THREE.ShaderMaterial({
+  ...additive, depthTest: false,
+  uniforms: {
+    uP0: bridgeMat.uniforms.uP0, uP1: bridgeMat.uniforms.uP1, uP2: bridgeMat.uniforms.uP2, uP3: bridgeMat.uniforms.uP3,
+    uForm: { value: 0 }, uTime: { value: 0 }, uCenter: { value: new THREE.Vector3() }, uHalf: { value: new THREE.Vector2(1, 0.25) },
+    uMouse: { value: new THREE.Vector3(99, 99, 0) }, uRepel: { value: 0 }, uO: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uDot: { value: 30 },
+  },
+  vertexShader: `
+    attribute vec3 aTarget; attribute float aSeed, aCol;
+    uniform vec3 uP0, uP1, uP2, uP3, uCenter, uMouse; uniform vec2 uHalf; uniform float uForm, uTime, uRepel, uPR, uDot;
+    varying float vA; varying float vCol; varying float vK;
+    vec3 bez(float u){ float v = 1.0 - u; return v*v*v*uP0 + 3.0*v*v*u*uP1 + 3.0*v*u*u*uP2 + u*u*u*uP3; }
+    void main(){
+      float u = fract(aSeed * 7.13 + uTime * 0.11);
+      vec3 b = bez(u) + vec3(sin(uTime * 1.7 + aSeed * 40.0), cos(uTime * 1.3 + aSeed * 31.0), 0.0) * 0.05;
+      vec3 tgt = uCenter + vec3(aTarget.x * uHalf.x, aTarget.y * uHalf.y, 0.0)
+               + vec3(sin(uTime * 1.3 + aSeed * 50.0), cos(uTime * 1.1 + aSeed * 40.0), 0.0) * 0.005;
+      float st = aSeed * 0.5;
+      float k = clamp((uForm - st) / 0.5, 0.0, 1.0); k = k * k * (3.0 - 2.0 * k);
+      vec3 p = mix(b, tgt, k);
+      p.z += sin(k * 3.14159) * (aSeed - 0.5) * 1.6;
+      p.y += sin(k * 3.14159) * 0.35 * aSeed;
+      vec2 d = p.xy - uMouse.xy; float l = length(d);
+      float push = pow(max(0.0, 1.0 - l / 0.75), 2.0);                 // soft falloff, no hard rim
+      p.xy += (d / max(l, 1e-3)) * push * 0.26 * uRepel * k;
+      p.z += push * 0.9 * uRepel * k;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_PointSize = uDot * uPR * (1.0 + (1.0 - k) * 0.8 + fract(aSeed * 13.7) * 0.6) / -mv.z;
+      gl_Position = projectionMatrix * mv;
+      vA = (0.62 + 0.38 * sin(uTime * (1.5 + aSeed * 2.0) + aSeed * 70.0)) * (0.22 + 0.78 * k); vCol = aCol; vK = k;
+    }`,
+  fragmentShader: `
+    uniform float uO; varying float vA; varying float vCol; varying float vK;
+    void main(){
+      float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard;
+      float a = pow(smoothstep(0.5, 0.0, d), 1.4);
+      vec3 cream = vec3(1.0, 0.93, 0.84), orange = vec3(1.0, 0.48, 0.14), flight = vec3(1.0, 0.62, 0.3);
+      vec3 c = mix(flight, mix(cream, orange, vCol), vK) * 1.3;
+      gl_FragColor = vec4(c * a * vA * uO, 1.0);
+    }`,
+});
+const word = new THREE.Points(wGeo, wordMat); word.frustumCulled = false; word.renderOrder = 16; word.visible = false; scene.add(word);
+let wordAspect = 5;
+(async () => {
+  try { await document.fonts.load('500 300px Onest') } catch (e) {}
+  const W = 2400, Hc = 520, c = document.createElement('canvas'); c.width = W; c.height = Hc;
+  const g = c.getContext('2d'); g.font = '500 340px Onest, "Plus Jakarta Sans", system-ui, sans-serif'; g.textBaseline = 'middle';
+  const w1 = g.measureText('Sign').width, w2 = g.measureText('Bridge').width, tw = w1 + w2, x0 = (W - tw) / 2;
+  g.fillStyle = '#f00'; g.fillText('Sign', x0, Hc / 2); g.fillStyle = '#0f0'; g.fillText('Bridge', x0 + w1, Hc / 2);
+  const img = g.getImageData(0, 0, W, Hc).data, pts = [];
+  for (let y = 0; y < Hc; y += 3) for (let x = 0; x < W; x += 3) { const i = (y * W + x) * 4; if (img[i + 3] > 140) pts.push([x, y, img[i + 1] > img[i] ? 1 : 0]) }
+  for (let i = pts.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [pts[i], pts[j]] = [pts[j], pts[i]] }
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const hw = (maxX - minX) / 2, hh = (maxY - minY) / 2, cx = (maxX + minX) / 2, cy = (maxY + minY) / 2;
+  wordAspect = hw / hh;
+  for (let i = 0; i < WN; i++) {
+    const q = pts[i % pts.length];
+    wTarget[i * 3] = (q[0] - cx) / hw; wTarget[i * 3 + 1] = -(q[1] - cy) / hw; wTarget[i * 3 + 2] = 0; // y normalised by width keeps proportions
+    wSeed[i] = Math.random(); wCol[i] = q[2];
+  }
+  wGeo.attributes.aTarget.needsUpdate = true; wGeo.attributes.aSeed.needsUpdate = true; wGeo.attributes.aCol.needsUpdate = true;
+  word.visible = true;
+})();
+const ray = new THREE.Raycaster(), zPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), mHit = new THREE.Vector3();
+
 /* ---------- Post ---------- */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -559,6 +635,23 @@ function frame(now) {
     }
     ln.geometry.attributes.position.needsUpdate = true; ln.visible = Math.random() > 0.15;
   });
+
+  /* finale: the word made of light */
+  {
+    const wv = S && !opening ? S.word : 0, wu = wordMat.uniforms;
+    G.word = damp(G.word || 0, wv, 4, dt);
+    const halfH = Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * CAM_Z, halfW = halfH * camera.aspect;
+    const span = camera.aspect < 0.9 ? 0.9 : 0.58;                     // share of the half-width the word fills
+    wu.uHalf.value.set(halfW * span, halfW * span);                     // y uses width units (targets are width-normalised)
+    wu.uCenter.value.set(0, halfH * (camera.aspect < 0.9 ? 0.08 : 0.1), 0);
+    wu.uForm.value = G.word; wu.uTime.value = SB.reduce ? 1 : t; wu.uO.value = clamp01(G.word * 5) * G.pres;
+    wu.uDot.value = camera.aspect < 0.9 ? 22 : 30;
+    if (!SB.reduce && SB.mouse) {
+      ray.setFromCamera(new THREE.Vector2(SB.mouse.x, SB.mouse.y), camera);
+      if (ray.ray.intersectPlane(zPlane, mHit)) wu.uMouse.value.lerp(mHit, 1 - Math.exp(-dt * 10));
+    }
+    wu.uRepel.value = damp(wu.uRepel.value, SB.reduce ? 0 : 1, 2, dt);
+  }
 
   /* dust */
   const du = dust.material.uniforms;

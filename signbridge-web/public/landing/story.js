@@ -23,7 +23,7 @@
   const BASE = {
     L: { x: 0, y: 0, s: 1, rx: 0, ry: 0, rz: 0, pose: 'S', vis: 1 },
     R: { x: 1.5, y: -1.3, s: 1, rx: 0, ry: 0, rz: 0, pose: 'OPEN', vis: 0 },
-    bridge: 0, brk: 0, ov: 0, glow: 0.2, rays: 0.3, tint: '#FF8A3D', ring: 0, dim: 0, act: 0,
+    bridge: 0, brk: 0, ov: 0, glow: 0.2, rays: 0.3, tint: '#FF8A3D', ring: 0, dim: 0, act: 0, word: 0,
   };
   const FILM = {
     story: [
@@ -55,8 +55,10 @@
     promise: [[0, { L: { x: 0, y: 0.05, s: 1, ry: 0, pose: 'OPEN' }, dim: 0.75, ov: 0.25, rays: 0.2, glow: 0.3 }], [1, {}]],
     faq: [[0, { L: { x: -0.62, y: -0.05, s: 0.9, pose: 'OPEN' }, dim: 0.8 }], [1, {}]],
     finale: [
-      [0, { L: { x: -0.62, y: 0.42, s: 0.95, ry: -0.6, pose: 'TOUCH' }, R: { x: 0.62, y: 0.42, s: 0.95, ry: -0.6, vis: 1, pose: 'TOUCH' }, bridge: 0.8, dim: 0, ov: 0.3, glow: 0.4, rays: 0.2 }],
-      [0.58, { L: { x: -0.2, pose: 'LOVE' }, R: { x: 0.2, pose: 'LOVE' }, bridge: 0, ring: 1, glow: 0.55, rays: 0.38 }],
+      /* the bridge spells its name: the hands part, the light flies into the word, then both sign I love you */
+      [0, { L: { x: -0.7, y: 0.18, s: 0.9, ry: -0.5, pose: 'OPEN' }, R: { x: 0.7, y: 0.18, s: 0.9, ry: -0.35, vis: 1, pose: 'OPEN' }, bridge: 1, dim: 0, ov: 0.3, glow: 0.4, rays: 0.16, act: 0, word: 0, ring: 0 }],
+      [0.3, { bridge: 1, word: 0 }],
+      [0.62, { L: { x: -0.82, y: 0.16, pose: 'LOVE' }, R: { x: 0.82, y: 0.16, pose: 'LOVE' }, bridge: 0, word: 1, glow: 0.3, rays: 0.1 }],
       [1, {}],
     ],
   };
@@ -68,7 +70,7 @@
     learn: [{ L: { x: 0, y: 0.52, s: 0.72 } }],
     promise: [{ L: { y: 0.1, s: 0.7 } }],
     faq: [{ L: { x: 0, y: 0, s: 0.7 } }],
-    finale: [{ L: { x: -0.5, y: 0.45, s: 0.6 }, R: { x: 0.5, y: 0.45, s: 0.6 } }, { L: { x: -0.14 }, R: { x: 0.14 } }],
+    finale: [{ L: { x: -0.55, y: 0.62, s: 0.5 }, R: { x: 0.55, y: 0.62, s: 0.5 } }, {}, { L: { x: -0.6, y: 0.66 }, R: { x: 0.6, y: 0.66 } }],
   };
 
   const chapters = [...document.querySelectorAll('main > section')];
@@ -109,7 +111,7 @@
     const A = TL[i].state, B = last ? A : TL[i + 1].state;
     const t = last ? 0 : smooth((y - TL[i].y) / Math.max(1, TL[i + 1].y - TL[i].y));
     const out = { L: hand(A.L, B.L, t), R: hand(A.R, B.R, t) };
-    for (const k of ['bridge', 'brk', 'ov', 'glow', 'rays', 'ring', 'dim', 'act']) out[k] = lerp(A[k], B[k], t);
+    for (const k of ['bridge', 'brk', 'ov', 'glow', 'rays', 'ring', 'dim', 'act', 'word']) out[k] = lerp(A[k], B[k], t);
     const ca = hex(A.tint), cb = hex(B.tint); out.tint = ca.map((v, j) => lerp(v, cb[j], t));
     return out;
   }
@@ -301,7 +303,7 @@
         promiseWords.forEach((w, i) => w.classList.toggle('lit', reduce || i < n));
       }
       if (id === 'finale') {
-        if (p > 0.5 && !mark.meet) { mark.meet = true; Sound.meet(); SB.burst++ }
+        if (p > 0.56 && !mark.meet) { mark.meet = true; Sound.meet(); SB.burst++ }
         if (p < 0.4) mark.meet = false;
       }
     });

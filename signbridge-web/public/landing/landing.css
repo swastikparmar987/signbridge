@@ -292,6 +292,11 @@ body.entered.end .sound-pill{opacity:0;pointer-events:none}
 /* finale */
 /* finale stacks in flow (copy, then wordmark) so the two can never overlap at any window size */
 .finale .stage{display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.finale .finale-copy{margin-bottom:clamp(28px,9vh,110px)}
+.finale .h2{font-size:clamp(28px,min(3.4vw,6.4vh),56px)}
+.word-hint{position:absolute;left:50%;top:clamp(84px,14vh,140px);translate:-50% 0;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
+@media (hover:none){.word-hint{display:none}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .finale-copy{position:relative;display:grid;justify-items:center;gap:clamp(14px,2.6vh,26px);text-align:center;width:min(900px,calc(100vw - 2 * var(--g)));margin-bottom:clamp(14px,3vh,36px)}
 .wordmark{position:relative;width:100%;text-align:center;overflow:hidden;line-height:.85;padding-bottom:.2em;margin-bottom:0}
 .wordmark span{display:inline-block;white-space:nowrap;font-weight:500;font-size:min(17.5vw,24vh);letter-spacing:-.07em;color:rgba(244,238,230,.92);transform:translateY(105%);transition:transform 1.4s var(--ease)}
