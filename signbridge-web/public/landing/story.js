@@ -27,81 +27,80 @@
     isMobile,
   };
 
-  /* ---------------- Loading: the hand signs its first words while the counter runs ---------------- */
-  const gate = document.getElementById('gate'), actions = document.getElementById('gateActions');
-  const bar = document.getElementById('gateBar'), num = document.getElementById('gateNum'), status = document.getElementById('gateStatus');
-  const wordEl = document.getElementById('gateWord'), kicker = document.getElementById('gateKicker'), spell = document.getElementById('gateSpell');
-  const spellTiles = [...spell.querySelectorAll('i')];
-  /* each step: when it starts (0..1 of loading), the hand pose, what we show, and an optional motion */
-  const SEQ = [
-    { at: 0.00, pose: 'HELLO', word: 'Hello', motion: 'wave' },
-    { at: 0.15, pose: 'L', word: 'Love', spell: 0 },
-    { at: 0.24, pose: 'O', word: 'Love', spell: 1 },
-    { at: 0.33, pose: 'V', word: 'Love', spell: 2 },
-    { at: 0.42, pose: 'E', word: 'Love', spell: 3 },
-    { at: 0.53, pose: 'LOVE', word: 'I love you' },
-    { at: 0.69, pose: 'B', word: 'Thank you', motion: 'thank' },
-    { at: 0.84, pose: 'S', word: 'Yes', motion: 'nod' },
-  ];
-  const STATUS = ['Preparing the story', 'Learning your hands', 'Finding the words', 'Almost there'];
-  SB.phase = 'loading'; SB.motion = 'wave'; SB.pose = 'HELLO';
-  const LOAD_MS = reduce ? 3200 : 6400;
-  const t0 = performance.now();
-  let shown = 0, gateOpen = false, step = -1;
-  function showStep(i) {
-    const st = SEQ[i], prev = SEQ[step];
-    step = i; SB.pose = st.pose; SB.motion = st.motion || null; SB.pulse = performance.now();
-    if (!prev || prev.word !== st.word) {
-      wordEl.textContent = st.word; wordEl.classList.remove('swap'); void wordEl.offsetWidth; wordEl.classList.add('swap');
-    }
-    kicker.textContent = st.spell != null ? 'Spelling' : 'Signing';
-    spell.classList.toggle('on', st.spell != null);
-    spellTiles.forEach((t, k) => { t.classList.toggle('now', k === st.spell); t.classList.toggle('done', st.spell != null && k < st.spell) });
-  }
-  (function loadLoop() {
-    if (gateOpen) return;
-    const timeP = clamp01((performance.now() - t0) / LOAD_MS);
-    const target = Math.min(timeP, SB.ready ? 1 : 0.9);
-    shown += (target - shown) * 0.1;
-    if (target >= 1 && shown > 0.995) shown = 1;
-    bar.style.setProperty('--p', shown.toFixed(4));
-    num.textContent = String(Math.floor(shown * 100));
-    status.textContent = STATUS[Math.min(STATUS.length - 1, Math.floor(shown * STATUS.length))];
-    let i = 0; while (i + 1 < SEQ.length && shown >= SEQ[i + 1].at) i++;
-    if (i !== step) showStep(i);
-    if (shown >= 1 || performance.now() - t0 > LOAD_MS + 8000) {
-      gateOpen = true; num.textContent = '100'; bar.style.setProperty('--p', 1);
-      status.textContent = 'Ready';
-      SB.motion = null; SB.pose = 'S';
-      gate.classList.add('ready');
-      setTimeout(() => {
-        actions.classList.add('on');
-        document.getElementById(Sound.saved() === 'off' ? 'enterQuiet' : 'enterSound').focus({ preventScroll: true });
-      }, 500);
-      return;
-    }
-    requestAnimationFrame(loadLoop);
+  /* ---------------- Opener: "Before the first word" ----------------
+     choice card -> black + flare -> macro A -> macro B -> pull back into the fist -> title card -> the film */
+  const gate = document.getElementById('gate'), note = document.getElementById('gateNote');
+  const letterbox = document.getElementById('letterbox'), flare = document.getElementById('flare');
+  const titleCard = document.getElementById('titleCard'), skipBtn = document.getElementById('skipIntro');
+  const SHOTS = [1.6, 2.2, 1.4, 1.8, 2.4]; // black, macro A, macro B, pull back, title (seconds)
+  SB.phase = 'choice'; SB.shot = 0; SB.shotP = 0; SB.pose = 'HELLO';
+  (function waitReady() {
+    if (SB.ready) { note.textContent = 'Headphones recommended'; return }
+    note.textContent = 'Preparing the story';
+    setTimeout(waitReady, 200);
   })();
+  document.getElementById(Sound.saved() === 'off' ? 'enterQuiet' : 'enterSound').focus({ preventScroll: true });
 
+  let openerDone = false;
   function enter(withSound) {
     Sound.set(withSound);
-    if (withSound) Sound.whoosh();
-    document.body.classList.remove('locked');
+    scrollTo(0, 0);
+    gate.classList.add('out');
+    setTimeout(() => gate.remove(), 1100);
+    if (reduce || !hasGsap) { finishOpener(); return }
+    SB.phase = 'opener';
+    document.body.classList.add('opening');
+    letterbox.classList.add('on');
+    setTimeout(() => flare.classList.add('go'), 350);
+    Sound.murmur(true);
+    let clock = 0, last = performance.now(), waited = 0, cue = -1;
+    (function tick(now) {
+      if (openerDone) return;
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      /* hold on black until the hand is ready, ten seconds at most */
+      if (clock + dt > SHOTS[0] && !SB.ready && waited < 10) { waited += dt } else clock += dt;
+      let i = 0, acc = 0; while (i < SHOTS.length - 1 && clock > acc + SHOTS[i]) { acc += SHOTS[i]; i++ }
+      SB.shot = i; SB.shotP = clamp01((clock - acc) / SHOTS[i]);
+      SB.pose = i < 3 ? 'HELLO' : 'S';
+      if (i !== cue) {
+        cue = i;
+        if (i === 3) Sound.riser(0.2);
+        if (i === 4) {
+          Sound.murmur(false); Sound.riser(0);
+          setTimeout(() => Sound.titleHit(), 260);
+          titleCard.classList.add('on');
+          setTimeout(() => titleCard.classList.add('line'), 1100);
+        }
+      }
+      if (i === 3) Sound.riser(0.2 + SB.shotP * 0.6);
+      if (i === 4 && SB.shotP >= 1) { finishOpener(); return }
+      requestAnimationFrame(tick);
+    })(last);
+  }
+  function finishOpener() {
+    if (openerDone) return;
+    openerDone = true;
+    Sound.murmur(false); Sound.riser(0);
+    SB.phase = 'film'; SB.shot = 4; SB.shotP = 1; SB.pose = 'S';
+    document.body.classList.remove('locked', 'opening');
     document.body.classList.add('entered');
+    letterbox.classList.remove('on');
+    titleCard.classList.add('out');
+    setTimeout(() => { titleCard.remove(); flare.remove() }, 1200);
     SB.entered = true;
     scrollTo(0, 0);
     if (lenis) lenis.start();
-    SB.phase = 'film'; SB.motion = null;
     if (hasGsap && !reduce) {
-      gsap.to(gate, { opacity: 0, duration: 1.1, ease: 'power2.inOut', onComplete: () => gate.remove() });
-      /* the small signing hand grows into the giant fist */
-      gsap.to(SB, { intro: 1, duration: 2.8, ease: 'power3.inOut', delay: 0.1 });
-      Sound.heartbeat(true);
-    } else { gate.remove(); SB.intro = 1 }
+      /* the title framing grows into the giant fist */
+      gsap.to(SB, { intro: 1, duration: 2.8, ease: 'power3.inOut', delay: 0.2 });
+      setTimeout(() => Sound.heartbeat(true), 900);
+    } else SB.intro = 1;
   }
+  skipBtn.addEventListener('click', finishOpener);
   document.getElementById('enterSound').addEventListener('click', () => enter(true));
   document.getElementById('enterQuiet').addEventListener('click', () => enter(false));
   document.querySelectorAll('[data-sound-toggle]').forEach(b => b.addEventListener('click', () => { Sound.set(!Sound.on); if (Sound.on) Sound.chime(5) }));
+  addEventListener('keydown', e => { if (e.key === 'Escape' && SB.phase === 'opener') finishOpener() });
   addEventListener('keydown', e => { if ((e.key === 'm' || e.key === 'M') && SB.entered && !e.target.closest('input,textarea')) Sound.set(!Sound.on) });
 
   /* ---------------- Smooth scroll ---------------- */
@@ -199,7 +198,7 @@
     if (SB.entered && f < T.open[0] && now - lastBeat > 1250) { lastBeat = now; SB.beat = now; Sound.heartbeat(beats++ < 3) }
 
     /* tension rises as it opens */
-    Sound.riser(f < T.burst ? SB.open(f) : 0);
+    if (SB.phase === 'film') Sound.riser(f < T.burst ? SB.open(f) : 0);
 
     /* each finger releases with a tick and a flare */
     FINGER_ORDER.forEach((_, k) => {

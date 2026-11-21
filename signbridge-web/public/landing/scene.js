@@ -7,6 +7,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { loadHand, applyPose, blendPose, POSES, JOINTS, LINKS, FINGERS } from './hand-rig.js';
 
 const SB = window.SB;
@@ -169,6 +170,10 @@ const flares = FINGERS.map(() => { const s = new THREE.Sprite(new THREE.SpriteMa
 /* ---------- Post: bloom + a cinematic lens ---------- */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
+/* shallow depth of field for the opener's macro shots */
+const bokeh = new BokehPass(scene, camera, { focus: 1, aperture: 0, maxblur: 0.014 });
+bokeh.enabled = false;
+composer.addPass(bokeh);
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.9, 0.55, 0.62);
 composer.addPass(bloom);
 const lens = new ShaderPass({
@@ -227,6 +232,7 @@ blendPose(POSES.S, POSES.S, { thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0, 
 const amounts = { thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0, rot: 0 };
 const all = { thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0, rot: 0 };
 const pts = JOINTS.map(() => new V());
+const focusT = new V(), dirV = new V(), macroCam = new V(), sideA = new V(0.5, 0.25, 0.1), sideB = new V(-0.45, 0.3, 0.15);
 const centroid = new V(), palmC = new V(), palmN = new V(), tmp = new V(), tmp2 = new V(), camTarget = new V(), look = new V(), up = new V(0, 1, 0);
 const st = { x: 0, y: 0, s: 1, dim: 0, ov: 0, world: SB.film >= SB.T.world, glow: 0 };
 let burstAt = -10, lastBurst = SB.burst, t = 0, last = performance.now(), hidden = false;
@@ -236,7 +242,8 @@ function frame(now) {
   requestAnimationFrame(frame);
   if (hidden) return;
   const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
-  const T = SB.T, f = SB.film, intro = SB.intro, pres = (st.pres = damp(st.pres || 0, rig ? 1 : 0, 2.2, dt)), m = SB.reduce ? { x: 0, y: 0 } : SB.mouse;
+  const T = SB.T, f = SB.film, intro = SB.intro, opening = SB.phase !== 'film', shot = SB.phase === 'choice' ? 0 : SB.shot, shotP = SB.shotP || 0,
+    pres = (st.pres = damp(st.pres || 0, rig && !(opening && shot === 0) ? 1 : 0, 1.6, dt)), m = SB.reduce ? { x: 0, y: 0 } : SB.mouse;
   const open = SB.open(f), trace = smooth(T.trace[0], T.trace[1], f), sunP = smooth(T.sun[0], T.sun[1], f);
   const dive = easeIn(smooth(T.dive[0], T.dive[1], f));
   const world = f >= T.world;
@@ -247,8 +254,7 @@ function frame(now) {
   const wide = camera.aspect < 0.8 ? 1.6 : camera.aspect < 1.2 ? 0.7 : 0;
 
   /* ----- pose ----- */
-  const loading = SB.phase === 'loading';
-  if (!world && !loading) {
+  if (!world && !opening) {
     SB.FINGER_ORDER.forEach((name, k) => { amounts[name] = damp(amounts[name], easeOut(SB.finger(k, f)), 9, dt) });
     amounts.rot = open;
     blendPose(POSES.S, POSES.OPEN, amounts, pose);
@@ -276,13 +282,10 @@ function frame(now) {
     handRoot.rotation.set(-m.y * 0.06 - sunP * 0.12, 0.6 * (1 - open) + Math.sin(t * 0.3) * 0.04 + m.x * 0.1, 0.14 * (1 - open) + Math.sin(t * 0.23) * 0.015);
     st.dim = damp(st.dim, 0, 4, dt);
     look.set(st.cx, ly, 0);
-    /* loading layout: a smaller hand signing above the counter, then it grows into the fist */
+    /* title layout: the hand above the title card; finishOpener() grows it into the giant fist */
     const L = 1 - intro;
     if (L > 0.0001) {
-      const mo = SB.motion;
-      const wave = mo === 'wave' ? Math.sin(t * 6) * 0.22 : 0;
-      const nod = mo === 'nod' ? Math.max(0, Math.sin(t * 6.5)) * 0.35 : 0;
-      const thank = mo === 'thank' ? (0.5 - 0.5 * Math.cos(t * 2.6)) * 0.5 : 0;
+      const nod = 0, thank = 0, wave = 0;
       const lp = tmp.set(0, (mobile ? 0.72 : 0.8) + Math.sin(t * 1.2) * 0.03, 0);
       handRoot.position.lerp(lp, L);
       handRoot.scale.setScalar(THREE.MathUtils.lerp(handRoot.scale.x, (mobile ? 0.5 : 0.6) * (1 + pulse * 0.05), L));
@@ -293,6 +296,22 @@ function frame(now) {
       camTarget.lerp(tmp2.set(m.x * 0.1, 0.1 + m.y * 0.06, 6.2 + wide * 1.5), L);
       look.lerp(tmp2.set(0, 0.1, 0), L);
     }
+    /* opener: macro shots across the glowing hand, then a fast pull back to the title framing */
+    if (opening && shot < 4) {
+      const ez = shotP * shotP * (3 - 2 * shotP);
+      const A = shot <= 1, p = shot === 0 ? 0 : shot >= 3 ? 1 : ez;
+      const a = A ? pts[5] : pts[12], b = A ? pts[8] : pts[9];
+      focusT.copy(a).lerp(b, p);
+      dirV.copy(palmN).add(A ? sideA : sideB).normalize();
+      const dist = A ? 0.68 - 0.08 * p : 0.85 - 0.15 * p;
+      macroCam.copy(focusT).addScaledVector(dirV, dist);
+      const w = shot === 3 ? (shotP < 0.5 ? 4 * shotP ** 3 : 1 - Math.pow(-2 * shotP + 2, 3) / 2) : 0;
+      tmp2.copy(camTarget); camTarget.copy(macroCam).lerp(tmp2, w);
+      tmp2.copy(look); look.copy(focusT).lerp(tmp2, w);
+      bokeh.enabled = w < 0.98;
+      bokeh.uniforms.focus.value = THREE.MathUtils.lerp(dist, camTarget.distanceTo(look), w);
+      bokeh.uniforms.aperture.value = 0.02 * (1 - w);
+    } else bokeh.enabled = false;
   } else {
     const halfH = Math.tan(THREE.MathUtils.degToRad(17.5)) * 7, halfW = halfH * camera.aspect, tg = SB.target;
     st.x = damp(st.x, tg.x * halfW, 2.6, dt); st.y = damp(st.y, tg.y * halfH, 2.6, dt);
@@ -322,7 +341,7 @@ function frame(now) {
     camTarget.lerp(tmp, dive);
     look.lerp(palmC, Math.min(1, dive * 3));
   }
-  if (!world && dive > 0) camera.position.copy(camTarget);
+  if ((!world && dive > 0) || opening) camera.position.copy(camTarget);
   else { camera.position.x = damp(camera.position.x, camTarget.x, 4, dt); camera.position.y = damp(camera.position.y, camTarget.y, 4, dt); camera.position.z = world ? damp(camera.position.z, camTarget.z, 3, dt) : camTarget.z }
   if (world && Math.abs(camera.position.z - 7) > 2) camera.position.copy(camTarget);
   camera.fov = 35 + (world ? 0 : dive * dive * 45);
@@ -346,7 +365,7 @@ function frame(now) {
   rays.quaternion.copy(camera.quaternion);
   rays.scale.setScalar(world ? st.s * 0.7 : 1 + sunP * 0.4 + burstK * 0.6);
   rays.material.uniforms.uTime.value = t;
-  rays.material.uniforms.uI.value = (world ? 0.22 + pulse * 0.3 : 0.12 + open * 0.45 + sunP * 0.7 + burstK * 0.9) * pres * (0.5 + 0.5 * intro);
+  rays.material.uniforms.uI.value = (world ? 0.22 + pulse * 0.3 : 0.12 + open * 0.45 + sunP * 0.7 + burstK * 0.9) * pres * (0.5 + 0.5 * intro) + (opening ? (shot === 3 ? shotP * 0.55 : shot === 4 ? 0.55 : 0) * pres : 0);
 
   /* ----- shockwave ----- */
   rings.forEach((r, i) => {
@@ -357,26 +376,27 @@ function frame(now) {
   });
 
   /* ----- constellation ----- */
-  const ovTarget = world ? 0.5 + pulse * 0.5 : trace;
-  st.ov = damp(st.ov, ovTarget, 4, dt);
+  const ovTarget = world ? 0.5 + pulse * 0.5 : opening ? (shot < 3 ? 0.95 : shot === 3 ? 0.95 - shotP * 0.6 : 0.35) : trace;
+  st.ov = damp(st.ov, ovTarget * pres, 4, dt);
+  const thin = opening && shot < 3 ? 0.7 : opening && shot === 3 ? 0.7 + 0.3 * shotP : 1; // finer lines up close
   const toCam = tmp2;
   joints.forEach((j, i) => {
     toCam.subVectors(camera.position, pts[i]).normalize();
     j.position.copy(pts[i]).addScaledVector(toCam, 0.03);
-    const order = i / JOINTS.length, appear = world ? 1 : clamp01((trace * 1.25 - order) / 0.2);
+    const order = i / JOINTS.length, appear = world || opening ? 1 : Math.max(1 - intro, clamp01((trace * 1.25 - order) / 0.2));
     const tip = TIPS.includes(i);
     const twinkle = 1 + Math.sin(t * 3 - i * 0.4) * 0.15 * st.ov;
-    j.scale.setScalar(j.userData.r * (world ? st.s * 0.9 : 1) * easeOut(appear) * twinkle * (1 + (tip ? burstK : 0)));
+    j.scale.setScalar(j.userData.r * (0.4 + 0.6 * thin) * (world ? st.s * 0.9 : 1) * easeOut(appear) * twinkle * (1 + (tip ? burstK : 0)));
     j.material.opacity = st.ov * appear;
   });
   links.forEach((l, i) => {
     const [a, b] = LINKS[i];
-    const order = i / LINKS.length, appear = world ? 1 : clamp01((trace * 1.25 - order) / 0.2);
+    const order = i / LINKS.length, appear = world || opening ? 1 : Math.max(1 - intro, clamp01((trace * 1.25 - order) / 0.2));
     tmp.copy(joints[a].position); const end = toCam.copy(joints[a].position).lerp(joints[b].position, easeOut(appear));
     const len = tmp.distanceTo(end);
     l.position.copy(tmp).add(end).multiplyScalar(0.5);
     if (len > 1e-4) l.quaternion.setFromUnitVectors(up, end.sub(tmp).normalize());
-    const w = 0.0045 * (world ? st.s : 1);
+    const w = 0.0045 * thin * (world ? st.s : 1);
     l.scale.set(w, Math.max(len, 1e-4), w);
     l.material.opacity = st.ov * 0.85 * Math.min(1, appear * 3);
   });

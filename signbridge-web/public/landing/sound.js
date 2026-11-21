@@ -5,7 +5,7 @@
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const SCALE = [220, 246.94, 277.18, 329.63, 369.99, 440, 493.88, 554.37, 659.25, 739.99];
 
-  let ctx = null, master, wet, noise, pad = null, riser = null, enabled = false;
+  let ctx = null, master, wet, noise, pad = null, riser = null, murmur = null, enabled = false;
 
   function impulse(sec, decay) {
     const len = Math.floor(ctx.sampleRate * sec), b = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -72,6 +72,32 @@
     riser = { g, bp, tone };
   }
 
+  /* a muffled room full of voices: band passed noise "speakers" whose loudness wobbles like speech */
+  function startMurmur() {
+    const out = ctx.createGain(); out.gain.value = 0;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.Q.value = 0.4;
+    lp.connect(out); out.connect(master); send(out, 0.5);
+    const timers = [];
+    [320, 520, 780, 1150, 1600].forEach((f, i) => {
+      const src = ctx.createBufferSource(); src.buffer = noise; src.loop = true; src.playbackRate.value = 0.9 + i * 0.05;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 4;
+      const g = ctx.createGain(); g.gain.value = 0;
+      src.connect(bp); bp.connect(g); g.connect(lp); src.start();
+      const talk = () => { // syllables: short random swells, with pauses between phrases
+        const t = ctx.currentTime, on = Math.random() > 0.25;
+        g.gain.setTargetAtTime(on ? 0.25 + Math.random() * 0.6 : 0.02, t, 0.05 + Math.random() * 0.08);
+        bp.frequency.setTargetAtTime(f * (0.85 + Math.random() * 0.3), t, 0.1);
+        timers.push(setTimeout(talk, 90 + Math.random() * 260));
+      };
+      talk();
+      timers.push({ stop: () => src.stop() });
+    });
+    const hum = ctx.createOscillator(); hum.frequency.value = 50; const hg = ctx.createGain(); hg.gain.value = 0.05; hum.connect(hg); hg.connect(out); hum.start();
+    timers.push({ stop: () => hum.stop() });
+    out.gain.setTargetAtTime(0.35, ctx.currentTime, 0.8);
+    return { out, timers };
+  }
+
   const vibrate = p => { if (!reduce && navigator.vibrate) try { navigator.vibrate(p) } catch (e) {} };
 
   const Sound = {
@@ -121,6 +147,22 @@
     arrive() {
       [5, 7, 9].forEach((n, k) => voice(SCALE[n] * 2, { dur: 3.2, gain: 0.04, attack: 0.3, rev: 0.9, when: k * 0.18 }));
       if (pad) pad.lp.frequency.setTargetAtTime(700, ctx.currentTime, 1.2);
+    },
+    murmur(on) {
+      if (!ctx) return;
+      if (on && enabled && !murmur) murmur = startMurmur();
+      else if (!on && murmur) {
+        const m = murmur; murmur = null;
+        m.out.gain.cancelScheduledValues(ctx.currentTime);
+        m.out.gain.setTargetAtTime(0, ctx.currentTime, 0.04); // a hard cut to silence
+        setTimeout(() => m.timers.forEach(x => x.stop ? x.stop() : clearTimeout(x)), 400);
+      }
+    },
+    titleHit() {
+      voice(36, { dur: 4, gain: 0.32, attack: 0.01, rev: 0.5, glide: 0.75 });
+      voice(72, { type: 'triangle', dur: 3, gain: 0.06, attack: 0.02, rev: 0.6 });
+      [0, 4, 7, 9].forEach((n, k) => voice(SCALE[n], { type: 'sine', dur: 6, gain: 0.04, attack: 1.2 + k * 0.2, rev: 0.9, when: 0.3 + k * 0.12 }));
+      vibrate([60, 40, 30]);
     },
     hover(i = 0) { voice(SCALE[(i % 5) + 5] * 2, { dur: 0.16, gain: 0.02, rev: 0.25 }) },
     click() { voice(SCALE[5], { type: 'triangle', dur: 0.5, gain: 0.06 }); voice(SCALE[8], { dur: 0.7, gain: 0.04, when: 0.07 }) },

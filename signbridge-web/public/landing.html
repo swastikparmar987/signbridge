@@ -39,20 +39,11 @@
 <div class="grain" aria-hidden="true"></div>
 
 <!-- Gate: the click unlocks sound, and the story is complete either way -->
+<!-- Choice first: browsers only allow sound after a click -->
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateLine">
-  <div class="gate-top">
-    <span class="brand"><img src="/logo.png" alt="">SignBridge</span>
-    <p class="gate-line" id="gateLine">Some voices are seen, not heard.</p>
-  </div>
-
-  <div class="gate-sign" id="gateSign" aria-live="polite">
-    <p class="gate-kicker caption-3" id="gateKicker">Signing</p>
-    <p class="gate-word" id="gateWord">Hello</p>
-    <div class="gate-spell" id="gateSpell" aria-hidden="true"><i>L</i><i>O</i><i>V</i><i>E</i></div>
-  </div>
-
-  <div class="gate-actions" id="gateActions">
-    <p class="gate-ready">Ready when you are.</p>
+  <div class="gate-card" id="gateCard">
+    <img class="gate-logo" src="/logo.png" alt="">
+    <p class="gate-line" id="gateLine">Watch with sound, or in silence,<br>the way many people live every day.</p>
     <div class="gate-btns">
       <button class="btn btn-primary btn-lg" id="enterSound" data-sfx>
         <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M80 168H32a8 8 0 0 1-8-8V96a8 8 0 0 1 8-8h48l72-56v192Z" fill="none" stroke="currentColor" stroke-width="16" stroke-linejoin="round"/><path d="M192 104a32 32 0 0 1 0 48M216 80a64 64 0 0 1 0 96" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round"/></svg>
@@ -60,15 +51,18 @@
       </button>
       <button class="btn btn-ghost btn-lg" id="enterQuiet" data-sfx>Enter in silence</button>
     </div>
-    <p class="gate-note">This story is made to be felt either way.</p>
+    <p class="gate-note" id="gateNote" aria-live="polite">Headphones recommended</p>
   </div>
-
-  <div class="gate-bottom">
-    <p class="gate-count" aria-hidden="true"><span id="gateNum">0</span><small>%</small></p>
-    <p class="gate-status caption-3" id="gateStatus">Preparing the story</p>
-  </div>
-  <div class="gate-bar" aria-hidden="true"><i id="gateBar"></i></div>
 </div>
+
+<!-- The opener: a film frame, a lens flare and a title card -->
+<div class="letterbox" id="letterbox" aria-hidden="true"><i></i><i></i></div>
+<div class="flare" id="flare" aria-hidden="true"></div>
+<div class="title-card" id="titleCard" aria-hidden="true">
+  <p class="tc-word"><span>S</span><span>i</span><span>g</span><span>n</span><span class="o">B</span><span class="o">r</span><span class="o">i</span><span class="o">d</span><span class="o">g</span><span class="o">e</span></p>
+  <p class="tc-line">A story told without a single spoken word.</p>
+</div>
+<button class="skip-intro pill" id="skipIntro">Skip intro</button>
 
 <header class="nav" id="nav" aria-label="Main">
   <a href="#top" class="brand" data-sfx aria-label="SignBridge, back to the start"><img src="/logo.png" alt="">SignBridge</a>
