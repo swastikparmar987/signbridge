@@ -388,7 +388,9 @@ function frame(now) {
   core.scale.setScalar(s * (0.05 + g * 0.18)); core.material.opacity = Math.min(1, g * 0.9);
   palmLight.position.copy(L.palmC).addScaledVector(L.palmN, 0.3 * s); palmLight.intensity = g * 0.9; palmLight.color.copy(tint);
   back.color.copy(tint); back.intensity = (2 + G.rays * 6) * G.pres * (1 - G.dim * 0.6);
-  rays.position.copy(L.palmC).addScaledVector(L.palmN, -0.7 * s); rays.quaternion.copy(camera.quaternion);
+  /* rays sit straight behind the hand's own centre, so the sunburst is always framed by the hand */
+  tmp3.set(0, 0, 0); L.pts.forEach(q => tmp3.add(q)); tmp3.multiplyScalar(1 / L.pts.length);
+  rays.position.copy(tmp3).add(new V(0, 0.15 * s, -1.1 * s)); rays.quaternion.copy(camera.quaternion);
   rays.scale.setScalar(Math.min(2.2, s) * (0.7 + G.rays * 0.3 + burstK * 0.4));
   rays.material.uniforms.uTime.value = t; rays.material.uniforms.uI.value = (G.rays + burstK * 0.6) * G.pres * (1 - G.dim * 0.7); rays.material.uniforms.uColor.value.copy(tint);
 

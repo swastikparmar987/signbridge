@@ -27,7 +27,7 @@
   };
   const FILM = {
     story: [
-      [0, { L: { x: -0.2, y: 0.5, s: 3.1, ry: 0.55, rz: 0.12, pose: 'S' }, glow: 0.25, rays: 0.3 }],
+      [0, { L: { x: -0.12, y: 0.42, s: 2.7, ry: 0.5, rz: 0.1, pose: 'S' }, glow: 0.25, rays: 0.32 }],
       [0.08, {}],
       [0.34, { L: { x: 0, y: 0.02, s: 2.5, ry: 0, rz: 0, pose: 'OPEN' }, glow: 1, rays: 0.62 }],
       [0.56, { L: { x: -0.4, y: 0.3, s: 1.15, ry: -0.35, pose: 'HELLO' }, R: { x: 0.46, y: 0.28, s: 1.05, ry: -0.35, vis: 1, pose: 'HELLO' }, bridge: 1, glow: 0.55, rays: 0.32, ov: 0.3 }],

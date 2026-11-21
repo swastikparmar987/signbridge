@@ -108,12 +108,84 @@ function skinMaterial(kind = 'velvet') {
 
 const loader = new GLTFLoader();
 
+/* Loop subdivision for a skinned mesh. The WebXR hand is ~2.3k triangles, which looks faceted when it
+   fills the screen. Each pass splits every triangle in four and smooths the surface (Loop weights);
+   new vertices blend the bone weights of their edge, so the hand still bends exactly like before. */
+function subdivideSkinned(src, passes = 2) {
+  let pos, idx, sIdx, sW;
+  {
+    // weld seam duplicates by position so the surface subdivides as one connected skin
+    const P = src.attributes.position, J = src.attributes.skinIndex, W = src.attributes.skinWeight, I = src.index.array;
+    const key = i => `${P.getX(i).toFixed(5)},${P.getY(i).toFixed(5)},${P.getZ(i).toFixed(5)}`;
+    const map = new Map(), remap = new Int32Array(P.count); pos = []; sIdx = []; sW = [];
+    for (let i = 0; i < P.count; i++) {
+      const k = key(i);
+      if (!map.has(k)) { map.set(k, pos.length / 3); pos.push(P.getX(i), P.getY(i), P.getZ(i)); for (let c = 0; c < 4; c++) { sIdx.push(J.getComponent(i, c)); sW.push(W.getComponent(i, c)) } }
+      remap[i] = map.get(k);
+    }
+    idx = Array.from(I, v => remap[v]);
+  }
+  const blendSkin = (a, b, out) => {
+    const m = new Map();
+    for (const [v, f] of [[a, 0.5], [b, 0.5]]) for (let c = 0; c < 4; c++) { const j = sIdx[v * 4 + c], w = sW[v * 4 + c] * f; if (w > 0) m.set(j, (m.get(j) || 0) + w) }
+    const top = [...m.entries()].sort((x, y) => y[1] - x[1]).slice(0, 4), sum = top.reduce((s, e) => s + e[1], 0) || 1;
+    for (let c = 0; c < 4; c++) { out.i.push(top[c] ? top[c][0] : 0); out.w.push(top[c] ? top[c][1] / sum : 0) }
+  };
+  for (let pass = 0; pass < passes; pass++) {
+    const n = pos.length / 3, edges = new Map(), nbr = Array.from({ length: n }, () => new Set());
+    const ek = (a, b) => a < b ? a * n + b : b * n + a;
+    for (let t = 0; t < idx.length; t += 3) for (let e = 0; e < 3; e++) {
+      const a = idx[t + e], b = idx[t + (e + 1) % 3], c = idx[t + (e + 2) % 3], k = ek(a, b);
+      if (!edges.has(k)) edges.set(k, { a, b, opp: [] });
+      edges.get(k).opp.push(c); nbr[a].add(b); nbr[b].add(a);
+    }
+    const boundary = new Uint8Array(n);
+    edges.forEach(e => { if (e.opp.length < 2) { boundary[e.a] = 1; boundary[e.b] = 1 } });
+    const np = [], ni = { i: [], w: [] };
+    for (let v = 0; v < n; v++) {
+      const N = [...nbr[v]], k = N.length;
+      if (boundary[v] || k < 3) { np.push(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]) }
+      else {
+        const beta = k > 3 ? 3 / (8 * k) : 3 / 16, keep = 1 - k * beta;
+        for (let c = 0; c < 3; c++) { let s = 0; for (const u of N) s += pos[u * 3 + c]; np.push(pos[v * 3 + c] * keep + s * beta) }
+      }
+      for (let c = 0; c < 4; c++) { ni.i.push(sIdx[v * 4 + c]); ni.w.push(sW[v * 4 + c]) }
+    }
+    const mid = new Map();
+    edges.forEach((e, key) => {
+      const id = np.length / 3;
+      for (let c = 0; c < 3; c++) {
+        const ab = pos[e.a * 3 + c] + pos[e.b * 3 + c];
+        np.push(e.opp.length === 2 ? ab * 0.375 + (pos[e.opp[0] * 3 + c] + pos[e.opp[1] * 3 + c]) * 0.125 : ab * 0.5);
+      }
+      blendSkin(e.a, e.b, ni); mid.set(key, id);
+    });
+    const nidx = [];
+    for (let t = 0; t < idx.length; t += 3) {
+      const a = idx[t], b = idx[t + 1], c = idx[t + 2], ab = mid.get(ek(a, b)), bc = mid.get(ek(b, c)), ca = mid.get(ek(c, a));
+      nidx.push(a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca);
+    }
+    pos = np; sIdx = ni.i; sW = ni.w; idx = nidx;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(sIdx, 4));
+  g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sW, 4));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
 export async function loadHand(url = '/models/hand-right.glb', skin = 'velvet') {
   const gltf = await loader.loadAsync(url);
   const sceneRoot = gltf.scene;
   const material = skinMaterial(skin);
   sceneRoot.traverse(o => {
-    if (o.isMesh) { o.geometry.computeVertexNormals(); o.material = material; o.frustumCulled = false; }
+    if (o.isMesh) {
+      if (o.isSkinnedMesh && o.geometry.index) { const g = subdivideSkinned(o.geometry, 2); o.geometry.dispose(); o.geometry = g }
+      else o.geometry.computeVertexNormals();
+      o.material = material; o.frustumCulled = false;
+    }
   });
 
   const bones = new Map();
