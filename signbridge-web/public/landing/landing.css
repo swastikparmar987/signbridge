@@ -122,8 +122,8 @@ body.entered.end .sound-pill{opacity:0;pointer-events:none}
 .stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
 
 /* type */
-.h1{font-weight:400;font-size:clamp(44px,6.4vw,104px);line-height:.95;letter-spacing:-.035em;text-shadow:0 16px 38px rgba(0,0,0,.32)}
-.h2{font-weight:400;font-size:clamp(36px,4.6vw,76px);line-height:1;letter-spacing:-.035em;text-shadow:0 16px 38px rgba(0,0,0,.32)}
+.h1{font-weight:400;font-size:clamp(38px,min(6.4vw,11vh),104px);line-height:.95;letter-spacing:-.035em;text-shadow:0 16px 38px rgba(0,0,0,.32)}
+.h2{font-weight:400;font-size:clamp(30px,min(4.6vw,8.4vh),76px);line-height:1;letter-spacing:-.035em;text-shadow:0 16px 38px rgba(0,0,0,.32)}
 .label{display:flex;align-items:center;gap:12px;font-size:11px;line-height:1;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);margin-bottom:28px}
 .label .rule{width:32px;height:1px;background:currentColor;opacity:.7}
 .label .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:dot 2.4s var(--ease) infinite}
@@ -171,7 +171,7 @@ body.entered.end .sound-pill{opacity:0;pointer-events:none}
 .beat{grid-area:1/1;align-self:end}
 .beat .body{margin-top:18px}
 .heard{position:absolute;right:var(--g);top:clamp(96px,15vh,170px);max-width:44vw;display:grid;justify-items:end;gap:16px;text-align:right}
-.heard-word{font-family:var(--serif);font-style:italic;font-size:clamp(56px,7.6vw,128px);line-height:.95;letter-spacing:-.02em;min-height:1em;text-shadow:0 0 60px rgba(251,106,24,.25)}
+.heard-word{font-family:var(--serif);font-style:italic;font-size:clamp(44px,min(7.6vw,13vh),128px);line-height:.95;letter-spacing:-.02em;min-height:1em;text-shadow:0 0 60px rgba(251,106,24,.25)}
 .heard-word::after{content:"";display:inline-block;width:2px;height:.8em;margin-left:6px;vertical-align:-.08em;background:var(--accent);animation:caret 1s steps(2) infinite}
 @keyframes caret{50%{opacity:0}}
 .voice{display:inline-flex;align-items:center;gap:4px;height:22px;opacity:0;transition:opacity .4s var(--ease)}
@@ -184,7 +184,7 @@ body.entered.end .sound-pill{opacity:0;pointer-events:none}
 .label-c{position:absolute;left:var(--g);top:clamp(84px,12vh,120px);margin:0}
 .moment{position:absolute;left:50%;bottom:clamp(56px,12vh,130px);translate:-50% 0;width:min(980px,calc(100vw - 2 * var(--g)));text-align:center}
 .m-place{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);margin-bottom:18px}
-.quote{text-wrap:balance;font-family:var(--serif);font-style:italic;font-size:clamp(40px,5.4vw,84px);line-height:1;letter-spacing:-.015em;text-shadow:0 16px 38px rgba(0,0,0,.4)}
+.quote{text-wrap:balance;font-family:var(--serif);font-style:italic;font-size:clamp(34px,min(5.4vw,9.5vh),84px);line-height:1;letter-spacing:-.015em;text-shadow:0 16px 38px rgba(0,0,0,.4)}
 .m-line{margin:20px auto 0;font-size:16px;color:var(--muted);max-width:30rem}
 .m-dots{position:absolute;right:var(--g);top:clamp(84px,12vh,120px);display:flex;gap:6px}
 .m-dots i{width:28px;height:2px;border-radius:2px;background:rgba(244,238,230,.14);position:relative;overflow:hidden}
@@ -230,9 +230,11 @@ body.entered.end .sound-pill{opacity:0;pointer-events:none}
 @media (max-width:900px){.faq-wrap{grid-template-columns:1fr}.faq-wrap .label{margin-bottom:0}}
 
 /* finale */
-.finale-copy{position:absolute;left:50%;top:60%;translate:-50% 0;display:grid;justify-items:center;gap:26px;text-align:center;width:min(900px,calc(100vw - 2 * var(--g)))}
-.wordmark{position:absolute;left:0;right:0;bottom:-1.2vw;text-align:center;overflow:hidden;line-height:.85}
-.wordmark span{display:inline-block;white-space:nowrap;font-weight:500;font-size:19vw;letter-spacing:-.07em;color:rgba(244,238,230,.92);transform:translateY(105%);transition:transform 1.4s var(--ease)}
+/* finale stacks in flow (copy, then wordmark) so the two can never overlap at any window size */
+.finale .stage{display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.finale-copy{position:relative;display:grid;justify-items:center;gap:clamp(14px,2.6vh,26px);text-align:center;width:min(900px,calc(100vw - 2 * var(--g)));margin-bottom:clamp(14px,3vh,36px)}
+.wordmark{position:relative;width:100%;text-align:center;overflow:hidden;line-height:.85;margin-bottom:-.02em}
+.wordmark span{display:inline-block;white-space:nowrap;font-weight:500;font-size:min(17.5vw,24vh);letter-spacing:-.07em;color:rgba(244,238,230,.92);transform:translateY(105%);transition:transform 1.4s var(--ease)}
 .js .wordmark[data-win]{transform:none;filter:none}
 .wordmark.on span{transform:none}
 .footer{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:center;padding:28px var(--g) 36px;border-top:1px solid var(--line);font-size:13px;color:var(--faint);background:#09070D}
@@ -259,10 +261,8 @@ body.entered.end .sound-pill{opacity:0;pointer-events:none}
   .js .learn .copy[data-win],.js .learn .copy[data-win].on{transform:none}
   .learn .big-stat{margin-top:24px;padding-top:18px}
   .chip-btn{height:44px;min-width:44px}
-  .finale-copy{top:56%}
   .cap{bottom:20vh}
 }
-@media (max-height:720px) and (min-width:901px){.h1{font-size:clamp(40px,5.2vw,80px)}.heard-word{font-size:clamp(48px,6vw,96px)}}
 
 /* ---------- No WebGL / reduced motion ---------- */
 html.nogl #gl{display:none}

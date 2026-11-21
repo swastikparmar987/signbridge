@@ -390,7 +390,7 @@ function frame(now) {
   /* finale: the bridge collapses into a ring between the two palms */
   const mid = tmp3.copy(L.palmC).lerp(H.R.palmC, 0.5);
   halo.position.copy(mid); halo.quaternion.copy(camera.quaternion);
-  const ringR = Math.max(0.3, L.palmC.distanceTo(H.R.palmC) * 0.62);
+  const ringR = 0.62 * Math.max(0.5, L.st.s); // sized to the hands, not the gap between them
   halo.scale.setScalar((0.3 + G.ring * 0.7) * ringR + Math.sin(t * 1.4) * 0.02 * G.ring); halo.material.opacity = G.ring * 0.9;
   haloGlow.position.copy(mid); haloGlow.scale.setScalar((0.6 + G.ring * 2.2) * ringR); haloGlow.material.opacity = G.ring * 0.3;
   const shockAt = G.ring > 0.3 ? mid : L.palmC;
