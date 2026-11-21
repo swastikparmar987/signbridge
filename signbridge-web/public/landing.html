@@ -2,13 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SignBridge</title>
-<meta name="description" content="SignBridge reads American Sign Language in real time — 21 landmarks per hand, 2,731 signs, right in your browser.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SignBridge · Your hands speak. Now the world listens.</title>
+<meta name="description" content="SignBridge turns American Sign Language into words and a natural voice as you sign, so the people around you understand you. All you need is a camera.">
+<meta name="theme-color" content="#100D19">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SignBridge · Your hands speak. Now the world listens.">
+<meta property="og:description" content="Sign the way you always do. SignBridge turns your signs into words and a voice, so everyone understands you.">
+<meta property="og:image" content="/mascot-hero.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" href="/models/hand-right.glb" as="fetch" crossorigin>
+<link rel="stylesheet" href="/landing/landing.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
@@ -18,1119 +26,235 @@
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
 } }
 </script>
-<style>
-:root{
-  /* SignBridge "Dark Velvet" — same tokens as the app (signbridge-web/app/globals.css) */
-  --bg:#100D19; --bg2:#15121E; --surface:#1D1829; --ink:#FAF6F0; --muted:#ACA5BC; --faint:#7E7890;
-  --line:rgba(255,255,255,.1); --glass:rgba(255,255,255,.045); --orange:#FB6A18; --orange2:#FF8A3D; --amber:#FFA66D; --cream:#FAF6F0; --dark:#15121E;
-  --gold:linear-gradient(180deg,#FFB27E 0%,#FF8A3D 40%,#FB6A18 100%);
-  --sans:"Plus Jakarta Sans",system-ui,sans-serif; --display:"Onest","Plus Jakarta Sans",system-ui,sans-serif; --marker:var(--display); --mono:"JetBrains Mono",ui-monospace,monospace;
-  --gutter:clamp(16px,4vw,56px);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{background:var(--bg);-webkit-text-size-adjust:100%}
-html.lenis,html.lenis body{height:auto}
-.lenis.lenis-smooth{scroll-behavior:auto!important}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);overflow-x:hidden;-webkit-font-smoothing:antialiased}
-body.locked{overflow:hidden;height:100vh}
-a{color:inherit;text-decoration:none}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-::selection{background:var(--orange);color:#fff}
-:focus-visible{outline:2px solid var(--orange);outline-offset:3px;border-radius:6px}
-
-/* WebGL stage */
-#gl{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block;transition:opacity .2s linear}
-.fallback-glow{position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(60vmax 60vmax at 70% 45%,rgba(251,106,24,.22),transparent 60%),radial-gradient(40vmax 40vmax at 20% 80%,rgba(246,183,60,.08),transparent 60%)}
-.velvet{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(circle at 50% 48%,rgba(251,106,24,.07) 0%,rgba(45,36,68,.22) 42%,rgba(16,13,25,0) 80%),radial-gradient(60vmax 50vmax at 0% 100%,rgba(88,64,140,.16),transparent 60%),radial-gradient(50vmax 40vmax at 100% 0%,rgba(88,64,140,.12),transparent 60%)}
-.grain{position:fixed;inset:-50%;z-index:1;pointer-events:none;opacity:.035;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation:grain 1.2s steps(6) infinite}
-@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
-main,header,footer{position:relative;z-index:2}
-
-/* Gate */
-.gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:var(--gutter)}
-.gate-inner{text-align:center;width:min(560px,100%)}
-.gate-logo{width:64px;height:64px;margin:0 auto 28px;border-radius:16px;filter:drop-shadow(0 0 30px rgba(251,106,24,.5))}
-.gate-word{font-weight:800;font-size:clamp(2.2rem,8vw,4.6rem);letter-spacing:-.04em;line-height:1;display:flex;justify-content:center;overflow:hidden}
-.gate-word span{display:inline-block}
-.gate-word{font-family:var(--display)}
-.gate-word .o{background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
-.gate-bar{height:2px;background:var(--line);margin:32px auto 12px;width:min(320px,80%);overflow:hidden;border-radius:2px}
-.gate-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--orange),var(--amber))}
-.gate-meta{font-family:var(--mono);font-size:.75rem;color:var(--faint);letter-spacing:.12em;text-transform:uppercase}
-.gate-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px;opacity:0;pointer-events:none;transition:opacity .6s}
-.gate-actions.on{opacity:1;pointer-events:auto}
-.gate-note{margin-top:16px;font-size:.8rem;color:var(--faint)}
-
-/* Buttons */
-.btn{position:relative;display:inline-flex;align-items:center;gap:10px;padding:16px 26px;border-radius:999px;font-weight:700;font-size:.98rem;letter-spacing:-.01em;transition:background .3s,color .3s,box-shadow .3s;will-change:transform;white-space:nowrap}
-.btn-primary{background:linear-gradient(180deg,#FF8A3D,#FB6A18);color:#1A130D;box-shadow:0 12px 36px -6px rgba(251,106,24,.62),inset 0 1px 0 rgba(255,255,255,.35)}
-.btn-primary:hover{filter:brightness(1.06);box-shadow:0 16px 54px -6px rgba(251,106,24,.8),inset 0 1px 0 rgba(255,255,255,.4)}
-h1,h2,h3,.brand,.stat .n,.word{font-family:var(--display)}
-.btn-ghost{border:1px solid var(--line);background:rgba(250,246,240,.04);backdrop-filter:blur(10px)}
-.btn-ghost:hover{border-color:rgba(250,246,240,.35);background:rgba(250,246,240,.08)}
-.btn svg{width:18px;height:18px}
-
-/* Nav */
-.nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:18px var(--gutter);transition:background .4s,backdrop-filter .4s,padding .4s}
-.nav.scrolled{background:rgba(16,13,25,.6);backdrop-filter:blur(16px) saturate(140%);padding-top:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.03em;font-size:1.15rem}
-.brand img{width:34px;height:34px;border-radius:9px}
-.nav-links{display:flex;gap:28px;font-size:.92rem;color:var(--muted);font-weight:500}
-.nav-links a{position:relative;transition:color .25s}
-.nav-links a:hover{color:var(--ink)}
-.nav-links a::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:1.5px;background:var(--orange);transform:scaleX(0);transform-origin:right;transition:transform .35s}
-.nav-links a:hover::after{transform:scaleX(1);transform-origin:left}
-.nav-right{display:flex;align-items:center;gap:10px}
-.nav .btn{padding:11px 18px;font-size:.88rem}
-.sound-toggle{display:inline-flex;align-items:center;gap:10px;height:42px;padding:0 14px;border-radius:999px;border:1px solid var(--line);font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);transition:border-color .3s,color .3s}
-.sound-toggle:hover{border-color:rgba(250,246,240,.35);color:var(--ink)}
-.eq{display:flex;align-items:flex-end;gap:2px;height:14px}
-.eq i{width:2px;height:3px;background:currentColor;border-radius:1px;transition:height .3s}
-.sound-toggle[aria-pressed="true"]{color:var(--orange);border-color:rgba(251,106,24,.5)}
-.sound-toggle[aria-pressed="true"] .eq i{animation:eq .9s ease-in-out infinite}
-.sound-toggle[aria-pressed="true"] .eq i:nth-child(2){animation-delay:-.3s}
-.sound-toggle[aria-pressed="true"] .eq i:nth-child(3){animation-delay:-.6s}
-.sound-toggle[aria-pressed="true"] .eq i:nth-child(4){animation-delay:-.15s}
-@keyframes eq{0%,100%{height:3px}50%{height:14px}}
-
-/* Hero */
-.hero{min-height:100vh;min-height:100svh;display:flex;align-items:center;padding:120px var(--gutter) 80px;position:relative}
-.hero-copy{max-width:min(720px,58vw)}
-.eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(250,246,240,.03);backdrop-filter:blur(8px)}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 0 rgba(251,106,24,.7);animation:ping 1.8s infinite}
-@keyframes ping{0%{box-shadow:0 0 0 0 rgba(251,106,24,.7)}80%,100%{box-shadow:0 0 0 10px rgba(251,106,24,0)}}
-.hero h1{font-weight:800;font-size:clamp(3rem,7.4vw,7.6rem);line-height:.92;letter-spacing:-.055em;margin:26px 0 28px;perspective:800px}
-.hero h1 .line{display:block;overflow:hidden;padding-bottom:.06em}
-.hero h1 .wd{display:inline-block;white-space:nowrap}
-.hero h1 .ch{display:inline-block;transform-origin:50% 100%;will-change:transform}
-.marker,.marker .ch{font-family:var(--display);font-weight:800;background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
-.hero h1 .marker{font-size:1em}
-.hero p.lead{font-size:clamp(1.05rem,1.5vw,1.3rem);line-height:1.6;color:var(--muted);max-width:520px}
-.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;margin-top:36px}
-.sign-card{position:absolute;right:var(--gutter);bottom:56px;display:flex;align-items:center;gap:16px;padding:14px 20px 14px 14px;border-radius:20px;border:1px solid var(--line);background:rgba(29,24,41,.55);backdrop-filter:blur(14px)}
-.sign-glyph{width:58px;height:58px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(140deg,rgba(251,106,24,.25),rgba(251,106,24,.05));border:1px solid rgba(251,106,24,.35);font-family:var(--display);font-weight:800;font-size:1.3rem;letter-spacing:-.03em;color:var(--orange);perspective:400px}
-.sign-glyph span{display:inline-block}
-.sign-meta{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
-.sign-name{font-weight:700;font-size:1.05rem;margin-top:4px}
-.hud{position:absolute;left:var(--gutter);bottom:56px;font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);display:flex;gap:22px}
-.hud b{color:var(--ink);font-weight:500}
-.scroll-cue{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);width:22px;height:36px;border:1.5px solid var(--line);border-radius:12px}
-.scroll-cue::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:var(--orange);animation:cue 1.6s infinite}
-@keyframes cue{0%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(12px)}}
-
-/* Marquee */
-.marquee{padding:34px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;background:rgba(16,13,25,.55);backdrop-filter:blur(6px)}
-.mrow{display:flex;white-space:nowrap;will-change:transform}
-.mrow + .mrow{margin-top:14px}
-.mrow span{font-weight:800;font-size:clamp(2rem,5vw,4.2rem);letter-spacing:-.04em;padding-right:.6em;display:inline-flex;align-items:center;gap:.6em}
-.mrow span::after{content:"";width:.28em;height:.28em;border-radius:50%;background:var(--orange);box-shadow:0 0 18px var(--orange)}
-.mrow.outline span{color:transparent;-webkit-text-stroke:1.2px rgba(250,246,240,.35)}
-
-/* Manifesto */
-.manifesto{min-height:120vh;display:flex;align-items:center;padding:20vh var(--gutter)}
-.manifesto p{font-weight:700;font-size:clamp(1.8rem,4.2vw,4rem);line-height:1.12;letter-spacing:-.035em;max-width:1200px}
-.manifesto .w{display:inline-block;opacity:.14;transition:none}
-.manifesto .hl{background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
-.section-tag{font-family:var(--mono);font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin-bottom:28px;display:flex;align-items:center;gap:12px}
-.section-tag::before{content:"";width:28px;height:1px;background:var(--orange)}
-
-/* Pipeline (sticky) */
-.pipe{height:440vh;position:relative}
-.pipe-stage{position:sticky;top:0;height:100vh;height:100svh;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:0 var(--gutter)}
-.pipe-text{grid-column:2;position:relative;max-width:540px}
-.pipe-steps{position:relative;min-height:480px}
-.step{position:absolute;inset:0;opacity:0;transform:translateY(30px);transition:opacity .6s,transform .7s cubic-bezier(.2,.8,.2,1);pointer-events:none}
-.step.on{opacity:1;transform:none;pointer-events:auto}
-.step-num{font-family:var(--display);font-weight:800;letter-spacing:-.05em;font-size:clamp(3.5rem,7vw,6rem);line-height:1;background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
-.step h3{font-size:clamp(1.9rem,3.4vw,3rem);font-weight:800;letter-spacing:-.04em;line-height:1.05;margin:10px 0 16px}
-.step p{color:var(--muted);font-size:1.06rem;line-height:1.65}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
-.chip{font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;padding:7px 11px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:rgba(250,246,240,.03)}
-.pipe-progress{display:flex;gap:8px;margin-top:34px}
-.pipe-progress i{flex:1;height:3px;border-radius:3px;background:var(--line);overflow:hidden;position:relative}
-.pipe-progress i b{position:absolute;inset:0;background:var(--orange);transform:scaleX(0);transform-origin:left}
-.pred{margin-top:22px;padding:16px;border-radius:16px;border:1px solid var(--line);background:rgba(29,24,41,.6);backdrop-filter:blur(10px)}
-.pred-head{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
-.pred-row{display:grid;grid-template-columns:110px 1fr 46px;gap:10px;align-items:center;font-size:.85rem;padding:4px 0}
-.pred-row .bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}
-.pred-row .bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--orange),var(--amber));transition:width 1s cubic-bezier(.2,.8,.2,1)}
-.pred-row:first-of-type{font-weight:700}
-.pred-row .v{font-family:var(--mono);font-size:.75rem;color:var(--muted);text-align:right}
-
-/* Stats band */
-.stats{color:var(--ink);padding:clamp(70px,10vw,130px) var(--gutter);position:relative;overflow:hidden;background:radial-gradient(70% 90% at 50% 0%,rgba(251,106,24,.10),transparent 60%),linear-gradient(180deg,rgba(29,24,41,.92),rgba(21,18,30,.96));border-top:1px solid var(--line);border-bottom:1px solid var(--line);backdrop-filter:blur(16px)}
-.stats .section-tag{color:var(--orange)}
-.stats .section-tag::before{background:var(--orange)}
-.stats h2{font-size:clamp(2rem,4.6vw,4rem);font-weight:800;letter-spacing:-.045em;line-height:1;max-width:900px}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:clamp(40px,6vw,80px);border-top:1px solid var(--line)}
-.stat{padding:30px 24px 0 0}
-.stat + .stat{padding-left:24px;border-left:1px solid var(--line)}
-.stat .n{background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;font-weight:800;font-size:clamp(2.6rem,5.4vw,5.2rem);letter-spacing:-.06em;line-height:1;font-variant-numeric:tabular-nums}
-.stat .n small{font-size:.45em;letter-spacing:-.02em;margin-left:2px}
-.stat .l{margin-top:12px;color:var(--muted);font-size:.95rem;line-height:1.45;max-width:220px}
-.stats-foot{margin-top:40px;font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;color:var(--faint)}
-
-/* Features */
-.features{padding:clamp(90px,14vw,180px) var(--gutter)}
-.features-head{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap;margin-bottom:56px}
-.features h2{font-size:clamp(2.2rem,5.4vw,5rem);font-weight:800;letter-spacing:-.05em;line-height:.98;max-width:820px}
-.features-head p{color:var(--muted);max-width:360px;line-height:1.6}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;perspective:1200px}
-.card{position:relative;padding:30px;border-radius:24px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(37,31,52,.72),rgba(21,18,30,.78)) padding-box,linear-gradient(160deg,rgba(255,138,61,.28),rgba(255,255,255,.06) 40%,rgba(255,255,255,.04)) border-box;border-color:transparent;backdrop-filter:blur(12px);min-height:280px;display:flex;flex-direction:column;transform-style:preserve-3d;transition:border-color .4s;will-change:transform;overflow:hidden}
-.card:hover{border-color:rgba(251,106,24,.45)}
-.card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .4s;background:radial-gradient(420px circle at var(--gx,50%) var(--gy,50%),rgba(251,106,24,.18),transparent 45%)}
-.card:hover::before{opacity:1}
-.card .ic{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:rgba(251,106,24,.12);border:1px solid rgba(251,106,24,.3);color:var(--orange);transform:translateZ(40px)}
-.card .ic svg{width:24px;height:24px}
-.card h3{font-size:1.4rem;font-weight:700;letter-spacing:-.03em;margin:auto 0 10px;padding-top:40px;transform:translateZ(30px)}
-.card p{color:var(--muted);line-height:1.6;font-size:.98rem;transform:translateZ(20px)}
-.card .k{position:absolute;top:28px;right:28px;font-family:var(--mono);font-size:.7rem;color:var(--faint);letter-spacing:.1em}
-kbd{font-family:var(--mono);font-size:.8em;padding:2px 7px;border-radius:6px;border:1px solid var(--line);background:rgba(250,246,240,.06);color:var(--ink)}
-
-/* Three ways to sign (mirrors the app's mode cards) */
-.modes{padding:clamp(90px,12vw,160px) var(--gutter) 0}
-.modes-head{text-align:center;max-width:780px;margin:0 auto clamp(40px,6vw,64px)}
-.modes-head h2{font-size:clamp(2.2rem,5vw,4.4rem);font-weight:800;letter-spacing:-.05em;line-height:1}
-.modes-head p{color:var(--muted);margin:18px auto 0;line-height:1.6;max-width:520px}
-.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1120px;margin:0 auto;perspective:1200px}
-.mode{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 22px 30px;border-radius:28px;border:1px solid transparent;
-  background:linear-gradient(165deg,rgba(37,31,52,.8),rgba(21,18,30,.85)) padding-box,linear-gradient(165deg,rgba(255,255,255,.14),rgba(255,255,255,.04)) border-box;
-  backdrop-filter:blur(14px);transform-style:preserve-3d;will-change:transform;transition:box-shadow .4s}
-.mode.featured{background:linear-gradient(165deg,rgba(45,36,62,.85),rgba(21,18,30,.88)) padding-box,linear-gradient(165deg,#FFA66D,rgba(251,106,24,.35) 45%,rgba(251,106,24,.6)) border-box;box-shadow:0 30px 80px -30px rgba(251,106,24,.45)}
-.mode:hover{box-shadow:0 34px 90px -30px rgba(251,106,24,.5)}
-.mode-art{position:relative;width:100%;aspect-ratio:5/4;display:flex;align-items:center;justify-content:center;border-radius:20px;background:radial-gradient(circle at 50% 58%,rgba(251,106,24,.2),rgba(251,106,24,0) 62%);transform:translateZ(50px)}
-.mode-art img{width:58%;height:auto;filter:drop-shadow(0 26px 30px rgba(0,0,0,.55));animation:sb-float 6s ease-in-out infinite}
-.mode-art.pair img{width:46%}
-.mode-art.pair img:first-child{transform:rotate(-10deg);margin-right:-14%}
-.mode-art.pair img:last-child{transform:rotate(10deg);animation-delay:-3s}
-@keyframes sb-float{0%,100%{translate:0 0}50%{translate:0 -12px}}
-.mode h3{font-size:1.55rem;font-weight:700;letter-spacing:-.03em;margin-top:14px;transform:translateZ(30px)}
-.mode p{color:var(--muted);font-size:.95rem;margin-top:6px;line-height:1.5;transform:translateZ(20px)}
-.mode .try{margin-top:18px;font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
-
-/* Learn horizontal */
-.learn{height:320vh;position:relative}
-.learn-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
-.learn-head{padding:0 var(--gutter);margin-bottom:44px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
-.learn-head h2{font-size:clamp(2.2rem,5vw,4.6rem);font-weight:800;letter-spacing:-.05em;line-height:.98}
-.learn-count{font-family:var(--mono);font-size:.78rem;color:var(--faint);letter-spacing:.12em}
-.track{display:flex;gap:20px;padding:0 var(--gutter);will-change:transform}
-.gloss{flex:0 0 auto;width:clamp(240px,26vw,340px);aspect-ratio:3/4;border-radius:26px;padding:26px;position:relative;overflow:hidden;border:1px solid var(--line);background:#1D1829;display:flex;flex-direction:column;justify-content:space-between;transition:transform .5s cubic-bezier(.2,.8,.2,1),border-color .4s}
-.gloss:hover{transform:translateY(-10px) rotate(-1deg);border-color:rgba(251,106,24,.5)}
-.gloss.alt{background:linear-gradient(165deg,#FFA66D,#FB6A18 65%,#E5560B);color:#1A130D;border-color:transparent;box-shadow:0 30px 70px -30px rgba(251,106,24,.7)}
-.gloss.cream{background:linear-gradient(165deg,rgba(255,255,255,.09),rgba(255,255,255,.03));backdrop-filter:blur(14px);border-color:rgba(255,138,61,.28)}
-.gloss .cat{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;opacity:.65}
-.gloss .word{font-weight:800;font-size:clamp(2.1rem,3.4vw,3rem);letter-spacing:-.05em;line-height:.95}
-.gloss .spell{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
-.gloss .spell i{font-style:normal;font-family:var(--display);font-weight:700;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:.95rem;background:rgba(250,246,240,.08)}
-.gloss.alt .spell i{background:rgba(26,19,13,.12)}
-.gloss.cream .spell i{background:rgba(255,138,61,.12);color:var(--amber)}
-.gloss .big{position:absolute;right:-10px;bottom:-46px;font-family:var(--display);font-weight:900;font-size:12rem;line-height:1;opacity:.07;pointer-events:none}
-.gloss .go{display:flex;justify-content:space-between;align-items:center;font-size:.86rem;font-weight:600;opacity:.85}
-
-/* CTA */
-.cta{min-height:110vh;display:grid;place-items:center;text-align:center;padding:16vh var(--gutter)}
-.cta h2{font-size:clamp(3rem,10vw,10rem);font-weight:800;letter-spacing:-.06em;line-height:.9}
-.cta h2 .marker{display:block;font-size:.92em;margin-top:.02em}
-.cta p{color:var(--muted);font-size:1.15rem;margin:30px auto 40px;max-width:520px;line-height:1.6}
-.cta .btn-primary{padding:22px 38px;font-size:1.1rem}
-
-footer{border-top:1px solid var(--line);padding:40px var(--gutter);display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;color:var(--faint);font-size:.88rem;background:rgba(16,13,25,.85)}
-footer nav{display:flex;gap:22px}
-footer nav a:hover{color:var(--ink)}
-
-/* Cursor */
-.cursor-dot,.cursor-ring{position:fixed;left:0;top:0;pointer-events:none;z-index:200;border-radius:50%;opacity:0}
-.cursor-dot{width:6px;height:6px;margin:-3px 0 0 -3px;background:var(--orange)}
-.cursor-ring{width:38px;height:38px;margin:-19px 0 0 -19px;border:1.5px solid rgba(250,246,240,.45);transition:width .35s,height .35s,margin .35s,background .35s,border-color .35s;display:grid;place-items:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#fff}
-.cursor-ring.big{width:84px;height:84px;margin:-42px 0 0 -42px;background:rgba(255,138,61,.92);border-color:transparent;color:#1A130D}
-.has-cursor .cursor-dot,.has-cursor .cursor-ring{opacity:1}
-
-/* Reveal initial states (only when animating) */
-.anim [data-reveal]{opacity:0;transform:translateY(40px)}
-.anim .hero .eyebrow,.anim .hero p.lead,.anim .hero-ctas,.anim .sign-card,.anim .hud{opacity:0}
-
-@media (max-width:900px){
-  .nav-links{display:none}
-  .sound-toggle .lbl{display:none}
-  .hero{align-items:flex-end;padding-bottom:150px}
-  .hero-copy{max-width:100%}
-  .sign-card{left:var(--gutter);right:auto;bottom:40px}
-  .hud{display:none}
-  .scroll-cue{display:none}
-  .pipe-stage{grid-template-columns:1fr;align-items:end;padding-bottom:7vh}
-  .pipe-text{grid-column:1;max-width:100%;background:rgba(16,13,25,.72);backdrop-filter:blur(12px);padding:22px;border-radius:22px;border:1px solid var(--line)}
-  .pipe-steps{min-height:380px}
-  .pred{display:none}
-  .stat-grid{grid-template-columns:1fr 1fr}
-  .stat:nth-child(3){border-left:0;padding-left:0}
-  .stat{padding-bottom:20px}
-  .grid{grid-template-columns:1fr}
-  .mode-grid{grid-template-columns:1fr;max-width:440px}
-  .card{min-height:220px}
-}
-@media (max-width:520px){
-  .nav .btn-primary{display:none}
-  .hero-ctas .btn{flex:1;justify-content:center}
-}
-@media (prefers-reduced-motion:reduce){
-  .grain,.live-dot,.scroll-cue::after{animation:none}
-  .step{transition:opacity .2s}
-}
-</style>
+<script>
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduce');
+</script>
 </head>
 <body class="locked">
+<a class="skip" href="#main">Skip to content</a>
 
 <canvas id="gl" aria-hidden="true"></canvas>
-<div class="fallback-glow" id="fallbackGlow" aria-hidden="true" hidden></div>
-<div class="velvet" aria-hidden="true"></div>
+<div class="fallback" id="fallback" aria-hidden="true" hidden><img src="/mascot-hero.png" alt=""></div>
+<div class="flash" id="flash" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
-<div class="cursor-dot" aria-hidden="true"></div>
-<div class="cursor-ring" aria-hidden="true"><span></span></div>
 
-<!-- Entry gate: gives the browser the user gesture it needs to start audio -->
-<div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Welcome to SignBridge">
-  <div class="gate-inner">
-    <img class="gate-logo" src="/logo.png" alt="">
-    <div class="gate-word" aria-label="SignBridge"><span>S</span><span>i</span><span>g</span><span>n</span><span class="o">B</span><span class="o">r</span><span class="o">i</span><span class="o">d</span><span class="o">g</span><span class="o">e</span></div>
-    <div class="gate-bar"><i id="gateBar"></i></div>
-    <div class="gate-meta"><span id="gateNum">000</span> · Calibrating 21 landmarks</div>
-    <div class="gate-actions" id="gateActions">
-      <button class="btn btn-primary" id="enterSound" data-sfx>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>
+<!-- Gate: the click unlocks sound, and the story is complete either way -->
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateLine">
+  <div class="gate-top">
+    <span class="brand"><img src="/logo.png" alt="">SignBridge</span>
+    <p class="gate-line" id="gateLine">Some voices are seen, not heard.</p>
+  </div>
+
+  <div class="gate-sign" id="gateSign" aria-live="polite">
+    <p class="gate-kicker caption-3" id="gateKicker">Signing</p>
+    <p class="gate-word" id="gateWord">Hello</p>
+    <div class="gate-spell" id="gateSpell" aria-hidden="true"><i>L</i><i>O</i><i>V</i><i>E</i></div>
+  </div>
+
+  <div class="gate-actions" id="gateActions">
+    <p class="gate-ready">Ready when you are.</p>
+    <div class="gate-btns">
+      <button class="btn btn-primary btn-lg" id="enterSound" data-sfx>
+        <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M80 168H32a8 8 0 0 1-8-8V96a8 8 0 0 1 8-8h48l72-56v192Z" fill="none" stroke="currentColor" stroke-width="16" stroke-linejoin="round"/><path d="M192 104a32 32 0 0 1 0 48M216 80a64 64 0 0 1 0 96" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round"/></svg>
         Enter with sound
       </button>
-      <button class="btn btn-ghost" id="enterQuiet" data-sfx>Enter quietly</button>
+      <button class="btn btn-ghost btn-lg" id="enterQuiet" data-sfx>Enter in silence</button>
     </div>
-    <p class="gate-note">Headphones recommended. You can switch sound on or off at any time.</p>
+    <p class="gate-note">This story is made to be felt either way.</p>
   </div>
+
+  <div class="gate-bottom">
+    <p class="gate-count" aria-hidden="true"><span id="gateNum">0</span><small>%</small></p>
+    <p class="gate-status caption-3" id="gateStatus">Preparing the story</p>
+  </div>
+  <div class="gate-bar" aria-hidden="true"><i id="gateBar"></i></div>
 </div>
 
-<header class="nav" id="nav">
-  <a href="#top" class="brand" data-sfx><img src="/logo.png" alt="">SignBridge</a>
+<header class="nav" id="nav" aria-label="Main">
+  <a href="#top" class="brand" data-sfx aria-label="SignBridge, back to the start"><img src="/logo.png" alt="">SignBridge</a>
   <nav class="nav-links" aria-label="Sections">
+    <a href="#moments" data-sfx>Stories</a>
     <a href="#how" data-sfx>How it works</a>
-    <a href="#features" data-sfx>Features</a>
     <a href="#learn" data-sfx>Learn</a>
+    <a href="#faq" data-sfx>Questions</a>
   </nav>
-  <div class="nav-right">
-    <button class="sound-toggle" id="soundToggle" aria-pressed="false" aria-label="Toggle sound" data-sfx>
-      <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="lbl">Sound</span>
-    </button>
-    <a class="btn btn-primary magnetic" href="/app" data-sfx data-cursor="Open">Open app</a>
-  </div>
+  <a class="btn btn-primary btn-sm" href="/app" data-sfx>Start signing</a>
 </header>
 
-<main id="top">
-  <!-- HERO -->
-  <section class="hero" data-hand='{"x":0.44,"y":0.02,"s":1,"dim":0,"mode":"cycle"}' data-hand-m='{"x":0,"y":0.38,"s":0.62,"dim":0.25,"mode":"cycle"}'>
-    <div class="hero-copy">
-      <span class="eyebrow"><span class="live-dot"></span>Real-time ASL recognition</span>
-      <h1 id="heroTitle" aria-label="Different signs. Same human connection.">
-        <span class="line">Different signs.</span>
-        <span class="line">Same human</span>
-        <span class="line"><span class="marker">connection.</span></span>
-      </h1>
-      <p class="lead">SignBridge watches 21 points on each hand and turns American Sign Language into words, live in your browser.</p>
-      <div class="hero-ctas">
-        <a class="btn btn-primary magnetic" href="/app" data-sfx data-cursor="Sign">
-          Start signing
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <a class="btn btn-ghost magnetic" href="#how" data-sfx>See how it works</a>
-      </div>
-    </div>
-    <div class="hud" aria-hidden="true">
-      <span>Landmarks <b>21</b></span><span>Buffer <b>32f</b></span><span>Render <b id="fps">--</b> fps</span>
-    </div>
-    <div class="sign-card" aria-live="polite">
-      <div class="sign-glyph"><span id="signGlyph">ILY</span></div>
-      <div>
-        <div class="sign-meta">Now signing</div>
-        <div class="sign-name" id="signName">I love you</div>
-      </div>
-    </div>
-    <div class="scroll-cue" aria-hidden="true"></div>
-  </section>
+<div class="dock">
+  <button class="pill" data-sound-toggle id="soundToggle" aria-pressed="false" aria-label="Toggle sound" data-sfx>
+    <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="lbl">Sound off</span>
+  </button>
+  <button class="pill" id="skipStory" data-sfx>Skip the story</button>
+</div>
 
-  <!-- MARQUEE -->
-  <div class="marquee" aria-hidden="true">
-    <div class="mrow" data-dir="1"><div class="mtrack"><span>Hello</span><span>Thank you</span><span>Friend</span><span>Family</span><span>Learn</span><span>Please</span><span>Water</span><span>Help</span><span>Happy</span><span>School</span></div></div>
-    <div class="mrow outline" data-dir="-1"><div class="mtrack"><span>2,731 signs</span><span>21 landmarks</span><span>126 features</span><span>32 frames</span><span>Top-5 ranked</span><span>~40 ms</span></div></div>
-  </div>
+<main id="main">
+  <!-- THE FILM: a closed hand opens and lets the light out -->
+  <section class="film" id="top" aria-label="The story">
+    <div class="film-stage">
+      <div class="cap" data-cap="0"><p class="cap-text">Every day, a conversation ends<br>before it begins.</p></div>
+      <div class="cap" data-cap="1"><p class="cap-text">Not because there was<br>nothing to say.</p></div>
+      <div class="cap" data-cap="2"><p class="cap-text">But because no one<br>could understand it.</p></div>
+      <div class="cap" data-cap="3"><p class="cap-text">What if every sign<br>could finally be heard?</p></div>
 
-  <!-- MANIFESTO -->
-  <section class="manifesto" data-hand='{"x":0.3,"y":0,"s":0.8,"dim":0.78,"mode":"cycle"}' data-hand-m='{"x":0,"y":0,"s":0.6,"dim":0.85,"mode":"cycle"}'>
-    <div>
-      <div class="section-tag">Why we built it</div>
-      <p id="manifesto">More than <span class="hl">70 million</span> deaf people sign every day. Most of the world still can't read a single word. SignBridge is a <span class="hl">bridge</span>: a camera, a small neural network and a lot of care, so a conversation never has to wait for an interpreter.</p>
-    </div>
-  </section>
+      <div class="cue" id="cue" aria-hidden="true"><span>Scroll to open the hand</span><i></i></div>
 
-  <!-- PIPELINE -->
-  <section class="pipe" id="how" data-hand='{"x":-0.46,"y":0,"s":1.05,"dim":0,"mode":"pipeline"}' data-hand-m='{"x":0,"y":0.42,"s":0.62,"dim":0,"mode":"pipeline"}'>
-    <div class="pipe-stage">
-      <div class="pipe-text">
-        <div class="section-tag">How it works</div>
-        <div class="pipe-steps">
-          <div class="step on" data-step="0">
-            <div class="step-num">01</div>
-            <h3>It sees your hands.</h3>
-            <p>MediaPipe tracks both hands from an ordinary webcam, frame by frame, right on your device. No gloves, sensors or special camera.</p>
-            <div class="chips"><span class="chip">MediaPipe Hands</span><span class="chip">Any webcam</span><span class="chip">On-device tracking</span></div>
-          </div>
-          <div class="step" data-step="1">
-            <div class="step-num">02</div>
-            <h3>It maps 21 points.</h3>
-            <p>Every hand becomes 21 landmarks in 3D, so each frame is 126 numbers. They are centered on the wrist and scaled, which makes recognition work for any hand size and distance.</p>
-            <div class="chips"><span class="chip">42 keypoints × xyz</span><span class="chip">Wrist-centered</span><span class="chip">Scale-invariant</span></div>
-          </div>
-          <div class="step" data-step="2">
-            <div class="step-num">03</div>
-            <h3>It remembers motion.</h3>
-            <p>A sign is movement, not a photo. A rolling 32-frame buffer goes into a bidirectional GRU with attention pooling, which learns how a sign unfolds over time.</p>
-            <div class="chips"><span class="chip">32-frame buffer</span><span class="chip">BiGRU + attention</span><span class="chip">PyTorch</span></div>
-          </div>
-          <div class="step" data-step="3">
-            <div class="step-num">04</div>
-            <h3>It speaks your words.</h3>
-            <p>You get ranked Top-5 guesses with confidence in about 40 ms on Apple Silicon. Then SignBridge can read the sign aloud.</p>
-            <div class="pred" aria-hidden="true">
-              <div class="pred-head"><span>Top-5</span><span>Example output</span></div>
-              <div class="pred-row"><span>I LOVE YOU</span><span class="bar"><i data-w="91"></i></span><span class="v">0.91</span></div>
-              <div class="pred-row"><span>LOVE</span><span class="bar"><i data-w="4"></i></span><span class="v">0.04</span></div>
-              <div class="pred-row"><span>YOU</span><span class="bar"><i data-w="2"></i></span><span class="v">0.02</span></div>
-              <div class="pred-row"><span>AIRPLANE</span><span class="bar"><i data-w="1.5"></i></span><span class="v">0.01</span></div>
-              <div class="pred-row"><span>Y</span><span class="bar"><i data-w="1"></i></span><span class="v">0.01</span></div>
-            </div>
-          </div>
+      <div class="hero" id="hero" data-hand='{"x":0.55,"y":-0.02,"s":0.92,"pose":"HELLO"}' data-hand-m='{"x":0,"y":0.42,"s":0.62,"pose":"HELLO"}'>
+        <p class="eyebrow">Sign language, understood</p>
+        <h1 class="heading-1 hero-title"><span class="ln">Your hands speak.</span><br><span class="ln">Now the world <span class="warm">listens.</span></span></h1>
+        <p class="title-1 hero-sub">SignBridge turns your signs into words and a natural voice as you sign, so the people around you understand you. All you need is a camera.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="/app" data-sfx>
+            Start signing
+            <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M40 128h176M144 56l72 72-72 72" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
         </div>
-        <div class="pipe-progress" aria-hidden="true"><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+        <p class="caption-2 hero-proof"><b>2,731 signs</b> and growing · Works right in your browser</p>
       </div>
     </div>
   </section>
 
-  <!-- STATS -->
-  <section class="stats" data-hand='{"x":0,"y":0,"s":0.6,"dim":1,"mode":"cycle"}'>
-    <div class="section-tag" data-reveal>By the numbers</div>
-    <h2 data-reveal>A vocabulary big enough for real conversation.</h2>
-    <div class="stat-grid">
-      <div class="stat" data-reveal><div class="n"><span class="count" data-to="2731" data-sep="1">0</span></div><div class="l">ASL signs (glosses) the production model recognizes</div></div>
-      <div class="stat" data-reveal><div class="n"><span class="count" data-to="126">0</span></div><div class="l">3D features read from your hands every frame</div></div>
-      <div class="stat" data-reveal><div class="n"><span class="count" data-to="72.89" data-dec="2">0</span><small>%</small></div><div class="l">Top-5 accuracy on the ASL Citizen test set</div></div>
-      <div class="stat" data-reveal><div class="n">~<span class="count" data-to="40">0</span><small>ms</small></div><div class="l">Inference per prediction on Apple Silicon</div></div>
-    </div>
-    <p class="stats-foot">Benchmarked on 32,941 ASL Citizen test samples · BiGRU attention-pooling classifier · 48.62% Top-1</p>
-  </section>
-
-  <!-- THREE WAYS TO SIGN -->
-  <section class="modes" id="modes" data-hand='{"x":0,"y":0.1,"s":0.5,"dim":0.92,"mode":"cycle"}'>
-    <div class="modes-head">
-      <div class="section-tag" style="justify-content:center" data-reveal>Three ways to sign</div>
-      <h2 data-reveal>One word, a sentence, or letter by letter.</h2>
-      <p data-reveal>The same three modes you'll find in the app. Pick one and SignBridge handles the recognition.</p>
-    </div>
-    <div class="mode-grid">
-      <a href="/app" class="mode" data-reveal data-tilt data-sfx data-cursor="Try">
-        <div class="mode-art"><img src="/hands/words-hand.png" alt="" loading="lazy"></div>
-        <h3>Words</h3>
-        <p>Single ASL vocabulary signs, 2,731 of them.</p>
-        <span class="try">Try words →</span>
-      </a>
-      <a href="/app" class="mode featured" data-reveal data-tilt data-sfx data-cursor="Try">
-        <div class="mode-art pair"><img src="/hands/cont-left.png" alt="" loading="lazy"><img src="/hands/cont-right.png" alt="" loading="lazy"></div>
-        <h3>Continuous</h3>
-        <p>Natural multi-sign sentences, translated as you pause.</p>
-        <span class="try">Try continuous →</span>
-      </a>
-      <a href="/app" class="mode" data-reveal data-tilt data-sfx data-cursor="Try">
-        <div class="mode-art"><img src="/hands/fingerspelling-hand.png" alt="" loading="lazy"></div>
-        <h3>Fingerspelling</h3>
-        <p>Spell names and new words letter by letter.</p>
-        <span class="try">Try fingerspelling →</span>
-      </a>
-    </div>
-  </section>
-
-  <!-- FEATURES -->
-  <section class="features" id="features" data-hand='{"x":0.5,"y":0.1,"s":0.55,"dim":0.82,"mode":"cycle"}' data-hand-m='{"x":0,"y":0,"s":0.5,"dim":0.88,"mode":"cycle"}'>
-    <div class="features-head">
-      <div>
-        <div class="section-tag" data-reveal>Everything in one place</div>
-        <h2 data-reveal>Recognize, learn and talk. All from a webcam.</h2>
+  <!-- MOMENTS -->
+  <section class="moments" id="moments" aria-labelledby="momentsTitle">
+    <div class="moments-stage">
+      <div class="moments-head">
+        <p class="tag">Moments that matter</p>
+        <h2 class="heading-2" id="momentsTitle">Small conversations.<br>Big moments.</h2>
       </div>
-      <p data-reveal>Built for Deaf and hard-of-hearing people, for the friends and families learning alongside them, and for developers building accessible tools.</p>
-    </div>
-    <div class="grid">
-      <article class="card" data-reveal data-tilt data-sfx>
-        <span class="k">01</span>
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
-        <h3>Live recognition</h3>
-        <p>Sign into your webcam and watch the words appear. It reads motion, not just handshapes.</p>
-      </article>
-      <article class="card" data-reveal data-tilt data-sfx>
-        <span class="k">02</span>
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg></div>
-        <h3>Video upload</h3>
-        <p>Drop in an .mp4, .mov or .webm clip to analyze recorded signing offline.</p>
-      </article>
-      <article class="card" data-reveal data-tilt data-sfx>
-        <span class="k">03</span>
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
-        <h3>Guided learning</h3>
-        <p>Demonstration videos for 2,731 signs and a practice mode that checks your form as you go.</p>
-      </article>
-      <article class="card" data-reveal data-tilt data-sfx>
-        <span class="k">04</span>
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4 7.2 17l.9-5.4L4.2 7.7l5.4-.8z"/><path d="M5 21h14"/></svg></div>
-        <h3>Custom Sign Learner</h3>
-        <p>Teach SignBridge your own signs and personalize recognition to the way you move.</p>
-      </article>
-      <article class="card" data-reveal data-tilt data-sfx>
-        <span class="k">05</span>
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg></div>
-        <h3>See the confidence</h3>
-        <p>Ranked Top-5 predictions with confidence bars. Press <kbd>D</kbd> for live tracking and latency telemetry.</p>
-      </article>
-      <article class="card" data-reveal data-tilt data-sfx>
-        <span class="k">06</span>
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg></div>
-        <h3>Voice and API</h3>
-        <p>Hear translations spoken aloud, or connect the JSON REST API to your own app.</p>
-      </article>
+      <ol class="scenes" id="scenes">
+        <li class="scene" data-pose="C">
+          <p class="scene-place caption-3"><span>01</span> At the café</p>
+          <h3 class="heading-4">You sign your order.<br>The barista hears it.</h3>
+          <p class="body-3">No pointing at the menu, no notes passed across the counter. Just your order, said the way you say it.</p>
+          <div class="said" aria-label="What they hear"><span class="said-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="said-text" data-say="One oat latte, please."></span></div>
+        </li>
+        <li class="scene" data-pose="LOVE">
+          <p class="scene-place caption-3"><span>02</span> At home</p>
+          <h3 class="heading-4">Your little one signs “I love you.”<br>Grandma hears every word.</h3>
+          <p class="body-3">The words that matter most should never need a translator in the room.</p>
+          <div class="said" aria-label="What they hear"><span class="said-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="said-text" data-say="I love you, Grandma."></span></div>
+        </li>
+        <li class="scene" data-pose="HELLO">
+          <p class="scene-place caption-3"><span>03</span> At the interview</p>
+          <h3 class="heading-4">They hear your answers.<br>Not the gap.</h3>
+          <p class="body-3">Walk in, introduce yourself, and let your experience speak for you from the very first hello.</p>
+          <div class="said" aria-label="What they hear"><span class="said-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="said-text" data-say="Hello, I am ready when you are."></span></div>
+        </li>
+        <li class="scene" data-pose="B">
+          <p class="scene-place caption-3"><span>04</span> At the doctor</p>
+          <h3 class="heading-4">Every symptom,<br>understood the first time.</h3>
+          <p class="body-3">When it matters most, nothing gets lost between you and the person helping you.</p>
+          <div class="said" aria-label="What they hear"><span class="said-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="said-text" data-say="It started three days ago."></span></div>
+        </li>
+      </ol>
+      <div class="scene-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     </div>
   </section>
 
-  <!-- LEARN (horizontal) -->
-  <section class="learn" id="learn" data-hand='{"x":0,"y":0.15,"s":0.5,"dim":0.9,"mode":"cycle"}'>
-    <div class="learn-stage">
-      <div class="learn-head">
-        <div>
-          <div class="section-tag">Learn to sign</div>
-          <h2>Start with one word.<br>Keep going to 2,731.</h2>
+  <!-- TAGLINE -->
+  <section class="tagline" aria-label="Our promise" data-hand='{"x":0,"y":0,"s":0.7,"pose":"OPEN","dim":0.85}'>
+    <p class="heading-2 tagline-text" id="tagline">Every sign deserves to be understood.<br>Every person deserves to be heard.</p>
+  </section>
+
+  <!-- HOW -->
+  <section class="how" id="how" aria-labelledby="howTitle" data-hand='{"x":0,"y":0.55,"s":0.5,"pose":"OPEN","dim":0.7}'>
+    <div class="wrap">
+      <p class="tag" data-reveal>How it works</p>
+      <h2 class="heading-2" id="howTitle" data-reveal>Three steps to<br>being understood.</h2>
+      <ol class="steps">
+        <li class="step" data-reveal>
+          <span class="step-n caption-3">01</span>
+          <div class="step-art" aria-hidden="true"><svg viewBox="0 0 120 80"><rect x="10" y="8" width="100" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="3"/><path d="M40 72h40" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle class="blink" cx="60" cy="36" r="8" fill="#FB6A18"/></svg></div>
+          <h3 class="heading-6">Open SignBridge</h3>
+          <p class="body-6">Open it in your browser. There is nothing to install and nothing to set up.</p>
+        </li>
+        <li class="step" data-reveal>
+          <span class="step-n caption-3">02</span>
+          <div class="step-art" aria-hidden="true"><svg viewBox="0 0 120 80"><g class="wave-hand"><path d="M60 70V34M48 66V30M72 66V30M84 62V38M38 52l10 14" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></g></svg></div>
+          <h3 class="heading-6">Sign to your camera</h3>
+          <p class="body-6">Sign the way you always do, word by word or letter by letter.</p>
+        </li>
+        <li class="step" data-reveal>
+          <span class="step-n caption-3">03</span>
+          <div class="step-art" aria-hidden="true"><svg viewBox="0 0 120 80"><rect x="14" y="18" width="70" height="34" rx="12" fill="none" stroke="currentColor" stroke-width="3"/><path d="M28 35h36" stroke="#FB6A18" stroke-width="4" stroke-linecap="round" class="type"/><path class="ring r1" d="M94 26a14 14 0 0 1 0 20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path class="ring r2" d="M102 18a26 26 0 0 1 0 36" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div>
+          <h3 class="heading-6">Be heard</h3>
+          <p class="body-6">Your signs appear as words on screen and can be spoken aloud in a natural voice.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- LEARN -->
+  <section class="learn" id="learn" aria-labelledby="learnTitle" data-hand='{"x":0.52,"y":0,"s":0.95,"pose":"HELLO"}' data-hand-m='{"x":0,"y":0.4,"s":0.6,"pose":"HELLO"}'>
+    <div class="wrap learn-grid">
+      <div class="learn-copy">
+        <p class="tag" data-reveal>Learn with your hands</p>
+        <h2 class="heading-2" id="learnTitle" data-reveal>Try your<br>first sign.</h2>
+        <p class="body-3" data-reveal>Tap a sign and watch the hand show you how. Then open SignBridge and try it yourself.</p>
+        <div class="chips" role="group" aria-label="Signs to try" data-reveal>
+          <button class="chip on" data-pose="HELLO" data-name="Hello" aria-pressed="true">Hello</button>
+          <button class="chip" data-pose="LOVE" data-name="I love you" aria-pressed="false">I love you</button>
+          <button class="chip" data-pose="A" data-name="Letter A" aria-pressed="false">A</button>
+          <button class="chip" data-pose="B" data-name="Letter B" aria-pressed="false">B</button>
+          <button class="chip" data-pose="C" data-name="Letter C" aria-pressed="false">C</button>
+          <button class="chip" data-pose="L" data-name="Letter L" aria-pressed="false">L</button>
+          <button class="chip" data-pose="O" data-name="Letter O" aria-pressed="false">O</button>
+          <button class="chip" data-pose="V" data-name="Letter V" aria-pressed="false">V</button>
+          <button class="chip" data-pose="W" data-name="Letter W" aria-pressed="false">W</button>
+          <button class="chip" data-pose="Y" data-name="Letter Y" aria-pressed="false">Y</button>
         </div>
-        <div class="learn-count" id="learnCount">01 / 10</div>
-      </div>
-      <div class="track" id="track">
-        <a href="/app" class="gloss alt" data-sfx data-cursor="Learn"><span class="cat">Greetings</span><div><div class="word">Hello</div><div class="spell"><i>H</i><i>E</i><i>L</i><i>L</i><i>O</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">H</span></a>
-        <a href="/app" class="gloss" data-sfx data-cursor="Learn"><span class="cat">Manners</span><div><div class="word">Thank you</div><div class="spell"><i>T</i><i>H</i><i>A</i><i>N</i><i>K</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">T</span></a>
-        <a href="/app" class="gloss cream" data-sfx data-cursor="Learn"><span class="cat">People</span><div><div class="word">Friend</div><div class="spell"><i>F</i><i>R</i><i>I</i><i>E</i><i>N</i><i>D</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">F</span></a>
-        <a href="/app" class="gloss" data-sfx data-cursor="Learn"><span class="cat">People</span><div><div class="word">Family</div><div class="spell"><i>F</i><i>A</i><i>M</i><i>I</i><i>L</i><i>Y</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">F</span></a>
-        <a href="/app" class="gloss alt" data-sfx data-cursor="Learn"><span class="cat">Everyday</span><div><div class="word">Water</div><div class="spell"><i>W</i><i>A</i><i>T</i><i>E</i><i>R</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">W</span></a>
-        <a href="/app" class="gloss" data-sfx data-cursor="Learn"><span class="cat">Manners</span><div><div class="word">Please</div><div class="spell"><i>P</i><i>L</i><i>E</i><i>A</i><i>S</i><i>E</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">P</span></a>
-        <a href="/app" class="gloss cream" data-sfx data-cursor="Learn"><span class="cat">Feelings</span><div><div class="word">Happy</div><div class="spell"><i>H</i><i>A</i><i>P</i><i>P</i><i>Y</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">H</span></a>
-        <a href="/app" class="gloss" data-sfx data-cursor="Learn"><span class="cat">Everyday</span><div><div class="word">Help</div><div class="spell"><i>H</i><i>E</i><i>L</i><i>P</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">H</span></a>
-        <a href="/app" class="gloss alt" data-sfx data-cursor="Learn"><span class="cat">Places</span><div><div class="word">School</div><div class="spell"><i>S</i><i>C</i><i>H</i><i>O</i><i>O</i><i>L</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">S</span></a>
-        <a href="/app" class="gloss" data-sfx data-cursor="Learn"><span class="cat">Actions</span><div><div class="word">Learn</div><div class="spell"><i>L</i><i>E</i><i>A</i><i>R</i><i>N</i></div></div><div class="go"><span>Watch · Practice</span><span>→</span></div><span class="big">L</span></a>
+        <p class="now-signing caption-1" aria-live="polite">Now signing <b id="nowSigning">Hello</b></p>
+        <div class="learn-stat" data-reveal>
+          <span class="heading-3"><span class="count" data-to="2731">2,731</span></span>
+          <span class="body-6">signs you can learn and use,<br>and more on the way.</span>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- CTA -->
-  <section class="cta" data-hand='{"x":0,"y":-0.12,"s":1.08,"dim":0.55,"mode":"ily"}' data-hand-m='{"x":0,"y":0,"s":0.72,"dim":0.5,"mode":"ily"}'>
-    <div>
-      <div class="section-tag" style="justify-content:center" data-reveal>Your first sign</div>
-      <h2 data-reveal>Say hello in a <span class="marker">new language.</span></h2>
-      <p data-reveal>Open SignBridge, allow your camera and sign. It's free, it runs in your browser and your video stays on your device.</p>
-      <div data-reveal><a class="btn btn-primary magnetic" href="/app" data-sfx data-cursor="Go">Launch SignBridge
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+  <!-- FAQ -->
+  <section class="faq" id="faq" aria-labelledby="faqTitle" data-hand='{"x":-0.62,"y":-0.1,"s":0.55,"pose":"OPEN","dim":0.8}' data-hand-m='{"x":0,"y":0,"s":0.5,"pose":"OPEN","dim":0.92}'>
+    <div class="wrap faq-wrap">
+      <p class="tag" data-reveal>Questions</p>
+      <h2 class="heading-2" id="faqTitle" data-reveal>Good questions.<br>Honest answers.</h2>
+      <div class="qa" data-reveal>
+        <details><summary class="title-1">Who is SignBridge for?<i aria-hidden="true"></i></summary><p class="body-3">For Deaf and hard of hearing people who sign, and for everyone who wants to understand them: family, friends, coworkers, teachers and anyone learning sign language.</p></details>
+        <details><summary class="title-1">Which sign language does it understand?<i aria-hidden="true"></i></summary><p class="body-3">American Sign Language, also known as ASL.</p></details>
+        <details><summary class="title-1">Do I need any special equipment?<i aria-hidden="true"></i></summary><p class="body-3">No. A regular webcam is enough. Good light on your hands helps.</p></details>
+        <details><summary class="title-1">Does it speak out loud?<i aria-hidden="true"></i></summary><p class="body-3">Yes. SignBridge can say your words in a natural voice, or you can keep it silent and let people read the words on screen.</p></details>
+        <details><summary class="title-1">Can it learn my own signs?<i aria-hidden="true"></i></summary><p class="body-3">Yes. You can teach SignBridge your own signs so it understands the way you sign.</p></details>
+        <details><summary class="title-1">Can I use it to learn ASL?<i aria-hidden="true"></i></summary><p class="body-3">Yes. Practice letters and words, watch how the hand should move, and see right away when you get it.</p></details>
+        <details><summary class="title-1">Is my video private?<i aria-hidden="true"></i></summary><p class="body-3"><span class="todo">{{privacy summary}}</span></p></details>
+        <details><summary class="title-1">How much does it cost?<i aria-hidden="true"></i></summary><p class="body-3"><span class="todo">{{price}}</span></p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section class="final" aria-labelledby="finalTitle" data-hand='{"x":0,"y":0.16,"s":0.62,"pose":"LOVE","dim":0}' data-hand-m='{"x":0,"y":0.42,"s":0.6,"pose":"LOVE","dim":0}'>
+    <div class="final-inner">
+      <h2 class="heading-1 final-title" id="finalTitle" data-reveal>Say hello<br>in a new way.</h2>
+      <p class="title-1" data-reveal>Your first conversation is one sign away.</p>
+      <a class="btn btn-primary btn-lg" href="/app" data-sfx data-reveal>
+        Start signing
+        <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M40 128h176M144 56l72 72-72 72" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
     </div>
   </section>
 </main>
 
-<footer>
+<footer class="footer">
   <a href="#top" class="brand" data-sfx><img src="/logo.png" alt="">SignBridge</a>
-  <span>Built with MediaPipe, PyTorch &amp; FastAPI.</span>
-  <nav aria-label="Footer"><a href="#how" data-sfx>How it works</a><a href="#features" data-sfx>Features</a><a href="/app" data-sfx>Open app</a></nav>
+  <p class="caption-2">Made so every sign is understood.</p>
+  <nav class="foot-links caption-2" aria-label="Legal">
+    <span class="todo" aria-disabled="true" title="Link coming soon">Privacy {{privacy url}}</span>
+    <span class="todo" aria-disabled="true" title="Link coming soon">Terms {{terms url}}</span>
+    <a href="/app" data-sfx>Open the app</a>
+  </nav>
 </footer>
 
-<script>
-/* ============ Shared state + UI, motion, sound (classic script; works even if 3D fails) ============ */
-(function(){
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const fine = matchMedia('(pointer: fine)').matches;
-const hasGsap = !!(window.gsap && window.ScrollTrigger);
-const store = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}} };
-const isMobile = () => innerWidth <= 900;
-
-const SB = window.SB = { target:{x:.44,y:.02,s:1,dim:0}, mode:'cycle', step:0, pose:'ILY', burst:0, mouse:{x:0,y:0}, vel:0, reduce };
-
-if (hasGsap && !reduce) document.documentElement.classList.add('anim');
-if (hasGsap) gsap.registerPlugin(ScrollTrigger);
-
-/* ---------------- Sound (Web Audio, fully synthesized) ---------------- */
-const Sound = (() => {
-  let ctx=null, master, wet, noise, pad=null, enabled=false;
-  const SCALE=[220,246.94,277.18,329.63,369.99,440,493.88,554.37,659.25,739.99]; // A major pentatonic-ish
-  function impulse(sec,decay){const len=Math.floor(ctx.sampleRate*sec),b=ctx.createBuffer(2,len,ctx.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay)}return b}
-  function ensure(){
-    if(ctx) return true;
-    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
-    ctx=new AC();
-    const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-16; comp.ratio.value=4;
-    master=ctx.createGain(); master.gain.value=0; master.connect(comp); comp.connect(ctx.destination);
-    const conv=ctx.createConvolver(); conv.buffer=impulse(3,2.4);
-    wet=ctx.createGain(); wet.gain.value=.8; wet.connect(conv); conv.connect(master);
-    noise=ctx.createBuffer(1,ctx.sampleRate*1.2,ctx.sampleRate); const nd=noise.getChannelData(0); for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
-    return true;
-  }
-  function voice(freq,o={}){
-    if(!enabled||!ctx) return;
-    const {type='sine',dur=.35,gain=.08,attack=.005,send=.35,when=0,glide=0}=o;
-    const t=ctx.currentTime+when, osc=ctx.createOscillator(), g=ctx.createGain();
-    osc.type=type; osc.frequency.setValueAtTime(freq,t); if(glide) osc.frequency.exponentialRampToValueAtTime(freq*glide,t+dur);
-    g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(gain,t+attack); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-    osc.connect(g); g.connect(master);
-    if(send){const s=ctx.createGain(); s.gain.value=send; g.connect(s); s.connect(wet)}
-    osc.start(t); osc.stop(t+dur+.05);
-  }
-  function startPad(){
-    if(pad) return;
-    const out=ctx.createGain(); out.gain.value=0;
-    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=480; lp.Q.value=.7;
-    const lfo=ctx.createOscillator(), lg=ctx.createGain(); lfo.frequency.value=.06; lg.gain.value=180; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
-    const oscs=[55,110,164.81,277.18,329.63].map((f,i)=>{const o=ctx.createOscillator(); o.type=i%2?'triangle':'sawtooth'; o.frequency.value=f; o.detune.value=(i-2)*5; const g=ctx.createGain(); g.gain.value=i===0?.5:.28; o.connect(g); g.connect(lp); o.start(); return o});
-    lp.connect(out); out.connect(master); const s=ctx.createGain(); s.gain.value=.6; out.connect(s); s.connect(wet);
-    out.gain.linearRampToValueAtTime(.045,ctx.currentTime+4);
-    pad={out,lp,oscs};
-  }
-  return {
-    get on(){return enabled},
-    set(on){
-      if(!ensure()) return;
-      enabled=on; if(ctx.state==='suspended') ctx.resume();
-      master.gain.cancelScheduledValues(ctx.currentTime);
-      master.gain.setTargetAtTime(on?.85:0,ctx.currentTime,.12);
-      if(on) startPad();
-      store.set('sb-sound',on?'on':'off');
-      document.querySelectorAll('#soundToggle').forEach(b=>b.setAttribute('aria-pressed',String(on)));
-    },
-    hover(i=0){voice(SCALE[(i%5)+5]*2,{dur:.16,gain:.025,send:.25})},
-    click(){voice(SCALE[5],{type:'triangle',dur:.5,gain:.07});voice(SCALE[8],{type:'sine',dur:.7,gain:.05,when:.07})},
-    pluck(i){const f=SCALE[i%SCALE.length];voice(f,{type:'triangle',dur:1.1,gain:.06,send:.55});voice(f*2,{dur:.6,gain:.02,send:.6})},
-    tick(p){voice(600+p*900,{type:'square',dur:.03,gain:.008,send:.05})},
-    chord(){[0,2,4,7].forEach((n,k)=>voice(SCALE[n],{type:'triangle',dur:2.2,gain:.05,send:.7,when:k*.06}))},
-    whoosh(){
-      if(!enabled||!ctx) return;
-      const t=ctx.currentTime, src=ctx.createBufferSource(), bp=ctx.createBiquadFilter(), g=ctx.createGain();
-      src.buffer=noise; bp.type='bandpass'; bp.Q.value=1.4;
-      bp.frequency.setValueAtTime(260,t); bp.frequency.exponentialRampToValueAtTime(2600,t+.55);
-      g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.09,t+.18); g.gain.exponentialRampToValueAtTime(.0001,t+.8);
-      src.connect(bp); bp.connect(g); g.connect(master); const s=ctx.createGain(); s.gain.value=.4; g.connect(s); s.connect(wet);
-      src.start(t); src.stop(t+.9);
-    },
-    padBright(v){if(pad) pad.lp.frequency.setTargetAtTime(380+Math.min(1,v)*1400,ctx.currentTime,.25)}
-  };
-})();
-window.SBSound = Sound;
-
-/* ---------------- Gate ---------------- */
-const gate=document.getElementById('gate'), bar=document.getElementById('gateBar'), num=document.getElementById('gateNum'), actions=document.getElementById('gateActions');
-let loaded=false; addEventListener('load',()=>loaded=true);
-(function progress(){
-  let p=0; const start=performance.now();
-  (function step(){
-    const el=performance.now()-start; const cap=loaded?100:88;
-    p+=((Math.min(cap,el/14))-p)*.12;
-    bar.style.width=p+'%'; num.textContent=String(Math.round(p)).padStart(3,'0');
-    if(p<99.5) requestAnimationFrame(step); else { bar.style.width='100%'; num.textContent='100'; actions.classList.add('on'); document.getElementById(store.get('sb-sound')==='off'?'enterQuiet':'enterSound').focus({preventScroll:true}); }
-  })();
-})();
-if(hasGsap && !reduce) gsap.from('.gate-word span',{yPercent:110,rotateX:-80,opacity:0,stagger:.05,duration:1,ease:'expo.out',delay:.15});
-
-function enter(withSound){
-  Sound.set(withSound);
-  if(withSound){Sound.chord();Sound.whoosh()}
-  document.body.classList.remove('locked');
-  const done=()=>{gate.remove();heroIntro()};
-  if(hasGsap && !reduce){
-    gsap.to('.gate-inner',{y:-40,opacity:0,duration:.5,ease:'power2.in'});
-    gsap.to(gate,{clipPath:'inset(0 0 100% 0)',duration:1.1,ease:'expo.inOut',delay:.25,onComplete:done});
-  } else done();
-}
-document.getElementById('enterSound').addEventListener('click',()=>enter(true));
-document.getElementById('enterQuiet').addEventListener('click',()=>enter(false));
-document.getElementById('soundToggle').addEventListener('click',()=>{Sound.set(!Sound.on); if(Sound.on) Sound.chord()});
-
-/* ---------------- Smooth scroll ---------------- */
-let lenis=null;
-if(hasGsap && !reduce && window.Lenis){
-  try{
-    lenis=new Lenis({lerp:.09,smoothWheel:true});
-    lenis.on('scroll',ScrollTrigger.update);
-    gsap.ticker.add(t=>lenis.raf(t*1000)); gsap.ticker.lagSmoothing(0);
-  }catch(e){lenis=null}
-}
-document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
-  const id=a.getAttribute('href'); const el=id==='#top'?document.body:document.querySelector(id); if(!el) return;
-  e.preventDefault(); if(lenis) lenis.scrollTo(id==='#top'?0:el,{duration:1.6}); else (id==='#top'?scrollTo({top:0,behavior:reduce?'auto':'smooth'}):el.scrollIntoView({behavior:reduce?'auto':'smooth'}));
-}));
-
-/* ---------------- Hero intro ---------------- */
-function splitChars(root){
-  root.querySelectorAll('.line').forEach(line=>{
-    const walk=node=>{[...node.childNodes].forEach(n=>{
-      if(n.nodeType===3){const frag=document.createDocumentFragment();n.textContent.split(/(\s+)/).forEach(w=>{if(!w)return;if(/^\s+$/.test(w)){frag.appendChild(document.createTextNode(' '));return}const word=document.createElement('span');word.className='wd';word.setAttribute('aria-hidden','true');[...w].forEach(c=>{const s=document.createElement('span');s.className='ch';s.textContent=c;word.appendChild(s)});frag.appendChild(word)});n.replaceWith(frag)}
-      else if(n.nodeType===1) walk(n);
-    })};
-    walk(line);
-  });
-}
-const heroTitle=document.getElementById('heroTitle');
-if(hasGsap && !reduce) splitChars(heroTitle);
-function heroIntro(){
-  if(!(hasGsap && !reduce)) return;
-  const tl=gsap.timeline({defaults:{ease:'expo.out'}});
-  tl.from('.hero .ch',{yPercent:120,rotateX:-90,opacity:0,duration:1.3,stagger:.022})
-    .to('.hero .eyebrow',{opacity:1,duration:.8},0.1).from('.hero .eyebrow',{y:20,duration:1},0.1)
-    .to('.hero p.lead',{opacity:1,duration:1},.55).from('.hero p.lead',{y:30,duration:1.2},.55)
-    .to('.hero-ctas',{opacity:1,duration:1},.7).from('.hero-ctas .btn',{y:30,scale:.9,stagger:.08,duration:1.2},.7)
-    .to(['.sign-card','.hud'],{opacity:1,duration:1},.9).from('.sign-card',{x:40,duration:1.2},.9);
-  SB.burst++;
-}
-
-/* ---------------- Hand state per section ---------------- */
-const parse=s=>{try{return JSON.parse(s)}catch(e){return null}};
-let activeSection=null;
-function applyHand(sec,quiet){
-  const d=parse((isMobile()&&sec.dataset.handM)||sec.dataset.hand); if(!d) return;
-  Object.assign(SB.target,{x:d.x,y:d.y,s:d.s,dim:d.dim});
-  const prev=SB.mode; SB.mode=d.mode||'cycle';
-  if(SB.mode==='ily' && prev!=='ily'){setPose('ILY','I love you');SB.burst++}
-  if(activeSection!==sec && !quiet) Sound.whoosh();
-  activeSection=sec;
-}
-const handSecs=[...document.querySelectorAll('[data-hand]')];
-if(hasGsap){
-  handSecs.forEach(sec=>ScrollTrigger.create({trigger:sec,start:'top 55%',end:'bottom 55%',onToggle:s=>{if(s.isActive) applyHand(sec)}}));
-} else {
-  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting) applyHand(e.target,true)}),{rootMargin:'-45% 0px -45% 0px'});
-  handSecs.forEach(s=>io.observe(s));
-}
-applyHand(handSecs[0],true);
-addEventListener('resize',()=>{if(activeSection) applyHand(activeSection,true)});
-
-/* ---------------- Pose sequencing ---------------- */
-const CYCLE=[['ILY','I love you'],['L','Letter L'],['O','Letter O'],['V','Letter V'],['Y','Letter Y'],['A','Letter A'],['B','Letter B'],['W','Letter W'],['C','Letter C'],['5','Open hand · 5']];
-const glyph=document.getElementById('signGlyph'), name=document.getElementById('signName');
-let ci=0, lastSwap=0, fastI=0;
-function setPose(key,label,idx){
-  if(SB.pose===key) return;
-  SB.pose=key;
-  if(label){
-    if(hasGsap && !reduce){
-      gsap.to(glyph,{rotateY:90,opacity:0,duration:.18,ease:'power2.in',onComplete:()=>{glyph.textContent=key;name.textContent=label;gsap.fromTo(glyph,{rotateY:-90,opacity:0},{rotateY:0,opacity:1,duration:.45,ease:'back.out(2)'})}});
-    } else {glyph.textContent=key;name.textContent=label}
-  }
-  Sound.pluck(idx==null?CYCLE.findIndex(c=>c[0]===key)+2:idx);
-}
-const STEP_POSE=['5','5',null,'ILY'], FAST=['A','S','L','Y','V'];
-setInterval(()=>{
-  if(document.body.classList.contains('locked')) return;
-  const now=performance.now();
-  if(SB.mode==='cycle'){
-    if(now-lastSwap>(reduce?3600:2100)){lastSwap=now; ci=(ci+1)%CYCLE.length; setPose(CYCLE[ci][0],CYCLE[ci][1]); if(activeSection===handSecs[0]) SB.burst++}
-  } else if(SB.mode==='pipeline'){
-    if(SB.step===2){ if(now-lastSwap>650){lastSwap=now; fastI=(fastI+1)%FAST.length; setPose(FAST[fastI],null,fastI+3)} }
-    else setPose(STEP_POSE[SB.step]);
-  }
-},120);
-
-/* ---------------- Pipeline progress ---------------- */
-const steps=[...document.querySelectorAll('.step')], segs=[...document.querySelectorAll('.pipe-progress b')], bars=[...document.querySelectorAll('.pred .bar i')];
-function setStep(n){
-  if(SB.step===n) return; SB.step=n;
-  steps.forEach((s,i)=>s.classList.toggle('on',i===n));
-  if(n===3){bars.forEach(b=>b.style.width=b.dataset.w+'%');SB.burst++;Sound.chord()} else {bars.forEach(b=>b.style.width='0');Sound.pluck(n*2+1);Sound.whoosh()}
-}
-SB.step=-1; setStep(0);
-if(hasGsap){
-  ScrollTrigger.create({trigger:'.pipe',start:'top top',end:'bottom bottom',onUpdate:s=>{
-    const p=s.progress; setStep(Math.min(3,Math.floor(p*4)));
-    segs.forEach((b,i)=>b.style.transform=`scaleX(${Math.max(0,Math.min(1,p*4-i))})`);
-  }});
-} else { steps.forEach(s=>{s.style.position='relative';s.classList.add('on')}); document.querySelector('.pipe').style.height='auto'; document.querySelector('.pipe-stage').style.position='relative'; }
-
-/* ---------------- Learn horizontal ---------------- */
-const track=document.getElementById('track'), learnCount=document.getElementById('learnCount'), learnSec=document.querySelector('.learn');
-if(hasGsap){
-  const dist=()=>Math.max(0,track.scrollWidth-innerWidth);
-  ScrollTrigger.create({trigger:learnSec,start:'top top',end:'bottom bottom',onUpdate:s=>{
-    track.style.transform=`translate3d(${-s.progress*dist()}px,0,0)`;
-    const n=Math.min(10,1+Math.floor(s.progress*10)); learnCount.textContent=String(n).padStart(2,'0')+' / 10';
-  }});
-} else { learnSec.style.height='auto'; document.querySelector('.learn-stage').style.position='relative'; track.style.overflowX='auto'; }
-
-/* ---------------- Manifesto word scrub ---------------- */
-const man=document.getElementById('manifesto');
-if(hasGsap && !reduce){
-  const walk=node=>{[...node.childNodes].forEach(n=>{
-    if(n.nodeType===3){const frag=document.createDocumentFragment();n.textContent.split(/(\s+)/).forEach(w=>{if(!w)return;if(/^\s+$/.test(w)){frag.appendChild(document.createTextNode(w));return}const s=document.createElement('span');s.className='w';s.textContent=w;frag.appendChild(s)});n.replaceWith(frag)}
-    else if(n.nodeType===1) walk(n);
-  })};
-  walk(man);
-  gsap.to(man.querySelectorAll('.w'),{opacity:1,stagger:.08,ease:'none',scrollTrigger:{trigger:man,start:'top 80%',end:'bottom 45%',scrub:.6}});
-}
-
-/* ---------------- Reveals ---------------- */
-if(hasGsap && !reduce){
-  ScrollTrigger.batch('[data-reveal]',{start:'top 88%',onEnter:els=>gsap.to(els,{opacity:1,y:0,duration:1.1,ease:'expo.out',stagger:.09,overwrite:true})});
-}
-
-/* ---------------- Counters ---------------- */
-document.querySelectorAll('.count').forEach(el=>{
-  const to=parseFloat(el.dataset.to), dec=+(el.dataset.dec||0), sep=!!el.dataset.sep;
-  const fmt=v=>{let s=v.toFixed(dec); if(sep) s=Number(s).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); return s};
-  if(!hasGsap||reduce){el.textContent=fmt(to);return}
-  const o={v:0}; let lastTick=0;
-  ScrollTrigger.create({trigger:el,start:'top 90%',once:true,onEnter:()=>gsap.to(o,{v:to,duration:2.2,ease:'expo.out',onUpdate(){el.textContent=fmt(o.v);const n=performance.now();if(n-lastTick>55){lastTick=n;Sound.tick(o.v/to)}}})});
-});
-
-/* ---------------- Nav state + scroll velocity ---------------- */
-const nav=document.getElementById('nav');
-if(hasGsap){
-  ScrollTrigger.create({start:0,end:'max',onUpdate:s=>{SB.vel=s.getVelocity();nav.classList.toggle('scrolled',s.scroll()>40);Sound.padBright(s.progress)}});
-} else addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>40),{passive:true});
-
-/* ---------------- Marquee with velocity skew ---------------- */
-const rows=[...document.querySelectorAll('.mrow')].map(r=>{const t=r.querySelector('.mtrack');t.style.display='flex';t.innerHTML+=t.innerHTML;return{r,t,x:0,dir:+r.dataset.dir,skew:0}});
-(function marq(){
-  const v=SB.vel||0; SB.vel*=.92;
-  rows.forEach(m=>{
-    const w=m.t.scrollWidth/2||1;
-    m.x-=(reduce?0:(.6+Math.min(12,Math.abs(v)/250)))*m.dir;
-    if(m.x<=-w) m.x+=w; if(m.x>0) m.x-=w;
-    m.skew+=((reduce?0:Math.max(-10,Math.min(10,v/180)))-m.skew)*.1;
-    m.t.style.transform=`translate3d(${m.x}px,0,0) skewX(${-m.skew}deg)`;
-  });
-  requestAnimationFrame(marq);
-})();
-
-/* ---------------- Pointer: cursor, tilt, magnetic, sfx ---------------- */
-addEventListener('pointermove',e=>{SB.mouse.x=e.clientX/innerWidth*2-1; SB.mouse.y=-(e.clientY/innerHeight*2-1)},{passive:true});
-if(fine && !reduce){
-  document.documentElement.classList.add('has-cursor');
-  const dot=document.querySelector('.cursor-dot'), ring=document.querySelector('.cursor-ring'), lbl=ring.querySelector('span');
-  let mx=innerWidth/2,my=innerHeight/2,rx=mx,ry=my;
-  addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY;dot.style.transform=`translate3d(${mx}px,${my}px,0)`},{passive:true});
-  (function loop(){rx+=(mx-rx)*.16;ry+=(my-ry)*.16;ring.style.transform=`translate3d(${rx}px,${ry}px,0)`;requestAnimationFrame(loop)})();
-  document.querySelectorAll('[data-cursor]').forEach(el=>{
-    el.addEventListener('pointerenter',()=>{ring.classList.add('big');lbl.textContent=el.dataset.cursor});
-    el.addEventListener('pointerleave',()=>{ring.classList.remove('big');lbl.textContent=''});
-  });
-  document.querySelectorAll('.magnetic').forEach(el=>{
-    el.addEventListener('pointermove',e=>{const r=el.getBoundingClientRect();const x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;el.style.transform=`translate(${x*.28}px,${y*.38}px)`});
-    el.addEventListener('pointerleave',()=>{el.style.transition='transform .6s cubic-bezier(.2,.8,.2,1)';el.style.transform='';setTimeout(()=>el.style.transition='',600)});
-  });
-  document.querySelectorAll('[data-tilt]').forEach(el=>{
-    el.addEventListener('pointermove',e=>{const r=el.getBoundingClientRect();const px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;
-      el.style.transform=`rotateY(${(px-.5)*14}deg) rotateX(${(.5-py)*12}deg) translateZ(0)`;el.style.setProperty('--gx',px*100+'%');el.style.setProperty('--gy',py*100+'%')});
-    el.addEventListener('pointerleave',()=>{el.style.transition='transform .8s cubic-bezier(.2,.8,.2,1),border-color .4s';el.style.transform='';setTimeout(()=>el.style.transition='',800)});
-  });
-}
-document.querySelectorAll('[data-sfx]').forEach((el,i)=>{
-  el.addEventListener('pointerenter',()=>Sound.hover(i));
-  el.addEventListener('click',()=>{if(el.id!=='soundToggle'&&el.id!=='enterSound'&&el.id!=='enterQuiet') Sound.click()});
-});
-addEventListener('keydown',e=>{if(e.key==='m'||e.key==='M'){if(document.body.classList.contains('locked'))return;Sound.set(!Sound.on)}});
-})();
-</script>
-
-<script type="module">
-/* ============ 3D: a glowing landmark hand (Three.js + bloom) ============ */
-import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-
-const SB = window.SB;
-const canvas = document.getElementById('gl');
-let renderer;
-try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-} catch (e) {
-  canvas.remove(); document.getElementById('fallbackGlow').hidden = false;
-  throw e;
-}
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-renderer.setSize(innerWidth, innerHeight);
-renderer.setClearColor(0x100D19, 1);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x100D19);
-scene.fog = new THREE.FogExp2(0x100D19, 0.05);
-const camera = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.1, 100);
-camera.position.set(0, 0, 7.2);
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-const key = new THREE.DirectionalLight(0xFFB58A, 2.2); key.position.set(3, 3, 5); scene.add(key);
-const rim = new THREE.DirectionalLight(0xFAF6F0, 1.2); rim.position.set(-4, 1, -3); scene.add(rim);
-
-const ORANGE = new THREE.Color(0xFB6A18), AMBER = new THREE.Color(0xFFA66D), CREAM = new THREE.Color(0xFAF6F0), VIOLET = new THREE.Color(0x9D8CFF);
-
-/* ---- radial glow texture ---- */
-function glowTex(inner = 'rgba(251,106,24,0.9)') {
-  const c = document.createElement('canvas'); c.width = c.height = 256;
-  const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  gr.addColorStop(0, inner); gr.addColorStop(0.35, 'rgba(251,106,24,0.25)'); gr.addColorStop(1, 'rgba(251,106,24,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-}
-
-/* ---- background particle field ---- */
-const PCOUNT = innerWidth < 700 ? 1100 : 2400;
-const pGeo = new THREE.BufferGeometry();
-const pPos = new Float32Array(PCOUNT * 3), pCol = new Float32Array(PCOUNT * 3);
-for (let i = 0; i < PCOUNT; i++) {
-  const r = 4 + Math.random() * 14, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
-  pPos[i * 3] = r * Math.sin(ph) * Math.cos(th); pPos[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th) * 0.6; pPos[i * 3 + 2] = -Math.abs(r * Math.cos(ph)) + 2;
-  const rr = Math.random(); const c = rr < 0.16 ? ORANGE : rr < 0.26 ? AMBER : rr < 0.42 ? VIOLET : CREAM;
-  const k = 0.35 + Math.random() * 0.65; pCol[i * 3] = c.r * k; pCol[i * 3 + 1] = c.g * k; pCol[i * 3 + 2] = c.b * k;
-}
-pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
-const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.4, 'rgba(255,255,255,.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
-const field = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.06, map: dotTex, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-scene.add(field);
-
-/* ---- hand rig ---- */
-const handRoot = new THREE.Group(); scene.add(handRoot);
-const hand = new THREE.Group(); hand.position.y = -0.3; handRoot.add(hand);
-
-const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.55 }));
-halo.scale.set(6, 6, 1); halo.position.set(0, 0.3, -1.2); hand.add(halo);
-
-const orbit = new THREE.Mesh(new THREE.TorusGeometry(2.05, 0.006, 8, 220), new THREE.MeshBasicMaterial({ color: ORANGE, transparent: true, opacity: 0.55 }));
-orbit.rotation.set(1.25, 0.2, 0); orbit.position.y = 0.3; hand.add(orbit);
-const orbit2 = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.003, 8, 220), new THREE.MeshBasicMaterial({ color: CREAM, transparent: true, opacity: 0.18 }));
-orbit2.rotation.set(1.0, -0.5, 0.3); orbit2.position.y = 0.3; hand.add(orbit2);
-const sat = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), new THREE.MeshBasicMaterial({ color: AMBER })); hand.add(sat);
-
-const V = THREE.Vector3;
-const WRIST = new V(0, -0.95, 0);
-const BASES = { t: new V(-0.32, -0.6, 0.06), i: new V(-0.36, 0.52, 0), m: new V(-0.12, 0.6, 0.02), r: new V(0.12, 0.56, 0.01), p: new V(0.34, 0.44, -0.02) };
-const LENS = { t: [0.42, 0.36, 0.3], i: [0.5, 0.3, 0.24], m: [0.54, 0.34, 0.26], r: [0.5, 0.32, 0.24], p: [0.4, 0.24, 0.2] };
-const ORDER = ['t', 'i', 'm', 'r', 'p'];
-const CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
-const TIPS = [4, 8, 12, 16, 20];
-
-const F = [1.45, 1.55, 0.55], S = [0.02, 0.04, 0.04];
-const P = (t, i, m, r, p) => ({ t, i, m, r, p });
-const across = [0.95, 0.5, 0.15, 0.1];
-const POSES = {
-  '5':   P([-0.95, 0.15, 0.1, 0.1], [-0.22, ...S], [-0.07, ...S], [0.08, ...S], [0.24, ...S]),
-  'A':   P([-0.12, 0.18, 0.0, 0.05], [-0.05, ...F], [0, ...F], [0.05, ...F], [0.1, ...F]),
-  'S':   P(across, [-0.05, ...F], [0, ...F], [0.05, ...F], [0.1, ...F]),
-  'L':   P([-1.35, 0.1, 0, 0], [-0.03, ...S], [0, ...F], [0.05, ...F], [0.1, ...F]),
-  'Y':   P([-1.2, 0.1, 0, 0], [-0.05, ...F], [0, ...F], [0.05, ...F], [0.42, ...S]),
-  'I':   P(across, [-0.05, ...F], [0, ...F], [0.05, ...F], [0.12, ...S]),
-  'B':   P([1.1, 0.35, 0.3, 0.2], [-0.03, ...S], [-0.01, ...S], [0.01, ...S], [0.03, ...S]),
-  'V':   P(across, [-0.2, ...S], [0.12, ...S], [0.05, ...F], [0.1, ...F]),
-  'W':   P([0.85, 0.55, 0.2, 0.15], [-0.22, ...S], [0, ...S], [0.2, ...S], [0.12, ...F]),
-  'ILY': P([-1.2, 0.1, 0, 0], [-0.1, ...S], [0, ...F], [0.05, ...F], [0.4, ...S]),
-  'O':   P([0.35, 0.55, 0.4, 0.3], [-0.05, 0.75, 0.95, 0.55], [0, 0.8, 0.95, 0.55], [0.05, 0.8, 0.95, 0.5], [0.1, 0.85, 0.9, 0.5]),
-  'C':   P([-0.25, 0.65, 0.2, 0.2], [-0.05, 0.5, 0.55, 0.35], [0, 0.5, 0.55, 0.35], [0.05, 0.5, 0.55, 0.35], [0.1, 0.5, 0.55, 0.35]),
-};
-const clonePose = p => ({ t: [...p.t], i: [...p.i], m: [...p.m], r: [...p.r], p: [...p.p] });
-const cur = clonePose(POSES.ILY), live = clonePose(POSES.ILY);
-const pts = Array.from({ length: 21 }, () => new V());
-const dir = new V();
-function fk(pose) {
-  pts[0].copy(WRIST); let idx = 1;
-  for (const f of ORDER) {
-    const [s, ...cs] = pose[f]; pts[idx].copy(BASES[f]); let a = 0;
-    for (let k = 0; k < 3; k++) {
-      a += cs[k];
-      dir.set(Math.sin(s) * Math.cos(a), Math.cos(s) * Math.cos(a), Math.sin(a));
-      pts[idx + k + 1].copy(pts[idx + k]).addScaledVector(dir, LENS[f][k]);
-    }
-    idx += 4;
-  }
-}
-
-/* joints */
-const jointGeo = new THREE.IcosahedronGeometry(1, 3);
-const joints = pts.map((_, i) => {
-  const tip = TIPS.includes(i);
-  const m = new THREE.Mesh(jointGeo, new THREE.MeshStandardMaterial({ color: tip ? 0xFFE3D0 : 0xFAF6F0, emissive: ORANGE, emissiveIntensity: tip ? 1.6 : 0.5, roughness: 0.25, metalness: 0.1 }));
-  m.userData.base = tip ? 0.07 : (i === 0 ? 0.075 : 0.05);
-  m.scale.setScalar(m.userData.base); hand.add(m); return m;
-});
-/* bones */
-const boneGeo = new THREE.CylinderGeometry(1, 1, 1, 10, 1, true);
-const boneMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xFB6A18).multiplyScalar(1.6), transparent: true, opacity: 0.9 });
-const bones = CONN.map(() => { const m = new THREE.Mesh(boneGeo, boneMat); hand.add(m); return m; });
-const UP = new V(0, 1, 0), mid = new V();
-/* palm membrane */
-const PALM = [0, 1, 5, 9, 13, 17];
-const palmGeo = new THREE.BufferGeometry();
-palmGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(18), 3));
-palmGeo.setIndex([0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5]);
-const palm = new THREE.Mesh(palmGeo, new THREE.MeshBasicMaterial({ color: ORANGE, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
-hand.add(palm);
-/* volumetric point cloud along bones */
-const PER = innerWidth < 700 ? 22 : 42;
-const cloudN = CONN.length * PER;
-const cloudGeo = new THREE.BufferGeometry();
-const cloudPos = new Float32Array(cloudN * 3);
-const cloudSeed = Array.from({ length: cloudN }, () => ({ u: Math.random(), o: new V().randomDirection().multiplyScalar(0.03 + Math.random() * 0.07), ph: Math.random() * 6.28 }));
-cloudGeo.setAttribute('position', new THREE.BufferAttribute(cloudPos, 3));
-const cloud = new THREE.Points(cloudGeo, new THREE.PointsMaterial({ size: 0.035, map: dotTex, color: 0xFF9A5C, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending }));
-hand.add(cloud);
-/* landmark index labels */
-const labels = pts.map((_, i) => {
-  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
-  g.fillStyle = 'rgba(16,13,25,.75)'; g.beginPath(); g.arc(32, 32, 26, 0, 7); g.fill();
-  g.strokeStyle = '#FB6A18'; g.lineWidth = 3; g.stroke();
-  g.fillStyle = '#FAF6F0'; g.font = '600 26px JetBrains Mono, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(i), 32, 34);
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, opacity: 0, depthWrite: false }));
-  s.scale.setScalar(0.17); hand.add(s); return s;
-});
-/* scan bar */
-const scan = new THREE.Group(); hand.add(scan);
-const scanLine = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.014), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xFB6A18).multiplyScalar(2), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-const scanGlow = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.5), new THREE.MeshBasicMaterial({ map: (() => { const c = document.createElement('canvas'); c.width = 4; c.height = 128; const g = c.getContext('2d'); const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, 'rgba(251,106,24,0)'); gr.addColorStop(.5, 'rgba(251,106,24,.5)'); gr.addColorStop(1, 'rgba(251,106,24,0)'); g.fillStyle = gr; g.fillRect(0, 0, 4, 128); return new THREE.CanvasTexture(c); })(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-scanLine.position.z = scanGlow.position.z = 0.4; scan.add(scanGlow, scanLine);
-/* fingertip motion trails */
-const TRAIL = 32;
-const trails = TIPS.map(() => {
-  const g = new THREE.BufferGeometry();
-  const pos = new Float32Array(TRAIL * 3), col = new Float32Array(TRAIL * 3);
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  const line = new THREE.Line(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-  line.frustumCulled = false; hand.add(line);
-  return { line, pos, col, hist: Array.from({ length: TRAIL }, () => new V()) };
-});
-/* burst ring */
-const burst = new THREE.Mesh(new THREE.RingGeometry(0.96, 1, 128), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xFB6A18).multiplyScalar(1.5), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
-burst.position.y = 0.3; hand.add(burst);
-let burstT = 9, lastBurst = SB.burst;
-
-/* ---- post ---- */
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.8, 0.55, 0.2);
-composer.addPass(bloom);
-composer.addPass(new OutputPass());
-
-function resize() {
-  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
-}
-addEventListener('resize', resize);
-
-/* ---- loop ---- */
-const damp = (a, b, l, dt) => a + (b - a) * (1 - Math.exp(-l * dt));
-const st = { x: SB.target.x, y: SB.target.y, s: 0.2, dim: 1, scan: 0, labels: 0, trail: 0 };
-const fpsEl = document.getElementById('fps');
-let last = performance.now(), t = 0, frames = 0, fpsT = 0, spin = 0;
-const tmp = new V();
-
-function frame(now) {
-  requestAnimationFrame(frame);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
-  frames++; fpsT += dt; if (fpsT > 0.5) { if (fpsEl) fpsEl.textContent = Math.round(frames / fpsT); frames = 0; fpsT = 0; }
-
-  const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z, halfW = halfH * camera.aspect;
-  const tg = SB.target, locked = document.body.classList.contains('locked');
-  st.x = damp(st.x, tg.x * halfW, 3.2, dt); st.y = damp(st.y, tg.y * halfH, 3.2, dt);
-  st.s = damp(st.s, locked ? 0.35 : tg.s, 2.6, dt); st.dim = damp(st.dim, locked ? 0.6 : tg.dim, 3, dt);
-  const pipe = SB.mode === 'pipeline';
-  st.scan = damp(st.scan, pipe && SB.step === 0 ? 1 : 0, 4, dt);
-  st.labels = damp(st.labels, pipe && SB.step === 1 ? 1 : 0, 4, dt);
-  st.trail = damp(st.trail, pipe && SB.step === 2 ? 1 : (SB.mode === 'cycle' ? 0.25 : 0.1), 3, dt);
-  canvas.style.opacity = (1 - st.dim * 0.72).toFixed(3);
-
-  const m = SB.reduce ? { x: 0, y: 0 } : SB.mouse;
-  spin = damp(spin, Math.max(-1, Math.min(1, (SB.vel || 0) / 2500)), 3, dt);
-  handRoot.position.set(st.x, st.y, 0);
-  handRoot.scale.setScalar(st.s);
-  handRoot.rotation.y = Math.sin(t * 0.35) * 0.22 + m.x * 0.4 + spin * 0.6;
-  handRoot.rotation.x = -m.y * 0.22 + Math.sin(t * 0.5) * 0.05;
-  handRoot.rotation.z = Math.sin(t * 0.27) * 0.04 - spin * 0.1;
-  handRoot.position.y += Math.sin(t * 0.9) * 0.05;
-
-  /* pose blend + idle life */
-  const target = POSES[SB.pose] || POSES['5'];
-  const k = 1 - Math.exp(-dt * 7.5);
-  ORDER.forEach((f, fi) => {
-    for (let j = 0; j < 4; j++) {
-      cur[f][j] += (target[f][j] - cur[f][j]) * k;
-      live[f][j] = cur[f][j] + (j ? Math.sin(t * 1.3 + fi * 1.7 + j) * 0.035 : Math.sin(t * 0.8 + fi) * 0.015);
-    }
-  });
-  fk(live);
-
-  const scanY = -1.05 + (0.5 - 0.5 * Math.cos(t * 1.7)) * 2.9;
-  scan.position.y = scanY;
-  scanLine.material.opacity = st.scan; scanGlow.material.opacity = st.scan * 0.9;
-
-  joints.forEach((j, i) => {
-    j.position.copy(pts[i]);
-    const near = st.scan * Math.max(0, 1 - Math.abs(pts[i].y - scanY) / 0.22);
-    const pulse = st.labels * Math.pow(Math.sin(t * 3 - i * 0.35) * 0.5 + 0.5, 3);
-    j.scale.setScalar(j.userData.base * (1 + near * 0.9 + pulse * 0.7));
-    j.material.emissiveIntensity = (TIPS.includes(i) ? 1.6 : 0.5) + near * 3 + pulse * 2.5;
-    const l = labels[i];
-    l.position.copy(pts[i]).add(tmp.set(0.13, 0.08, 0.12));
-    l.material.opacity = st.labels * (0.6 + pulse * 0.4);
-    l.visible = st.labels > 0.01;
-  });
-  CONN.forEach(([a, b], i) => {
-    const A = pts[a], B = pts[b]; mid.addVectors(A, B).multiplyScalar(0.5);
-    dir.subVectors(B, A); const len = dir.length();
-    const bn = bones[i]; bn.position.copy(mid); bn.quaternion.setFromUnitVectors(UP, dir.normalize());
-    bn.scale.set(0.018, len, 0.018);
-  });
-  const pa = palmGeo.attributes.position.array;
-  PALM.forEach((pi, n) => { pa[n * 3] = pts[pi].x; pa[n * 3 + 1] = pts[pi].y; pa[n * 3 + 2] = pts[pi].z; });
-  palmGeo.attributes.position.needsUpdate = true; palmGeo.computeBoundingSphere();
-
-  for (let b = 0; b < CONN.length; b++) {
-    const A = pts[CONN[b][0]], B = pts[CONN[b][1]];
-    for (let s = 0; s < PER; s++) {
-      const n = b * PER + s, sd = cloudSeed[n], w = 1 + Math.sin(t * 2 + sd.ph) * 0.25;
-      cloudPos[n * 3] = A.x + (B.x - A.x) * sd.u + sd.o.x * w;
-      cloudPos[n * 3 + 1] = A.y + (B.y - A.y) * sd.u + sd.o.y * w;
-      cloudPos[n * 3 + 2] = A.z + (B.z - A.z) * sd.u + sd.o.z * w;
-    }
-  }
-  cloudGeo.attributes.position.needsUpdate = true;
-
-  trails.forEach((tr, ti) => {
-    const v = tr.hist.pop(); v.copy(pts[TIPS[ti]]); tr.hist.unshift(v);
-    tr.line.visible = st.trail > 0.02;
-    for (let i = 0; i < TRAIL; i++) {
-      const p = tr.hist[i], f = (1 - i / TRAIL) * st.trail;
-      tr.pos[i * 3] = p.x; tr.pos[i * 3 + 1] = p.y; tr.pos[i * 3 + 2] = p.z;
-      tr.col[i * 3] = 1.0 * f; tr.col[i * 3 + 1] = 0.42 * f; tr.col[i * 3 + 2] = 0.1 * f;
-    }
-    tr.line.geometry.attributes.position.needsUpdate = true; tr.line.geometry.attributes.color.needsUpdate = true;
-  });
-
-  if (SB.burst !== lastBurst) { lastBurst = SB.burst; burstT = 0; }
-  burstT += dt;
-  const bp = Math.min(1, burstT / 1.4);
-  burst.scale.setScalar(0.6 + bp * 2.6); burst.material.opacity = (1 - bp) * (1 - bp) * 0.9;
-
-  orbit.rotation.z = t * 0.25; orbit2.rotation.z = -t * 0.15;
-  const oa = t * 0.9; sat.position.set(Math.cos(oa) * 2.05, 0.3 + Math.sin(oa) * 2.05 * Math.cos(1.25), Math.sin(oa) * 2.05 * Math.sin(1.25));
-  halo.material.opacity = 0.45 + Math.sin(t * 1.4) * 0.1 + (1 - bp) * 0.25;
-
-  field.rotation.y = t * 0.012 + m.x * 0.05; field.rotation.x = m.y * 0.03;
-  camera.position.x = damp(camera.position.x, m.x * 0.35, 2, dt);
-  camera.position.y = damp(camera.position.y, m.y * 0.25, 2, dt);
-  camera.lookAt(0, 0, 0);
-
-  composer.render();
-}
-requestAnimationFrame(frame);
-</script>
+<script src="/landing/sound.js"></script>
+<script src="/landing/story.js"></script>
+<script type="module" src="/landing/scene.js"></script>
 </body>
 </html>

@@ -25,7 +25,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "SignBridge — Sign. Understand. Connect.",
   description:
-    "Real-time American Sign Language recognition, fingerspelling, personal custom sign adaptation, Groq/Qwen sentence generation, and Kokoro neural speech.",
+    "Sign the way you always do. SignBridge turns American Sign Language into words and a natural voice, so everyone understands you.",
 };
 
 export default function RootLayout({
