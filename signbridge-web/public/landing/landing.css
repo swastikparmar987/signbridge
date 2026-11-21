@@ -34,7 +34,7 @@ h1,h2,p{text-wrap:balance}
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   animation:grain 1.2s steps(6) infinite}
 @keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
-main,.footer{position:relative;z-index:2}
+main{position:relative;z-index:2}
 
 /* ---------- Buttons (pills) ---------- */
 .btn-primary,.btn-ghost{display:inline-flex;align-items:center;gap:12px;border-radius:999px;font-size:14px;line-height:20px;font-weight:500;white-space:nowrap;
@@ -293,12 +293,17 @@ body.entered.end .sound-pill{opacity:0;pointer-events:none}
 /* finale stacks in flow (copy, then wordmark) so the two can never overlap at any window size */
 .finale .stage{display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
 .finale-copy{position:relative;display:grid;justify-items:center;gap:clamp(14px,2.6vh,26px);text-align:center;width:min(900px,calc(100vw - 2 * var(--g)));margin-bottom:clamp(14px,3vh,36px)}
-.wordmark{position:relative;width:100%;text-align:center;overflow:hidden;line-height:.85;margin-bottom:-.02em}
+.wordmark{position:relative;width:100%;text-align:center;overflow:hidden;line-height:.85;padding-bottom:.2em;margin-bottom:0}
 .wordmark span{display:inline-block;white-space:nowrap;font-weight:500;font-size:min(17.5vw,24vh);letter-spacing:-.07em;color:rgba(244,238,230,.92);transform:translateY(105%);transition:transform 1.4s var(--ease)}
 .js .wordmark[data-win]{transform:none;filter:none}
 .wordmark.on span{transform:none}
-.footer{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:center;padding:28px var(--g) 36px;border-top:1px solid var(--line);font-size:13px;color:var(--faint);background:#09070D}
-.footer a:hover{color:var(--ink)}
+.wordmark span{background:linear-gradient(100deg,rgba(244,238,230,.92) 0%,rgba(244,238,230,.92) 40%,#FFD2B0 50%,rgba(244,238,230,.92) 60%,rgba(244,238,230,.92) 100%);background-size:250% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.wordmark.on span{animation:shineText 6s ease-in-out 1.6s infinite}
+.footer{position:relative;width:100%;display:flex;flex-wrap:wrap;gap:14px 28px;justify-content:space-between;align-items:center;padding:18px var(--g) max(18px,env(safe-area-inset-bottom));border-top:1px solid var(--line);font-size:13px;color:var(--faint);background:rgba(9,7,13,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.footer a{transition:color .2s}.footer a:hover{color:var(--ink)}
+.foot-brand{display:inline-flex;align-items:center;gap:10px}.foot-brand img{width:18px;height:18px;filter:drop-shadow(0 0 8px rgba(251,106,24,.5))}
+.foot-links{display:inline-flex;gap:24px}
+@media (max-width:700px){.footer{justify-content:center;text-align:center}.foot-tag{width:100%;order:3}}
 
 /* ---------- Mobile ---------- */
 @media (max-width:900px){

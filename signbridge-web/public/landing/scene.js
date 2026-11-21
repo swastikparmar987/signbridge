@@ -148,11 +148,12 @@ const bridgeMat = new THREE.ShaderMaterial({
   uniforms: {
     uP0: { value: new THREE.Vector3() }, uP1: { value: new THREE.Vector3() }, uP2: { value: new THREE.Vector3() }, uP3: { value: new THREE.Vector3() },
     uPerp: { value: new THREE.Vector3(0, 1, 0) }, uTime: { value: 0 }, uBridge: { value: 0 }, uBrk: { value: 0 },
+    uOrbit: { value: 0 }, uRingC: { value: new THREE.Vector3() }, uRingR: { value: 1 },
     uPR: { value: renderer.getPixelRatio() }, uColA: { value: new THREE.Color(0xFB6A18) }, uColB: { value: new THREE.Color(0xFFE3C8) }, uWidth: { value: 0.09 },
   },
   vertexShader: `
     attribute float aSeed, aSpd, aSize, aComet; attribute vec2 aLane;
-    uniform vec3 uP0, uP1, uP2, uP3, uPerp; uniform float uTime, uBridge, uBrk, uPR, uWidth;
+    uniform vec3 uP0, uP1, uP2, uP3, uPerp, uRingC; uniform float uTime, uBridge, uBrk, uPR, uWidth, uOrbit, uRingR;
     varying float vA; varying float vU; varying float vC;
     vec3 bez(float u){ float v = 1.0 - u; return v*v*v*uP0 + 3.0*v*v*u*uP1 + 3.0*v*u*u*uP2 + u*u*u*uP3; }
     void main(){
@@ -167,6 +168,10 @@ const bridgeMat = new THREE.ShaderMaterial({
       p.x += uBrk * b * aLane.x * 2.2;
       p.z += uBrk * b * aLane.y * 1.5;
       float fade = env * (1.0 - uBrk * smoothstep(0.45, 0.95, u)) * (1.0 + uBrk * 0.4);
+      float ang = 6.28318 * (aSeed + uTime * (0.05 + 0.06 * aSpd));
+      vec3 orb = uRingC + vec3(cos(ang), sin(ang), 0.0) * uRingR * (1.0 + aLane.x * 0.16) + vec3(0.0, 0.0, aLane.y * 0.2);
+      p = mix(p, orb, uOrbit);
+      fade = mix(fade, 0.55 + 0.45 * sin(uTime * 2.0 + aSeed * 40.0), uOrbit);
       vA = fade * uBridge * (0.45 + 0.55 * aSpd) * (1.0 + aComet * 1.4);
       vU = u; vC = aComet;
       vec4 mv = modelViewMatrix * vec4(p, 1.0);
@@ -256,6 +261,7 @@ const V = THREE.Vector3;
 const damp = (a, b, l, dt) => a + (b - a) * (1 - Math.exp(-l * dt));
 const clamp01 = v => Math.max(0, Math.min(1, v));
 const easeOut = t => 1 - Math.pow(1 - t, 3);
+const smooth01 = v => { v = clamp01(v); return v * v * (3 - 2 * v) };
 const stag = { thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0, rot: 0 }, kAll = { thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0, rot: 0 };
 const tmp = new V(), tmp2 = new V(), tmp3 = new V(), up = new V(0, 1, 0), look = new V(), camT = new V(0, 0, CAM_Z), focusT = new V(), dirV = new V(), macroCam = new V();
 const sideA = new V(0.5, 0.25, 0.1), sideB = new V(-0.45, 0.3, 0.15), tint = new THREE.Color(0xFF8A3D), tintT = new THREE.Color();
@@ -325,8 +331,18 @@ function frame(now) {
   }
   place(H.L, SL, dt, opening ? 2.2 : 3.2, true, m, beat, pulse);
   place(H.R, SR, dt, 3.2, false, m, 0, 0);
-  if (H.L.rig) applyPose(H.L.rig, H.L.pose, 1);
-  if (H.R.rig) applyPose(H.R.rig, H.R.pose, 1);
+  /* hands are alive: fingers breathe a little, and a hello is a real wave */
+  for (const [h, SS, ph] of [[H.L, SL, 0], [H.R, SR, 2.1]]) {
+    h.wave = damp(h.wave || 0, !opening && SS.to === 'HELLO' && SS.t > 0.5 ? 1 : 0, 3, dt);
+    if (!SB.reduce) h.g.rotation.z += Math.sin(t * 4.6 + ph) * 0.16 * h.wave;
+    const lv = h.live || (h.live = { rotation: [0, 0, 0] });
+    lv.rotation[0] = h.pose.rotation[0]; lv.rotation[1] = h.pose.rotation[1]; lv.rotation[2] = h.pose.rotation[2];
+    FINGERS.forEach((f, k) => {
+      const a = SB.reduce ? 0 : Math.sin(t * 1.25 + k * 1.1 + ph) * 0.05, src = h.pose[f];
+      lv[f] = { spread: src.spread + a * 0.3, mcp: src.mcp + a, pip: src.pip + a * 0.7, dip: src.dip + a * 0.5 };
+    });
+    if (h.rig) applyPose(h.rig, lv, 1);
+  }
   joints3(H.L); joints3(H.R);
 
   /* camera: gentle parallax, or the opener's macro shots */
@@ -384,12 +400,14 @@ function frame(now) {
   u.uP1.value.copy(P0).addScaledVector(d, 0.33).addScaledVector(perp, len * 0.28);
   u.uP2.value.copy(P0).addScaledVector(d, 0.66).addScaledVector(perp, len * 0.28);
   u.uPerp.value.copy(perp); u.uTime.value = SB.reduce ? 0.5 : t;
-  u.uBridge.value = G.bridge * G.pres * (ready ? 1 : 0) * Math.min(1, H.R.st.vis * 1.5 + 0.2); u.uBrk.value = G.brk;
+  u.uBridge.value = Math.max(G.bridge, G.ring * 0.8) * G.pres * (ready ? 1 : 0) * Math.min(1, H.R.st.vis * 1.5 + 0.2); u.uBrk.value = G.brk;
+  u.uOrbit.value = smooth01(G.ring);
   u.uColA.value.copy(tint).lerp(ORANGE, 0.5);
 
   /* finale: the bridge collapses into a ring between the two palms */
   const mid = tmp3.copy(L.palmC).lerp(H.R.palmC, 0.5);
   halo.position.copy(mid); halo.quaternion.copy(camera.quaternion);
+  u.uRingC.value.copy(mid); u.uRingR.value = 0.62 * Math.max(0.5, L.st.s);
   const ringR = 0.62 * Math.max(0.5, L.st.s); // sized to the hands, not the gap between them
   halo.scale.setScalar((0.3 + G.ring * 0.7) * ringR + Math.sin(t * 1.4) * 0.02 * G.ring); halo.material.opacity = G.ring * 0.9;
   haloGlow.position.copy(mid); haloGlow.scale.setScalar((0.6 + G.ring * 2.2) * ringR); haloGlow.material.opacity = G.ring * 0.3;

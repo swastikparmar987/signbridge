@@ -30,7 +30,7 @@
       [0, { L: { x: -0.2, y: 0.5, s: 3.1, ry: 0.55, rz: 0.12, pose: 'S' }, glow: 0.25, rays: 0.3 }],
       [0.08, {}],
       [0.34, { L: { x: 0, y: 0.02, s: 2.5, ry: 0, rz: 0, pose: 'OPEN' }, glow: 1, rays: 0.62 }],
-      [0.56, { L: { x: -0.4, y: 0.3, s: 1.15, ry: -0.35, pose: 'HELLO' }, R: { x: 0.46, y: 0.28, s: 1.05, ry: -0.35, vis: 1, pose: 'TOUCH' }, bridge: 1, glow: 0.55, rays: 0.32, ov: 0.3 }],
+      [0.56, { L: { x: -0.4, y: 0.3, s: 1.15, ry: -0.35, pose: 'HELLO' }, R: { x: 0.46, y: 0.28, s: 1.05, ry: -0.35, vis: 1, pose: 'HELLO' }, bridge: 1, glow: 0.55, rays: 0.32, ov: 0.3 }],
       [1, { L: { x: -0.44 }, R: { x: 0.47 } }],
     ],
     silence: [
@@ -39,13 +39,13 @@
       [1, {}],
     ],
     how: [
-      [0, { brk: 0, bridge: 0.9, L: { x: -0.22, y: 0.2, s: 1.4, ry: -0.3, pose: 'HELLO' }, R: { x: 0.66, y: -0.18, s: 0.85, ry: -0.35, vis: 1, pose: 'TOUCH' }, ov: 1, tint: '#FF8A3D', glow: 0.4, rays: 0.22 }],
-      [0.3, {}], [0.37, { L: { pose: 'LOVE' } }], [0.63, {}], [0.7, { L: { pose: 'B' } }], [1, {}],
+      [0, { brk: 0, bridge: 0.9, L: { x: -0.22, y: 0.2, s: 1.4, ry: -0.3, pose: 'HELLO' }, R: { x: 0.66, y: -0.18, s: 0.85, ry: -0.35, vis: 1, pose: 'HELLO' }, ov: 1, tint: '#FF8A3D', glow: 0.4, rays: 0.22 }],
+      [0.3, {}], [0.37, { L: { pose: 'LOVE' }, R: { pose: 'LOVE' } }], [0.63, {}], [0.7, { L: { pose: 'B' }, R: { pose: 'OPEN' } }], [1, {}],
     ],
     moments: [
-      [0, { L: { x: -0.4, y: 0.24, s: 1.1, ry: -0.3, pose: 'C' }, R: { x: 0.42, y: 0.22, s: 1, ry: -0.35, vis: 1, pose: 'TOUCH' }, ov: 0.35, bridge: 0.85, tint: '#FF9A4D', rays: 0.24 }],
-      [0.2, {}], [0.27, { L: { pose: 'LOVE' }, tint: '#FF6F86' }], [0.45, {}], [0.52, { L: { pose: 'HELLO' }, tint: '#8FB4FF' }],
-      [0.7, {}], [0.77, { L: { pose: 'B' }, tint: '#6FE3C8' }], [1, {}],
+      [0, { L: { x: -0.4, y: 0.24, s: 1.1, ry: -0.3, pose: 'C' }, R: { x: 0.42, y: 0.22, s: 1, ry: -0.35, vis: 1, pose: 'OPEN' }, ov: 0.35, bridge: 0.85, tint: '#FF9A4D', rays: 0.24 }],
+      [0.2, {}], [0.27, { L: { pose: 'LOVE' }, R: { pose: 'LOVE' }, tint: '#FF6F86' }], [0.45, {}], [0.52, { L: { pose: 'HELLO' }, R: { pose: 'HELLO' }, tint: '#8FB4FF' }],
+      [0.7, {}], [0.77, { L: { pose: 'B' }, R: { pose: 'B' }, tint: '#6FE3C8' }], [1, {}],
     ],
     learn: [
       [0, { L: { x: 0.42, y: 0.02, s: 1.45, ry: 0.15, rz: 0, pose: 'LEARN' }, R: { x: 1.8, y: -0.2, vis: 0 }, bridge: 0, ov: 0.6, tint: '#FF8A3D', glow: 0.4, rays: 0.26 }],
@@ -55,7 +55,7 @@
     faq: [[0, { L: { x: -0.62, y: -0.05, s: 0.9, pose: 'OPEN' }, dim: 0.8 }], [1, {}]],
     finale: [
       [0, { L: { x: -0.62, y: 0.42, s: 0.95, ry: -0.6, pose: 'TOUCH' }, R: { x: 0.62, y: 0.42, s: 0.95, ry: -0.6, vis: 1, pose: 'TOUCH' }, bridge: 0.8, dim: 0, ov: 0.3, glow: 0.4, rays: 0.2 }],
-      [0.58, { L: { x: -0.17 }, R: { x: 0.17 }, bridge: 0, ring: 1, glow: 0.55, rays: 0.38 }],
+      [0.58, { L: { x: -0.2, pose: 'LOVE' }, R: { x: 0.2, pose: 'LOVE' }, bridge: 0, ring: 1, glow: 0.55, rays: 0.38 }],
       [1, {}],
     ],
   };
@@ -343,7 +343,7 @@
     if (!e.isIntersecting) return;
     links.forEach(a => a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + e.target.id)));
   }), { rootMargin: '-45% 0px -45% 0px' });
-  ['silence', 'how', 'moments', 'learn', 'faq'].forEach(id => { const el = document.getElementById(id); if (el) navIo.observe(el) });
+  ['story', 'silence', 'how', 'moments', 'learn', 'faq', 'finale'].forEach(id => { const el = document.getElementById(id); if (el) navIo.observe(el) });
   addEventListener('pointermove', e => { SB.mouse.x = e.clientX / innerWidth * 2 - 1; SB.mouse.y = -(e.clientY / innerHeight * 2 - 1) }, { passive: true });
   document.querySelectorAll('[data-sfx]').forEach((el, i) => {
     el.addEventListener('pointerenter', () => Sound.hover(i));
