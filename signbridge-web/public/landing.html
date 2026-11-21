@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SignBridge · Your hands speak. Now the world listens.</title>
 <meta name="description" content="SignBridge turns American Sign Language into words and a natural voice as you sign, so the people around you understand you. All you need is a camera.">
-<meta name="theme-color" content="#100D19">
+<meta name="theme-color" content="#09070D">
 <meta property="og:type" content="website">
 <meta property="og:title" content="SignBridge · Your hands speak. Now the world listens.">
 <meta property="og:description" content="Sign the way you always do. SignBridge turns your signs into words and a voice, so everyone understands you.">
@@ -14,8 +14,9 @@
 <link rel="icon" type="image/png" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
 <link rel="preload" href="/models/hand-right.glb" as="fetch" crossorigin>
+<link rel="preload" href="/models/hand-left.glb" as="fetch" crossorigin>
 <link rel="stylesheet" href="/landing/landing.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
@@ -27,6 +28,7 @@
 } }
 </script>
 <script>
+  document.documentElement.classList.add('js');
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduce');
 </script>
 </head>
@@ -35,10 +37,9 @@
 
 <canvas id="gl" aria-hidden="true"></canvas>
 <div class="fallback" id="fallback" aria-hidden="true" hidden><img src="/mascot-hero.png" alt=""></div>
-<div class="flash" id="flash" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 
-<!-- Gate: the click unlocks sound, and the story is complete either way -->
 <!-- Choice first: browsers only allow sound after a click -->
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateLine">
   <div class="gate-card" id="gateCard">
@@ -65,186 +66,153 @@
 <button class="skip-intro pill" id="skipIntro">Skip intro</button>
 
 <header class="nav" id="nav" aria-label="Main">
-  <a href="#top" class="brand" data-sfx aria-label="SignBridge, back to the start"><img src="/logo.png" alt="">SignBridge</a>
+  <a href="#story" class="brand" data-sfx aria-label="SignBridge, back to the start"><img src="/logo.png" alt="">SignBridge</a>
   <nav class="nav-links" aria-label="Sections">
-    <a href="#moments" data-sfx>Stories</a>
-    <a href="#how" data-sfx>How it works</a>
+    <a href="#silence" data-sfx>Story</a>
+    <a href="#how" data-sfx>How</a>
+    <a href="#moments" data-sfx>Moments</a>
     <a href="#learn" data-sfx>Learn</a>
-    <a href="#faq" data-sfx>Questions</a>
+    <a href="#faq" data-sfx>FAQ</a>
   </nav>
-  <a class="btn btn-primary btn-sm" href="/app" data-sfx>Start signing</a>
+  <a class="btn-primary btn-sm" href="/app" data-sfx>Start signing<span class="chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
 </header>
 
-<div class="dock">
-  <button class="pill" data-sound-toggle id="soundToggle" aria-pressed="false" aria-label="Toggle sound" data-sfx>
-    <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="lbl">Sound off</span>
-  </button>
-  <button class="pill" id="skipStory" data-sfx>Skip the story</button>
-</div>
+<button class="sound-pill" data-sound-toggle id="soundToggle" aria-pressed="false" aria-label="Toggle sound" data-sfx>
+  <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="lbl">Sound off</span>
+</button>
+<div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
 
 <main id="main">
-  <!-- THE FILM: a closed hand opens and lets the light out -->
-  <section class="film" id="top" aria-label="The story">
-    <div class="film-stage">
-      <div class="cap" data-cap="0"><p class="cap-text">Every day, a conversation ends<br>before it begins.</p></div>
-      <div class="cap" data-cap="1"><p class="cap-text">Not because there was<br>nothing to say.</p></div>
-      <div class="cap" data-cap="2"><p class="cap-text">But because no one<br>could understand it.</p></div>
-      <div class="cap" data-cap="3"><p class="cap-text">What if every sign<br>could finally be heard?</p></div>
 
-      <div class="cue" id="cue" aria-hidden="true"><span>Scroll to open the hand</span><i></i></div>
-
-      <div class="hero" id="hero" data-hand='{"x":0.55,"y":-0.02,"s":0.92,"pose":"HELLO"}' data-hand-m='{"x":0,"y":0.42,"s":0.62,"pose":"HELLO"}'>
-        <p class="eyebrow">Sign language, understood</p>
-        <h1 class="heading-1 hero-title"><span class="ln">Your hands speak.</span><br><span class="ln">Now the world <span class="warm">listens.</span></span></h1>
-        <p class="title-1 hero-sub">SignBridge turns your signs into words and a natural voice as you sign, so the people around you understand you. All you need is a camera.</p>
-        <div class="hero-cta">
-          <a class="btn btn-primary btn-lg" href="/app" data-sfx>
-            Start signing
-            <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M40 128h176M144 56l72 72-72 72" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
+  <!-- 1 · HERO: the fist opens and the bridge forms -->
+  <section class="ch hero" id="story" aria-label="Introduction">
+    <div class="stage">
+      <p class="cap" data-win="0.015,0.2">Every day, a conversation<br>ends before it begins.</p>
+      <div class="cue" data-win="0,0.03"><span>Scroll</span><i></i></div>
+      <div class="hero-copy" data-win="0.5,9">
+        <p class="label"><i class="dot"></i>Sign language, understood</p>
+        <h1 class="h1" data-split>Your hands speak.<br>Now the world <em>listens.</em></h1>
+      </div>
+      <div class="hero-side" data-win="0.56,9">
+        <p class="sub">SignBridge turns sign language into words and a natural voice as you sign. All you need is a camera.</p>
+        <div class="ctas">
+          <a class="btn-primary" href="/app" data-sfx>Start signing<span class="chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+          <a class="btn-ghost" href="#silence" data-sfx>Watch the story</a>
         </div>
-        <p class="caption-2 hero-proof"><b>2,731 signs</b> and growing · Works right in your browser</p>
+        <p class="proof"><b>2,731</b> signs · Works in your browser</p>
       </div>
     </div>
   </section>
 
-  <!-- MOMENTS -->
-  <section class="moments" id="moments" aria-labelledby="momentsTitle">
-    <div class="moments-stage">
-      <div class="moments-head">
-        <p class="tag">Moments that matter</p>
-        <h2 class="heading-2" id="momentsTitle">Small conversations.<br>Big moments.</h2>
-      </div>
-      <ol class="scenes" id="scenes">
-        <li class="scene" data-pose="C">
-          <p class="scene-place caption-3"><span>01</span> At the café</p>
-          <h3 class="heading-4">You sign your order.<br>The barista hears it.</h3>
-          <p class="body-3">No pointing at the menu, no notes passed across the counter. Just your order, said the way you say it.</p>
-          <div class="said" aria-label="What they hear"><span class="said-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="said-text" data-say="One oat latte, please."></span></div>
-        </li>
-        <li class="scene" data-pose="LOVE">
-          <p class="scene-place caption-3"><span>02</span> At home</p>
-          <h3 class="heading-4">Your little one signs “I love you.”<br>Grandma hears every word.</h3>
-          <p class="body-3">The words that matter most should never need a translator in the room.</p>
-          <div class="said" aria-label="What they hear"><span class="said-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="said-text" data-say="I love you, Grandma."></span></div>
-        </li>
-        <li class="scene" data-pose="HELLO">
-          <p class="scene-place caption-3"><span>03</span> At the interview</p>
-          <h3 class="heading-4">They hear your answers.<br>Not the gap.</h3>
-          <p class="body-3">Walk in, introduce yourself, and let your experience speak for you from the very first hello.</p>
-          <div class="said" aria-label="What they hear"><span class="said-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="said-text" data-say="Hello, I am ready when you are."></span></div>
-        </li>
-        <li class="scene" data-pose="B">
-          <p class="scene-place caption-3"><span>04</span> At the doctor</p>
-          <h3 class="heading-4">Every symptom,<br>understood the first time.</h3>
-          <p class="body-3">When it matters most, nothing gets lost between you and the person helping you.</p>
-          <div class="said" aria-label="What they hear"><span class="said-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="said-text" data-say="It started three days ago."></span></div>
-        </li>
-      </ol>
-      <div class="scene-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-    </div>
-  </section>
-
-  <!-- TAGLINE -->
-  <section class="tagline" aria-label="Our promise" data-hand='{"x":0,"y":0,"s":0.7,"pose":"OPEN","dim":0.85}'>
-    <p class="heading-2 tagline-text" id="tagline">Every sign deserves to be understood.<br>Every person deserves to be heard.</p>
-  </section>
-
-  <!-- HOW -->
-  <section class="how" id="how" aria-labelledby="howTitle" data-hand='{"x":0,"y":0.55,"s":0.5,"pose":"OPEN","dim":0.7}'>
-    <div class="wrap">
-      <p class="tag" data-reveal>How it works</p>
-      <h2 class="heading-2" id="howTitle" data-reveal>Three steps to<br>being understood.</h2>
-      <ol class="steps">
-        <li class="step" data-reveal>
-          <span class="step-n caption-3">01</span>
-          <div class="step-art" aria-hidden="true"><svg viewBox="0 0 120 80"><rect x="10" y="8" width="100" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="3"/><path d="M40 72h40" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle class="blink" cx="60" cy="36" r="8" fill="#FB6A18"/></svg></div>
-          <h3 class="heading-6">Open SignBridge</h3>
-          <p class="body-6">Open it in your browser. There is nothing to install and nothing to set up.</p>
-        </li>
-        <li class="step" data-reveal>
-          <span class="step-n caption-3">02</span>
-          <div class="step-art" aria-hidden="true"><svg viewBox="0 0 120 80"><g class="wave-hand"><path d="M60 70V34M48 66V30M72 66V30M84 62V38M38 52l10 14" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></g></svg></div>
-          <h3 class="heading-6">Sign to your camera</h3>
-          <p class="body-6">Sign the way you always do, word by word or letter by letter.</p>
-        </li>
-        <li class="step" data-reveal>
-          <span class="step-n caption-3">03</span>
-          <div class="step-art" aria-hidden="true"><svg viewBox="0 0 120 80"><rect x="14" y="18" width="70" height="34" rx="12" fill="none" stroke="currentColor" stroke-width="3"/><path d="M28 35h36" stroke="#FB6A18" stroke-width="4" stroke-linecap="round" class="type"/><path class="ring r1" d="M94 26a14 14 0 0 1 0 20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path class="ring r2" d="M102 18a26 26 0 0 1 0 36" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div>
-          <h3 class="heading-6">Be heard</h3>
-          <p class="body-6">Your signs appear as words on screen and can be spoken aloud in a natural voice.</p>
-        </li>
-      </ol>
-    </div>
-  </section>
-
-  <!-- LEARN -->
-  <section class="learn" id="learn" aria-labelledby="learnTitle" data-hand='{"x":0.52,"y":0,"s":0.95,"pose":"HELLO"}' data-hand-m='{"x":0,"y":0.4,"s":0.6,"pose":"HELLO"}'>
-    <div class="wrap learn-grid">
-      <div class="learn-copy">
-        <p class="tag" data-reveal>Learn with your hands</p>
-        <h2 class="heading-2" id="learnTitle" data-reveal>Try your<br>first sign.</h2>
-        <p class="body-3" data-reveal>Tap a sign and watch the hand show you how. Then open SignBridge and try it yourself.</p>
-        <div class="chips" role="group" aria-label="Signs to try" data-reveal>
-          <button class="chip on" data-pose="HELLO" data-name="Hello" aria-pressed="true">Hello</button>
-          <button class="chip" data-pose="LOVE" data-name="I love you" aria-pressed="false">I love you</button>
-          <button class="chip" data-pose="A" data-name="Letter A" aria-pressed="false">A</button>
-          <button class="chip" data-pose="B" data-name="Letter B" aria-pressed="false">B</button>
-          <button class="chip" data-pose="C" data-name="Letter C" aria-pressed="false">C</button>
-          <button class="chip" data-pose="L" data-name="Letter L" aria-pressed="false">L</button>
-          <button class="chip" data-pose="O" data-name="Letter O" aria-pressed="false">O</button>
-          <button class="chip" data-pose="V" data-name="Letter V" aria-pressed="false">V</button>
-          <button class="chip" data-pose="W" data-name="Letter W" aria-pressed="false">W</button>
-          <button class="chip" data-pose="Y" data-name="Letter Y" aria-pressed="false">Y</button>
-        </div>
-        <p class="now-signing caption-1" aria-live="polite">Now signing <b id="nowSigning">Hello</b></p>
-        <div class="learn-stat" data-reveal>
-          <span class="heading-3"><span class="count" data-to="2731">2,731</span></span>
-          <span class="body-6">signs you can learn and use,<br>and more on the way.</span>
-        </div>
+  <!-- 2 · THE SILENCE: the bridge breaks -->
+  <section class="ch silence" id="silence" aria-labelledby="silenceTitle">
+    <div class="stage">
+      <p class="ghost" aria-hidden="true" data-win="0.08,9">Unheard</p>
+      <div class="copy copy-left" data-win="0.3,9">
+        <p class="label">01 <span class="rule"></span> The silence</p>
+        <h2 class="h2" id="silenceTitle" data-split>Most of the world was never taught to <em>listen with its eyes.</em></h2>
+        <div class="stat"><span class="num">70M</span><span class="stat-l">Deaf people use sign language. Most of the people around them don’t.<small>Source: World Federation of the Deaf</small></span></div>
       </div>
     </div>
   </section>
 
-  <!-- FAQ -->
-  <section class="faq" id="faq" aria-labelledby="faqTitle" data-hand='{"x":-0.62,"y":-0.1,"s":0.55,"pose":"OPEN","dim":0.8}' data-hand-m='{"x":0,"y":0,"s":0.5,"pose":"OPEN","dim":0.92}'>
-    <div class="wrap faq-wrap">
-      <p class="tag" data-reveal>Questions</p>
-      <h2 class="heading-2" id="faqTitle" data-reveal>Good questions.<br>Honest answers.</h2>
+  <!-- 3 · UNDERSTOOD: how it works, in three beats -->
+  <section class="ch understood" id="how" aria-labelledby="howTitle">
+    <div class="stage">
+      <ol class="rail" aria-hidden="true"><li>01</li><li>02</li><li>03</li></ol>
+      <div class="copy copy-left copy-low">
+        <p class="label" id="howTitle">02 <span class="rule"></span> How it works</p>
+        <div class="beats">
+          <div class="beat" data-win="0,0.34"><h2 class="h2" data-split>Sign the way <em>you always do.</em></h2><p class="body">Word by word, or letter by letter. No gloves, no special camera, nothing to learn.</p></div>
+          <div class="beat" data-win="0.34,0.67"><h2 class="h2" data-split>Every movement, <em>understood.</em></h2><p class="body">SignBridge follows the shape and motion of your hands and knows what you mean.</p></div>
+          <div class="beat" data-win="0.67,9"><h2 class="h2" data-split>And finally, <em>heard.</em></h2><p class="body">Your words appear on screen and can be spoken aloud in a natural voice.</p></div>
+        </div>
+      </div>
+      <div class="heard" aria-live="polite">
+        <span class="voice" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <p class="heard-word" id="heardWord"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · MOMENTS -->
+  <section class="ch moments" id="moments" aria-labelledby="momentsTitle">
+    <div class="stage">
+      <p class="label label-c" id="momentsTitle">03 <span class="rule"></span> Moments that matter</p>
+      <div class="moment" data-win="0,0.25"><p class="m-place">At the café</p><blockquote class="quote">“One oat latte, please.”</blockquote><p class="m-line">Order the way you speak. The barista hears every word.</p></div>
+      <div class="moment" data-win="0.25,0.5"><p class="m-place">At home</p><blockquote class="quote">“I love you, Grandma.”</blockquote><p class="m-line">The words that matter most should never need a translator in the room.</p></div>
+      <div class="moment" data-win="0.5,0.75"><p class="m-place">At the interview</p><blockquote class="quote">“Hello, I’m ready when you are.”</blockquote><p class="m-line">They hear your answers. Not the gap.</p></div>
+      <div class="moment" data-win="0.75,9"><p class="m-place">At the doctor</p><blockquote class="quote">“It started three days ago.”</blockquote><p class="m-line">When it matters most, nothing gets lost between you.</p></div>
+      <div class="m-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </div>
+  </section>
+
+  <!-- 5 · LEARN -->
+  <section class="ch learn" id="learn" aria-labelledby="learnTitle">
+    <div class="stage">
+      <div class="copy copy-left" data-win="0,9">
+        <p class="label">04 <span class="rule"></span> Learn with your hands</p>
+        <h2 class="h2" id="learnTitle" data-split>Your first sign is <em>one tap away.</em></h2>
+        <div class="chips" role="group" aria-label="Signs to try">
+          <button class="chip-btn on" data-pose="HELLO" data-name="Hello" aria-pressed="true">Hello</button>
+          <button class="chip-btn" data-pose="LOVE" data-name="I love you" aria-pressed="false">I love you</button>
+          <button class="chip-btn" data-pose="A" data-name="Letter A" aria-pressed="false">A</button>
+          <button class="chip-btn" data-pose="B" data-name="Letter B" aria-pressed="false">B</button>
+          <button class="chip-btn" data-pose="C" data-name="Letter C" aria-pressed="false">C</button>
+          <button class="chip-btn" data-pose="L" data-name="Letter L" aria-pressed="false">L</button>
+          <button class="chip-btn" data-pose="O" data-name="Letter O" aria-pressed="false">O</button>
+          <button class="chip-btn" data-pose="V" data-name="Letter V" aria-pressed="false">V</button>
+          <button class="chip-btn" data-pose="W" data-name="Letter W" aria-pressed="false">W</button>
+          <button class="chip-btn" data-pose="Y" data-name="Letter Y" aria-pressed="false">Y</button>
+        </div>
+        <p class="now" aria-live="polite">Now signing <b id="nowSigning">Hello</b></p>
+        <div class="big-stat"><span class="big-num" id="count" data-to="2731">2,731</span><span class="stat-l">signs you can learn and use,<br>and more on the way.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · PROMISE -->
+  <section class="ch promise" aria-label="Our promise">
+    <div class="stage">
+      <p class="promise-text" id="promise"><span class="pl">Every sign deserves to be understood.</span> <span class="pl">Every person deserves to be <em>heard.</em></span></p>
+    </div>
+  </section>
+
+  <!-- 7 · FAQ -->
+  <section class="faq" id="faq" aria-labelledby="faqTitle">
+    <div class="faq-wrap">
+      <p class="label" data-reveal>05 <span class="rule"></span> Questions</p>
+      <h2 class="h2" id="faqTitle" data-reveal>Good questions.<br><em>Honest answers.</em></h2>
       <div class="qa" data-reveal>
-        <details><summary class="title-1">Who is SignBridge for?<i aria-hidden="true"></i></summary><p class="body-3">For Deaf and hard of hearing people who sign, and for everyone who wants to understand them: family, friends, coworkers, teachers and anyone learning sign language.</p></details>
-        <details><summary class="title-1">Which sign language does it understand?<i aria-hidden="true"></i></summary><p class="body-3">American Sign Language, also known as ASL.</p></details>
-        <details><summary class="title-1">Do I need any special equipment?<i aria-hidden="true"></i></summary><p class="body-3">No. A regular webcam is enough. Good light on your hands helps.</p></details>
-        <details><summary class="title-1">Does it speak out loud?<i aria-hidden="true"></i></summary><p class="body-3">Yes. SignBridge can say your words in a natural voice, or you can keep it silent and let people read the words on screen.</p></details>
-        <details><summary class="title-1">Can it learn my own signs?<i aria-hidden="true"></i></summary><p class="body-3">Yes. You can teach SignBridge your own signs so it understands the way you sign.</p></details>
-        <details><summary class="title-1">Can I use it to learn ASL?<i aria-hidden="true"></i></summary><p class="body-3">Yes. Practice letters and words, watch how the hand should move, and see right away when you get it.</p></details>
-        <details><summary class="title-1">Is my video private?<i aria-hidden="true"></i></summary><p class="body-3"><span class="todo">{{privacy summary}}</span></p></details>
-        <details><summary class="title-1">How much does it cost?<i aria-hidden="true"></i></summary><p class="body-3"><span class="todo">{{price}}</span></p></details>
+        <details><summary>Who is SignBridge for?<i aria-hidden="true"></i></summary><p>For Deaf and hard of hearing people who sign, and for everyone who wants to understand them: family, friends, coworkers, teachers and anyone learning sign language.</p></details>
+        <details><summary>Which sign language does it understand?<i aria-hidden="true"></i></summary><p>American Sign Language, also known as ASL.</p></details>
+        <details><summary>Do I need any special equipment?<i aria-hidden="true"></i></summary><p>No. A regular webcam is enough. Good light on your hands helps.</p></details>
+        <details><summary>Does it speak out loud?<i aria-hidden="true"></i></summary><p>Yes. SignBridge can say your words in a natural voice, or you can keep it silent and let people read the words on screen.</p></details>
+        <details><summary>Can it learn my own signs?<i aria-hidden="true"></i></summary><p>Yes. You can teach SignBridge your own signs so it understands the way you sign.</p></details>
+        <details><summary>Can I use it to learn ASL?<i aria-hidden="true"></i></summary><p>Yes. Practice letters and words, watch how the hand should move, and see right away when you get it.</p></details>
+        <details><summary>Is my video private?<i aria-hidden="true"></i></summary><p><span class="todo">{{privacy summary}}</span></p></details>
+        <details><summary>How much does it cost?<i aria-hidden="true"></i></summary><p><span class="todo">{{price}}</span></p></details>
       </div>
     </div>
   </section>
 
-  <!-- FINAL -->
-  <section class="final" aria-labelledby="finalTitle" data-hand='{"x":0,"y":0.16,"s":0.62,"pose":"LOVE","dim":0}' data-hand-m='{"x":0,"y":0.42,"s":0.6,"pose":"LOVE","dim":0}'>
-    <div class="final-inner">
-      <h2 class="heading-1 final-title" id="finalTitle" data-reveal>Say hello<br>in a new way.</h2>
-      <p class="title-1" data-reveal>Your first conversation is one sign away.</p>
-      <a class="btn btn-primary btn-lg" href="/app" data-sfx data-reveal>
-        Start signing
-        <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M40 128h176M144 56l72 72-72 72" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
+  <!-- 8 · FINALE: the hands meet -->
+  <section class="ch finale" id="finale" aria-labelledby="finaleTitle">
+    <div class="stage">
+      <div class="finale-copy" data-win="0.5,9">
+        <h2 class="h2" id="finaleTitle" data-split>Say hello <em>in a new way.</em></h2>
+        <a class="btn-primary btn-lg" href="/app" data-sfx>Start signing<span class="chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+      </div>
+      <p class="wordmark" data-win="0.62,9" aria-hidden="true"><span>SignBridge</span></p>
     </div>
   </section>
 </main>
 
 <footer class="footer">
-  <a href="#top" class="brand" data-sfx><img src="/logo.png" alt="">SignBridge</a>
-  <p class="caption-2">Made so every sign is understood.</p>
-  <nav class="foot-links caption-2" aria-label="Legal">
-    <span class="todo" aria-disabled="true" title="Link coming soon">Privacy {{privacy url}}</span>
-    <span class="todo" aria-disabled="true" title="Link coming soon">Terms {{terms url}}</span>
-    <a href="/app" data-sfx>Open the app</a>
-  </nav>
+  <span>© SignBridge</span>
+  <span class="todo" aria-disabled="true" title="Link coming soon">Privacy {{privacy url}}</span>
+  <span class="todo" aria-disabled="true" title="Link coming soon">Terms {{terms url}}</span>
+  <a href="/app" data-sfx>Open the app</a>
 </footer>
 
 <script src="/landing/sound.js"></script>

@@ -56,6 +56,7 @@ export const POSES = {
   W:     { rotation: [0.04, 0.12, 0.0], thumb: F(1.0, 1.14, 0.85, 0.18), index: F(0.04, 0.06, 0.04, 0.18), middle: F(0.03, 0.06, 0.04, 0.0), ring: F(0.05, 0.08, 0.05, -0.18), pinky: F(1.48, 1.54, 1.14, -0.06) },
   Y:     { rotation: [0.05, 0.1, 0.04], thumb: F(0.14, 0.12, 0.08, 0.72), index: F(1.48, 1.56, 1.16, 0.02), middle: F(1.52, 1.58, 1.18, 0.0), ring: F(1.48, 1.55, 1.15, -0.02), pinky: F(0.05, 0.08, 0.05, -0.22) },
   E:     { rotation: [0.06, 0.08, 0.0], thumb: F(1.05, 1.25, 0.95, 0.16), index: F(1.25, 1.5, 1.25, 0.03), middle: F(1.28, 1.52, 1.28, 0.0), ring: F(1.28, 1.52, 1.28, -0.02), pinky: F(1.25, 1.48, 1.22, -0.05) },
+  TOUCH: { rotation: [0.02, 0.0, 0.0], thumb: F(0.3, 0.2, 0.1, 0.42), index: F(0.14, 0.16, 0.1, 0.04), middle: F(0.12, 0.15, 0.1, 0.0), ring: F(0.14, 0.17, 0.11, -0.04), pinky: F(0.18, 0.2, 0.12, -0.08) },
   LOVE:  { rotation: [0.04, 0.1, 0.0], thumb: F(0.16, 0.12, 0.08, 0.7), index: F(0.03, 0.06, 0.04, 0.08), middle: F(1.48, 1.56, 1.18, 0.0), ring: F(1.48, 1.56, 1.18, -0.02), pinky: F(0.05, 0.08, 0.05, -0.2) },
 };
 export const FINGERS = ['thumb', 'index', 'middle', 'ring', 'pinky'];
@@ -70,23 +71,35 @@ export function blendPose(from, to, amounts, out = { rotation: [0, 0, 0] }) {
   return out;
 }
 
-/* Velvet skin with a fresnel rim, so the hand reads as a silhouette drawn in light */
-function velvetMaterial() {
+/* Two skins with a fresnel rim: velvet (the signer, a silhouette drawn in light) and porcelain (the listener) */
+const SKINS = {
+  velvet: { mat: { color: 0x1c1526, roughness: 0.6, sheen: 0.22, sheenRoughness: 0.85, sheenColor: 0xff8a3d, clearcoat: 0.18 }, rim: 0xff9a52 },
+  porcelain: { mat: { color: 0xb9a996, roughness: 0.42, sheen: 0.3, sheenRoughness: 0.6, sheenColor: 0xffd9b8, clearcoat: 0.35 }, rim: 0xffe3c8 },
+};
+function skinMaterial(kind = 'velvet') {
+  const k = SKINS[kind] || SKINS.velvet;
   const mat = new THREE.MeshPhysicalMaterial({
-    color: 0x1c1526, roughness: 0.6, metalness: 0.0,
-    sheen: 0.22, sheenRoughness: 0.85, sheenColor: new THREE.Color(0xff8a3d),
-    clearcoat: 0.18, clearcoatRoughness: 0.5,
+    color: k.mat.color, roughness: k.mat.roughness, metalness: 0.0,
+    sheen: k.mat.sheen, sheenRoughness: k.mat.sheenRoughness, sheenColor: new THREE.Color(k.mat.sheenColor),
+    clearcoat: k.mat.clearcoat, clearcoatRoughness: 0.5,
   });
-  const uniforms = { uRim: { value: 1.0 }, uRimColor: { value: new THREE.Color(0xff9a52) }, uInner: { value: 0.0 } };
+  const uniforms = { uRim: { value: 1.0 }, uRimColor: { value: new THREE.Color(k.rim) }, uInner: { value: 0.0 },
+    uWrist: { value: new THREE.Vector3() }, uAxis: { value: new THREE.Vector3(0, 1, 0) }, uLen: { value: 1.0 } };
   mat.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
+    /* the forearm dissolves into the dark, so the cut end of the wrist never shows */
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vSbW;')
+      .replace('#include <skinning_vertex>', '#include <skinning_vertex>\nvSbW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uRim; uniform vec3 uRimColor; uniform float uInner;')
+      .replace('#include <common>', '#include <common>\nuniform float uRim; uniform vec3 uRimColor; uniform float uInner; uniform vec3 uWrist; uniform vec3 uAxis; uniform float uLen; varying vec3 vSbW;')
       .replace('#include <dithering_fragment>', `
         vec3 vdir = normalize(vViewPosition);
         float fr = pow(1.0 - clamp(dot(vdir, normal), 0.0, 1.0), 2.4);
         gl_FragColor.rgb += uRimColor * fr * uRim;
         gl_FragColor.rgb += vec3(1.0, 0.55, 0.25) * uInner * (0.35 + 0.65 * (1.0 - fr));
+        float sbFade = smoothstep(-0.2 * uLen, 0.45 * uLen, dot(vSbW - uWrist, uAxis));
+        gl_FragColor.rgb *= sbFade; gl_FragColor.a *= sbFade;
         #include <dithering_fragment>`);
   };
   mat.userData.uniforms = uniforms;
@@ -95,10 +108,10 @@ function velvetMaterial() {
 
 const loader = new GLTFLoader();
 
-export async function loadHand(url = '/models/hand-right.glb') {
+export async function loadHand(url = '/models/hand-right.glb', skin = 'velvet') {
   const gltf = await loader.loadAsync(url);
   const sceneRoot = gltf.scene;
-  const material = velvetMaterial();
+  const material = skinMaterial(skin);
   sceneRoot.traverse(o => {
     if (o.isMesh) { o.geometry.computeVertexNormals(); o.material = material; o.frustumCulled = false; }
   });

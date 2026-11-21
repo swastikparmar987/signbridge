@@ -164,6 +164,34 @@
       [0, 4, 7, 9].forEach((n, k) => voice(SCALE[n], { type: 'sine', dur: 6, gain: 0.04, attack: 1.2 + k * 0.2, rev: 0.9, when: 0.3 + k * 0.12 }));
       vibrate([60, 40, 30]);
     },
+    /* the bridge of light forms: a rising shimmer and an arpeggio */
+    bridgeOn() {
+      noiseHit({ from: 2400, to: 9000, q: 3, dur: 2.2, gain: 0.035, attack: 0.6, rev: 0.9 });
+      [4, 7, 9].forEach((n, k) => voice(SCALE[n] * 2, { type: 'sine', dur: 2.4, gain: 0.04, attack: 0.05, rev: 0.85, when: k * 0.16 }));
+      vibrate([20, 40, 20]);
+    },
+    /* the bridge breaks: a falling glide that closes into a soft thud */
+    breakApart() {
+      voice(440, { type: 'triangle', dur: 2.2, gain: 0.05, attack: 0.02, rev: 0.7, glide: 0.35 });
+      noiseHit({ from: 3000, to: 220, q: 1.5, dur: 1.8, gain: 0.05, attack: 0.05, rev: 0.6, type: 'lowpass' });
+      voice(48, { dur: 0.9, gain: 0.2, attack: 0.01, rev: 0.3, glide: 0.7, when: 1.4 });
+      vibrate([30, 80, 60]);
+    },
+    letter() {
+      const n = performance.now(); if (n - (this._lt || 0) < 50) return; this._lt = n;
+      voice(1800 + Math.random() * 400, { type: 'sine', dur: 0.04, gain: 0.012, attack: 0.002, rev: 0.15 });
+    },
+    sceneChord(i) {
+      const roots = [[0, 4, 7], [2, 5, 9], [4, 7, 9], [0, 5, 8]][i % 4];
+      roots.forEach((n, k) => voice(SCALE[n], { type: 'triangle', dur: 3, gain: 0.035, attack: 0.3, rev: 0.85, when: k * 0.08 }));
+      vibrate(14);
+    },
+    /* the two hands meet */
+    meet() {
+      voice(41, { dur: 3.4, gain: 0.3, attack: 0.02, rev: 0.5, glide: 0.72 });
+      [0, 2, 4, 5, 7, 9].forEach((n, k) => voice(SCALE[n] * (k > 2 ? 2 : 1), { type: k % 2 ? 'sine' : 'triangle', dur: 5, gain: 0.045, attack: 0.05 + k * 0.03, rev: 0.9, when: k * 0.06 }));
+      vibrate([40, 60, 90]);
+    },
     hover(i = 0) { voice(SCALE[(i % 5) + 5] * 2, { dur: 0.16, gain: 0.02, rev: 0.25 }) },
     click() { voice(SCALE[5], { type: 'triangle', dur: 0.5, gain: 0.06 }); voice(SCALE[8], { dur: 0.7, gain: 0.04, when: 0.07 }) },
     chime(i = 0) { const f = SCALE[i % SCALE.length]; voice(f * 2, { type: 'triangle', dur: 1.4, gain: 0.055, rev: 0.7 }); voice(f * 3, { dur: 0.9, gain: 0.02, rev: 0.7, when: 0.04 }); vibrate(10) },
