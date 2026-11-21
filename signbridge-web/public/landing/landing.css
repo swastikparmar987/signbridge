@@ -52,16 +52,76 @@ main,.footer{position:relative;z-index:2}
 .btn-lg{font-size:16px;padding:10px 10px 10px 28px}
 .btn-lg .chip{width:38px;height:38px}
 
-/* ---------- Choice card ---------- */
-.gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:var(--g);background:var(--bg);transition:opacity 1s var(--ease)}
+/* ---------- Choice card: the full logo lockup, glowing ---------- */
+.gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:var(--g);background:#09070D;overflow:hidden;transition:opacity 1s var(--ease)}
 .gate.out{opacity:0;pointer-events:none}
-.gate-card{display:grid;justify-items:center;gap:24px;text-align:center;width:min(560px,100%);animation:cardIn 1.4s var(--ease) both}
-@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.gate-logo{width:48px;height:48px;border-radius:12px;filter:drop-shadow(0 0 30px rgba(251,106,24,.45))}
-.gate-line{font-family:var(--display);font-weight:600;font-size:24px;line-height:32px;letter-spacing:-.01em}
-@media (min-width:768px){.gate-line{font-size:30px;line-height:36px}}
-.gate-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:16px}
-.gate-note{font-size:12px;line-height:16px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.gate-fx{position:absolute;inset:0;pointer-events:none}
+.gate-rays{position:absolute;left:50%;top:38%;width:150vmax;height:150vmax;translate:-50% -50%;opacity:0;
+  background:repeating-conic-gradient(from 0deg,rgba(251,106,24,.10) 0deg 3deg,transparent 3deg 14deg);
+  -webkit-mask:radial-gradient(circle,#000 0%,rgba(0,0,0,.55) 18%,transparent 46%);mask:radial-gradient(circle,#000 0%,rgba(0,0,0,.55) 18%,transparent 46%);
+  animation:raysIn 2.4s var(--ease) .3s forwards,spin 90s linear infinite}
+.gate-aura{position:absolute;left:50%;top:38%;width:min(70vmin,620px);aspect-ratio:1;translate:-50% -50%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,138,61,.38) 0%,rgba(251,106,24,.12) 34%,rgba(251,106,24,0) 66%);filter:blur(10px);animation:breath 5.5s var(--ease) infinite}
+@keyframes raysIn{to{opacity:1}}
+@keyframes spin{to{rotate:360deg}}
+@keyframes breath{0%,100%{scale:.82;opacity:.65}50%{scale:1.06;opacity:1}}
+.spark{position:absolute;left:calc(50% + var(--x));bottom:-12px;width:3px;height:3px;border-radius:50%;background:#FFD2B0;box-shadow:0 0 10px 2px rgba(251,106,24,.8);opacity:0;
+  animation:rise var(--t) linear var(--d) infinite}
+@keyframes rise{0%{transform:translate3d(0,0,0);opacity:0}10%{opacity:.9}70%{opacity:.5}100%{transform:translate3d(18px,-104vh,0);opacity:0}}
+
+.gate-card{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;width:min(720px,100%)}
+.lockup{display:flex;flex-direction:column;align-items:center;gap:clamp(14px,2.4vh,24px);transition:transform .6s var(--ease)}
+.mark{position:relative;width:clamp(96px,15vh,140px);aspect-ratio:221/288;animation:markIn 1.6s var(--ease) both}
+.mark-img{position:relative;width:100%;height:100%;filter:drop-shadow(0 0 18px rgba(251,106,24,.55)) drop-shadow(0 0 2px rgba(255,210,170,.6));animation:float 6s ease-in-out 1.6s infinite}
+.mark-glow{position:absolute;inset:-8%;width:116%;height:116%;filter:blur(26px) saturate(1.6);opacity:.9;animation:glow 3.2s ease-in-out infinite}
+.mark-ring{position:absolute;left:50%;top:50%;width:175%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(255,178,126,.12) 0 70%,rgba(255,178,126,.9) 82%,rgba(255,178,126,.12) 84% 100%);
+  -webkit-mask:radial-gradient(circle,transparent 68.5%,#000 69.5%,#000 70.5%,transparent 71.5%);mask:radial-gradient(circle,transparent 68.5%,#000 69.5%,#000 70.5%,transparent 71.5%);
+  filter:drop-shadow(0 0 6px rgba(251,106,24,.8));animation:spin 7s linear infinite,ringIn 2s var(--ease) .6s both}
+@keyframes markIn{from{opacity:0;transform:scale(.7);filter:blur(16px)}to{opacity:1;transform:none;filter:none}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes glow{0%,100%{opacity:.55;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes ringIn{from{opacity:0;scale:.6}to{opacity:1;scale:1}}
+.lock-word{position:relative;display:flex;font-weight:500;font-size:clamp(52px,min(8.4vw,11vh),96px);line-height:1;letter-spacing:-.045em;overflow:hidden;padding:.06em .1em .14em}
+.lock-word span{display:inline-block;animation:wordIn 1.3s var(--ease) both}
+.lock-word span:first-child{animation-delay:.35s}
+.lock-word .b{animation:wordIn 1.3s var(--ease) .5s both,shineText 5s ease-in-out 1.8s infinite;background:linear-gradient(100deg,#FB6A18 0%,#FF8A3D 30%,#FFE6D2 46%,#FF8A3D 62%,#FB6A18 100%);background-size:260% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+@keyframes wordIn{from{transform:translateY(105%);opacity:0}to{transform:none;opacity:1}}
+@keyframes shineText{0%{background-position:100% 0}40%,100%{background-position:0% 0}}
+.gate-line{margin-top:clamp(20px,3.6vh,36px);font-size:clamp(18px,min(2.1vw,3.4vh),26px);line-height:1.35;font-weight:400;letter-spacing:-.015em;color:rgba(244,238,230,.82);text-wrap:balance;animation:fadeUp 1.2s var(--ease) .8s both}
+.gate-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:clamp(24px,4.4vh,44px);animation:fadeUp 1.2s var(--ease) 1s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+
+/* entry buttons: symmetric, icon + label centred, sheen + glow */
+.gbtn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;height:56px;padding:0 28px;border-radius:999px;font-size:16px;font-weight:500;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;isolation:isolate;
+  transition:transform .3s var(--ease),box-shadow .4s var(--ease),border-color .3s,color .3s,background-color .3s}
+.gbtn svg{width:20px;height:20px;flex:none}
+.gbtn span{position:relative}
+.gbtn-primary{color:#1A0D05;background:linear-gradient(180deg,#FF9A55 0%,#FB6A18 100%);box-shadow:0 0 0 1px rgba(255,190,140,.5) inset,0 10px 40px -8px rgba(251,106,24,.75),0 0 60px -10px rgba(251,106,24,.6);animation:pulseGlow 3s ease-in-out 2.2s infinite}
+.gbtn-primary::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:sweep 3.6s var(--ease) 2s infinite}
+.gbtn-primary .w1,.gbtn-primary .w2{animation:wave 1.6s ease-in-out infinite}
+.gbtn-primary .w2{animation-delay:.25s}
+@keyframes wave{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes sweep{0%{transform:translateX(-120%)}40%,100%{transform:translateX(120%)}}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 1px rgba(255,190,140,.5) inset,0 10px 40px -8px rgba(251,106,24,.75),0 0 60px -10px rgba(251,106,24,.6)}50%{box-shadow:0 0 0 1px rgba(255,190,140,.6) inset,0 12px 50px -6px rgba(251,106,24,.9),0 0 90px -6px rgba(251,106,24,.8)}}
+.gbtn-primary:hover{transform:translateY(-2px) scale(1.03)}
+.gbtn-ghost{color:var(--ink);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.gbtn-ghost::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(120px circle at var(--mx,50%) var(--my,50%),rgba(255,178,126,.22),transparent 70%);opacity:0;transition:opacity .3s}
+.gbtn-ghost:hover{border-color:rgba(255,178,126,.45);transform:translateY(-2px)}
+.gbtn-ghost:hover::before{opacity:1}
+.gbtn:active{transform:scale(.97)}
+.gbtn:focus-visible{outline:2px solid #FFB27E;outline-offset:4px}
+.gate-note{display:inline-flex;align-items:center;gap:10px;margin-top:22px;font-size:11px;line-height:1;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);animation:fadeUp 1.2s var(--ease) 1.2s both}
+.gate-eq{display:inline-flex;gap:2px;align-items:center;height:12px}
+.gate-eq i{width:2px;height:4px;border-radius:2px;background:#FF8A3D;animation:eq .9s ease-in-out infinite}
+.gate-eq i:nth-child(2){animation-delay:-.3s}.gate-eq i:nth-child(3){animation-delay:-.6s}.gate-eq i:nth-child(4){animation-delay:-.15s}
+/* click: the logo flares before the curtain lifts */
+.gate.go .mark{animation:flareOut .9s var(--ease) forwards}
+.gate.go .gate-aura{animation:auraOut .9s var(--ease) forwards}
+@keyframes flareOut{40%{transform:scale(1.18);filter:brightness(1.6) drop-shadow(0 0 40px #FB6A18)}100%{transform:scale(.9);opacity:0}}
+@keyframes auraOut{to{scale:2.4;opacity:0}}
+@media (max-width:560px){.gate-btns{flex-direction:column;width:100%;max-width:320px}.gbtn{width:100%}}
+@media (prefers-reduced-motion:reduce){.gate *,.gate *::before,.gate *::after{animation:none!important}.gate-rays{opacity:1}}
 
 /* ---------- Opener: letterbox, flare, title card ---------- */
 .letterbox{position:fixed;inset:0;z-index:95;pointer-events:none}

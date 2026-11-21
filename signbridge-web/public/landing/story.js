@@ -124,13 +124,26 @@
     setTimeout(waitReady, 200);
   })();
   document.getElementById(Sound.saved() === 'off' ? 'enterQuiet' : 'enterSound').focus({ preventScroll: true });
+  /* the lockup leans toward the pointer; the silence button carries a cursor spotlight */
+  const lockup = document.getElementById('lockup');
+  if (!reduce && matchMedia('(hover:hover)').matches) {
+    gate.addEventListener('pointermove', e => {
+      const x = e.clientX / innerWidth - 0.5, y = e.clientY / innerHeight - 0.5;
+      lockup.style.transform = `perspective(900px) rotateY(${(x * 10).toFixed(2)}deg) rotateX(${(-y * 8).toFixed(2)}deg) translate3d(${(x * 10).toFixed(1)}px,${(y * 8).toFixed(1)}px,0)`;
+    }, { passive: true });
+    gate.addEventListener('pointerleave', () => { lockup.style.transform = '' });
+    const q = document.getElementById('enterQuiet');
+    q.addEventListener('pointermove', e => { const r = q.getBoundingClientRect(); q.style.setProperty('--mx', (e.clientX - r.left) + 'px'); q.style.setProperty('--my', (e.clientY - r.top) + 'px') });
+  }
 
   let openerDone = false;
   function enter(withSound) {
     Sound.set(withSound);
+    if (withSound) Sound.whoosh();
     scrollTo(0, 0);
-    gate.classList.add('out');
-    setTimeout(() => gate.remove(), 1100);
+    gate.classList.add('go');                       // the logo flares first
+    setTimeout(() => gate.classList.add('out'), 380);
+    setTimeout(() => gate.remove(), 1500);
     if (reduce || !hasGsap) { finishOpener(); return }
     SB.phase = 'opener';
     document.body.classList.add('opening');

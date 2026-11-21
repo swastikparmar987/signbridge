@@ -42,17 +42,34 @@
 
 <!-- Choice first: browsers only allow sound after a click -->
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateLine">
+  <div class="gate-fx" aria-hidden="true">
+    <i class="gate-rays"></i><i class="gate-aura"></i>
+    <span class="spark" style="--x:-34vw;--d:0s;--t:9s"></span><span class="spark" style="--x:-22vw;--d:2.2s;--t:11s"></span>
+    <span class="spark" style="--x:-12vw;--d:4.1s;--t:8s"></span><span class="spark" style="--x:-4vw;--d:1.2s;--t:12s"></span>
+    <span class="spark" style="--x:6vw;--d:3.3s;--t:10s"></span><span class="spark" style="--x:15vw;--d:.6s;--t:9.5s"></span>
+    <span class="spark" style="--x:24vw;--d:5s;--t:11.5s"></span><span class="spark" style="--x:33vw;--d:2.8s;--t:8.5s"></span>
+  </div>
   <div class="gate-card" id="gateCard">
-    <img class="gate-logo" src="/logo.png" alt="">
-    <p class="gate-line" id="gateLine">Watch with sound, or in silence,<br>the way many people live every day.</p>
-    <div class="gate-btns">
-      <button class="btn btn-primary btn-lg" id="enterSound" data-sfx>
-        <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M80 168H32a8 8 0 0 1-8-8V96a8 8 0 0 1 8-8h48l72-56v192Z" fill="none" stroke="currentColor" stroke-width="16" stroke-linejoin="round"/><path d="M192 104a32 32 0 0 1 0 48M216 80a64 64 0 0 1 0 96" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round"/></svg>
-        Enter with sound
-      </button>
-      <button class="btn btn-ghost btn-lg" id="enterQuiet" data-sfx>Enter in silence</button>
+    <div class="lockup" id="lockup">
+      <div class="mark">
+        <i class="mark-ring" aria-hidden="true"></i>
+        <img class="mark-glow" src="/logo.png" alt="" aria-hidden="true">
+        <img class="mark-img" src="/logo.png" alt="SignBridge logo">
+      </div>
+      <p class="lock-word" aria-label="SignBridge"><span>Sign</span><span class="b">Bridge</span></p>
     </div>
-    <p class="gate-note" id="gateNote" aria-live="polite">Headphones recommended</p>
+    <p class="gate-line" id="gateLine">Watch with sound, or <em>in silence,</em><br>the way many people live every day.</p>
+    <div class="gate-btns">
+      <button class="gbtn gbtn-primary" id="enterSound" data-sfx>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" fill="currentColor"/><path class="w1" d="M15 9.2a4 4 0 0 1 0 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="w2" d="M17.6 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span>Enter with sound</span>
+      </button>
+      <button class="gbtn gbtn-ghost" id="enterQuiet" data-sfx>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" fill="currentColor"/><path d="M16 10l4 4M20 10l-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span>Enter in silence</span>
+      </button>
+    </div>
+    <p class="gate-note"><span class="gate-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="gateNote" aria-live="polite">Headphones recommended</span></p>
   </div>
 </div>
 
