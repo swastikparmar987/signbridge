@@ -12,6 +12,7 @@ import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { loadHand, applyPose, blendPose, POSES, JOINTS, LINKS, FINGERS } from './hand-rig.js';
 
 const SB = window.SB;
+const Sound = window.SBSound;
 const root = document.documentElement;
 const canvas = document.getElementById('gl');
 const mobile = innerWidth < 700;
@@ -133,7 +134,7 @@ const bGeoP = new THREE.BufferGeometry();
 const bSeed = new Float32Array(BN), bSpd = new Float32Array(BN), bLane = new Float32Array(BN * 2), bSize = new Float32Array(BN), bComet = new Float32Array(BN);
 for (let i = 0; i < BN; i++) {
   bSeed[i] = Math.random(); bSpd[i] = Math.random();
-  const a = Math.random() * Math.PI * 2, r = Math.pow(Math.random(), 1.6);
+  const a = Math.random() * Math.PI * 2, r = i % 3 === 0 ? Math.random() * 0.12 : Math.pow(Math.random(), 1.6); // a third form a bright core beam
   bLane[i * 2] = Math.cos(a) * r; bLane[i * 2 + 1] = Math.sin(a) * r;
   bSize[i] = 18 + Math.random() * 28; bComet[i] = i < 6 ? 1 : 0;
 }
@@ -202,6 +203,61 @@ const linkMat = new THREE.MeshBasicMaterial({ color: ORANGE.clone().multiplyScal
 const links = LINKS.map(() => { const m = new THREE.Mesh(cyl, linkMat); m.renderOrder = 10; scene.add(m); return m });
 const flares = FINGERS.map(() => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, ...additive, opacity: 0, depthTest: false })); s.renderOrder = 13; scene.add(s); return s });
 
+/* ---------- Spell VFX: rune circles, sparks and crackling arcs ---------- */
+/* a rune circle drawn once: rings, tick marks, the ASL alphabet as runes, an inscribed octagram and hexagram */
+const sigilTex = (() => {
+  const S = 1024, c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d'); g.translate(S / 2, S / 2);
+  g.strokeStyle = 'rgba(255,196,150,1)'; g.fillStyle = 'rgba(255,214,180,1)';
+  g.shadowColor = 'rgba(251,106,24,1)'; g.shadowBlur = 18;
+  const ring = (r, w, dash) => { g.lineWidth = w; g.setLineDash(dash || []); g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.stroke(); g.setLineDash([]) };
+  ring(492, 6); ring(470, 2); ring(392, 3); ring(362, 2, [10, 14]); ring(214, 4); ring(70, 3);
+  for (let i = 0; i < 120; i++) { const a = i / 120 * Math.PI * 2, l = i % 5 === 0 ? 22 : 10; g.lineWidth = i % 5 === 0 ? 3 : 1.5; g.beginPath(); g.moveTo(Math.cos(a) * 470, Math.sin(a) * 470); g.lineTo(Math.cos(a) * (470 - l), Math.sin(a) * (470 - l)); g.stroke() }
+  g.font = '600 40px "Instrument Serif", Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach((ch, i) => { const a = i / 26 * Math.PI * 2; g.save(); g.rotate(a); g.translate(0, -430); g.fillText(ch, 0, 0); g.restore() });
+  const poly = (n, r, step, rot = 0) => { g.lineWidth = 3; g.beginPath(); for (let i = 0; i <= n; i++) { const a = rot + (i * step % n) / n * Math.PI * 2; const x = Math.cos(a) * r, y = Math.sin(a) * r; i ? g.lineTo(x, y) : g.moveTo(x, y) } g.stroke() };
+  poly(8, 352, 3, Math.PI / 8); poly(6, 206, 2, Math.PI / 6); poly(6, 206, 2, Math.PI / 2);
+  for (let i = 0; i < 8; i++) { const a = Math.PI / 8 + i / 8 * Math.PI * 2; g.beginPath(); g.arc(Math.cos(a) * 352, Math.sin(a) * 352, 16, 0, Math.PI * 2); g.stroke() }
+  for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2; g.lineWidth = 1.5; g.beginPath(); g.moveTo(Math.cos(a) * 214, Math.sin(a) * 214); g.lineTo(Math.cos(a) * 362, Math.sin(a) * 362); g.globalAlpha = 0.35; g.stroke(); g.globalAlpha = 1 }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+})();
+const sigilMat = () => new THREE.MeshBasicMaterial({ map: sigilTex, color: new THREE.Color(1.6, 0.85, 0.45), ...additive, opacity: 0, side: THREE.DoubleSide, depthTest: false });
+function makeSigil() {
+  const grp = new THREE.Group(), outer = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), sigilMat()), inner = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), sigilMat());
+  inner.scale.setScalar(0.56); inner.position.z = 0.01; grp.add(outer, inner); grp.renderOrder = 14; outer.renderOrder = inner.renderOrder = 14;
+  scene.add(grp); return { grp, outer, inner, castAt: -10 };
+}
+const sigils = { L: makeSigil(), R: makeSigil(), F: makeSigil() };
+
+/* sparks: a small CPU particle pool, burst from the fingertips on every sign */
+const SPK = mobile ? 260 : 520;
+const spPos = new Float32Array(SPK * 3), spVel = new Float32Array(SPK * 3), spLife = new Float32Array(SPK), spMax = new Float32Array(SPK);
+const spGeo = new THREE.BufferGeometry();
+spGeo.setAttribute('position', new THREE.BufferAttribute(spPos, 3));
+spGeo.setAttribute('aLife', new THREE.BufferAttribute(spLife, 1));
+const sparks = new THREE.Points(spGeo, new THREE.ShaderMaterial({
+  ...additive, depthTest: false,
+  uniforms: { uSize: { value: 70 * renderer.getPixelRatio() } },
+  vertexShader: 'attribute float aLife; uniform float uSize; varying float vL; void main(){ vL = aLife; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = uSize * (0.25 + aLife) / -mv.z; gl_Position = projectionMatrix * mv; }',
+  fragmentShader: 'varying float vL; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5 || vL <= 0.0) discard; float a = pow(smoothstep(0.5, 0.0, d), 1.5); gl_FragColor = vec4(mix(vec3(1.0, 0.45, 0.12), vec3(1.0, 0.92, 0.8), vL) * a * vL * 2.2, 1.0); }',
+}));
+sparks.frustumCulled = false; sparks.renderOrder = 15; scene.add(sparks);
+let spHead = 0;
+function emit(at, n, speed) {
+  for (let k = 0; k < n; k++) {
+    const i = spHead; spHead = (spHead + 1) % SPK;
+    spPos[i * 3] = at.x; spPos[i * 3 + 1] = at.y; spPos[i * 3 + 2] = at.z;
+    const a = Math.random() * Math.PI * 2, b = Math.acos(2 * Math.random() - 1), v = speed * (0.3 + Math.random());
+    spVel[i * 3] = Math.sin(b) * Math.cos(a) * v; spVel[i * 3 + 1] = Math.sin(b) * Math.sin(a) * v + speed * 0.4; spVel[i * 3 + 2] = Math.cos(b) * v;
+    spMax[i] = 0.6 + Math.random() * 0.8; spLife[i] = 1;
+  }
+}
+
+/* crackling arcs between neighbouring fingertips */
+const ARC_PAIRS = [[4, 8], [8, 12], [12, 16], [16, 20], [4, 12]], ARC_N = 12;
+const arcMat = new THREE.LineBasicMaterial({ color: new THREE.Color(2.6, 1.3, 0.55), ...additive, opacity: 0, depthTest: false });
+const arcs = ARC_PAIRS.map(() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ARC_N * 3), 3)); const l = new THREE.Line(g, arcMat); l.frustumCulled = false; l.renderOrder = 15; scene.add(l); return l });
+
 /* ---------- Post ---------- */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -267,6 +323,8 @@ const tmp = new V(), tmp2 = new V(), tmp3 = new V(), up = new V(0, 1, 0), look =
 const sideA = new V(0.5, 0.25, 0.1), sideB = new V(-0.45, 0.3, 0.15), tint = new THREE.Color(0xFF8A3D), tintT = new THREE.Color();
 const G = { ov: 0, glow: 0, rays: 0, bridge: 0, brk: 0, ring: 0, dim: 0 };
 let t = 0, last = performance.now(), hidden = false, burstAt = -10, lastBurst = 0;
+const ACT_SEQ = ['HELLO', 'LOVE', 'Y', 'B', 'L', 'V', 'C', 'OPEN'], SIGN_DUR = 1.5;
+const perf = { step: -1, stepR: -1, pulse: -10 };
 document.addEventListener('visibilitychange', () => { hidden = document.hidden; last = performance.now() });
 
 const OPENER_L = { x: 0, y: 0.3, s: 0.7, rx: 0, ry: 0.25, rz: 0, vis: 1, from: 'HELLO', to: 'HELLO', t: 1 };
@@ -322,6 +380,23 @@ function frame(now) {
   if (S && !opening) tintT.setRGB(S.tint[0], S.tint[1], S.tint[2]); else tintT.set(0xFF8A3D);
   tint.lerp(tintT, 1 - Math.exp(-2 * dt));
 
+  /* performance: while a chapter holds, the signer keeps signing and the listener echoes each sign */
+  G.act = damp(G.act || 0, S && !opening ? S.act || 0 : 0, 3, dt);
+  let perfPh = 0;
+  if (G.act > 0.5 && !SB.reduce) {
+    const n = ACT_SEQ.length, step = Math.floor(t / SIGN_DUR); perfPh = (t % SIGN_DUR) / SIGN_DUR;
+    SL.from = ACT_SEQ[(step + n - 1) % n]; SL.to = ACT_SEQ[step % n]; SL.t = Math.min(1, perfPh / 0.32);
+    if (step !== perf.step) { perf.step = step; perf.castL = t; sigils.L.castAt = t; if (H.L.rig) FINGERS.forEach(f => emit(H.L.pts[TIP_OF[f]], 6, 1.4 * H.L.st.s)); Sound.cast && Sound.cast() }
+    const echo = S.brk < 0.5 && S.R.vis > 0.5;
+    if (echo) {
+      const tr = t - SIGN_DUR * 0.45, sr = Math.floor(tr / SIGN_DUR), pr = (tr % SIGN_DUR + SIGN_DUR) % SIGN_DUR / SIGN_DUR;
+      SR.from = ACT_SEQ[(sr + n - 1) % n]; SR.to = ACT_SEQ[sr % n]; SR.t = Math.min(1, pr / 0.32);
+      if (sr !== perf.stepR) { perf.stepR = sr; sigils.R.castAt = t; if (H.R.rig) FINGERS.forEach(f => emit(H.R.pts[TIP_OF[f]], 4, 1.1 * H.R.st.s)) }
+    }
+  }
+  /* a chip tap in Learn or a new moment also casts */
+  if (SB.pulse !== perf.pulse) { perf.pulse = SB.pulse; if (!opening && SB.entered) { sigils.L.castAt = t; if (H.L.rig) FINGERS.forEach(f => emit(H.L.pts[TIP_OF[f]], 5, 1.2 * H.L.st.s)) } }
+
   /* poses (staggered finger by finger, then damped) */
   const kp = 1 - Math.exp(-dt * 7);
   for (const key in kAll) kAll[key] = kp;
@@ -331,6 +406,11 @@ function frame(now) {
   }
   place(H.L, SL, dt, opening ? 2.2 : 3.2, true, m, beat, pulse);
   place(H.R, SR, dt, 3.2, false, m, 0, 0);
+  if (G.act > 0.01 && !SB.reduce) {
+    const arc = Math.sin(perfPh * Math.PI), sL = H.L.st.s;
+    H.L.g.position.x += arc * 0.16 * sL * G.act; H.L.g.position.y += Math.sin(perfPh * Math.PI * 2) * 0.07 * sL * G.act;
+    H.L.g.rotation.z -= arc * 0.22 * G.act; H.L.g.rotation.y += Math.sin(perfPh * Math.PI * 2) * 0.18 * G.act;
+  }
   /* hands are alive: fingers breathe a little, and a hello is a real wave */
   for (const [h, SS, ph] of [[H.L, SL, 0], [H.R, SR, 2.1]]) {
     h.wave = damp(h.wave || 0, !opening && SS.to === 'HELLO' && SS.t > 0.5 ? 1 : 0, 3, dt);
@@ -440,6 +520,44 @@ function frame(now) {
     const fl = flares[k], age = (now - SB.flare[k]) / 1000;
     fl.position.copy(joints[TIP_OF[name]].position);
     if (age < 0.9) { const e = Math.exp(-age * 4); fl.scale.setScalar(s * (0.08 + (1 - e) * 0.3)); fl.material.opacity = e } else fl.material.opacity = 0;
+  });
+
+  /* spell VFX */
+  const castEnv = k => Math.exp(-(t - sigils[k].castAt) * 2.6);
+  for (const k of ['L', 'R']) {
+    const h = H[k], sg = sigils[k], env = castEnv(k), sc = h.st.s;
+    const on = (k === 'L' ? Math.max(G.act * 0.4, env) : (G.act > 0.5 ? env : 0)) * G.pres * (k === 'R' ? h.st.vis : 1);
+    sg.grp.position.copy(h.palmC).addScaledVector(h.palmN, 0.32 * sc);
+    tmp.copy(sg.grp.position).add(h.palmN); sg.grp.lookAt(tmp);
+    sg.outer.rotation.z = t * 0.35 * (k === 'L' ? 1 : -1); sg.inner.rotation.z = -t * 0.8 * (k === 'L' ? 1 : -1);
+    sg.grp.scale.setScalar(sc * (1.45 + (1 - env) * 0.1 + env * 0.4));
+    sg.outer.material.opacity = on * 0.85; sg.inner.material.opacity = on * 0.95;
+    sg.outer.material.color.copy(tint).multiplyScalar(1.6).lerp(new THREE.Color(1.6, 0.85, 0.45), 0.5); sg.inner.material.color.copy(sg.outer.material.color);
+  }
+  { /* the finale's ring holds a large rune circle */
+    const sg = sigils.F, r = 0.62 * Math.max(0.5, L.st.s);
+    sg.grp.position.copy(mid); sg.grp.quaternion.copy(camera.quaternion);
+    sg.outer.rotation.z = t * 0.25; sg.inner.rotation.z = -t * 0.6;
+    sg.grp.scale.setScalar(r * 2.3); sg.outer.material.opacity = G.ring * 0.75; sg.inner.material.opacity = G.ring * 0.85;
+  }
+  /* sparks */
+  for (let i = 0; i < SPK; i++) {
+    if (spLife[i] <= 0) continue;
+    spVel[i * 3] *= 0.965; spVel[i * 3 + 1] = spVel[i * 3 + 1] * 0.965 - 1.6 * dt; spVel[i * 3 + 2] *= 0.965;
+    spPos[i * 3] += spVel[i * 3] * dt; spPos[i * 3 + 1] += spVel[i * 3 + 1] * dt; spPos[i * 3 + 2] += spVel[i * 3 + 2] * dt;
+    spLife[i] = Math.max(0, spLife[i] - dt / spMax[i]);
+  }
+  spGeo.attributes.position.needsUpdate = true; spGeo.attributes.aLife.needsUpdate = true;
+  /* arcs crackle while the hand performs, flaring on each cast */
+  const arcAmt = clamp01(G.act * 0.45 + castEnv('L') * 1.2) * G.pres * (SB.reduce ? 0 : 1);
+  arcMat.opacity = arcAmt * (0.55 + Math.random() * 0.45);
+  if (arcAmt > 0.01) arcs.forEach((ln, ai) => {
+    const [a, b] = ARC_PAIRS[ai], pa = L.pts[a], pb = L.pts[b], arr = ln.geometry.attributes.position.array, jit = 0.035 * L.st.s;
+    for (let i = 0; i < ARC_N; i++) {
+      const f = i / (ARC_N - 1), j = i === 0 || i === ARC_N - 1 ? 0 : jit;
+      arr[i * 3] = pa.x + (pb.x - pa.x) * f + (Math.random() - 0.5) * j; arr[i * 3 + 1] = pa.y + (pb.y - pa.y) * f + (Math.random() - 0.5) * j + Math.sin(f * Math.PI) * jit * 0.8; arr[i * 3 + 2] = pa.z + (pb.z - pa.z) * f + (Math.random() - 0.5) * j;
+    }
+    ln.geometry.attributes.position.needsUpdate = true; ln.visible = Math.random() > 0.15;
   });
 
   /* dust */

@@ -23,7 +23,7 @@
   const BASE = {
     L: { x: 0, y: 0, s: 1, rx: 0, ry: 0, rz: 0, pose: 'S', vis: 1 },
     R: { x: 1.5, y: -1.3, s: 1, rx: 0, ry: 0, rz: 0, pose: 'OPEN', vis: 0 },
-    bridge: 0, brk: 0, ov: 0, glow: 0.2, rays: 0.3, tint: '#FF8A3D', ring: 0, dim: 0,
+    bridge: 0, brk: 0, ov: 0, glow: 0.2, rays: 0.3, tint: '#FF8A3D', ring: 0, dim: 0, act: 0,
   };
   const FILM = {
     story: [
@@ -31,15 +31,16 @@
       [0.08, {}],
       [0.34, { L: { x: 0, y: 0.02, s: 2.5, ry: 0, rz: 0, pose: 'OPEN' }, glow: 1, rays: 0.62 }],
       [0.56, { L: { x: -0.4, y: 0.3, s: 1.15, ry: -0.35, pose: 'HELLO' }, R: { x: 0.46, y: 0.28, s: 1.05, ry: -0.35, vis: 1, pose: 'HELLO' }, bridge: 1, glow: 0.55, rays: 0.32, ov: 0.3 }],
+      [0.7, { act: 1 }],
       [1, { L: { x: -0.44 }, R: { x: 0.47 } }],
     ],
     silence: [
       [0, {}],
-      [0.4, { brk: 1, bridge: 1, L: { x: 0.02, y: 0.22, ry: -0.2, pose: 'B' }, R: { x: 0.62, y: 0.12, ry: 1.4, vis: 0.35, pose: 'OPEN' }, tint: '#7A86FF', rays: 0.1, glow: 0.16, ov: 0 }],
+      [0.4, { brk: 1, bridge: 1, L: { x: 0.02, y: 0.22, ry: -0.2, pose: 'B' }, R: { x: 0.62, y: 0.12, ry: 1.4, vis: 0.35, pose: 'OPEN' }, tint: '#7A86FF', rays: 0.1, glow: 0.16, ov: 0, act: 1 }],
       [1, {}],
     ],
     how: [
-      [0, { brk: 0, bridge: 0.9, L: { x: -0.22, y: 0.2, s: 1.4, ry: -0.3, pose: 'HELLO' }, R: { x: 0.66, y: -0.18, s: 0.85, ry: -0.35, vis: 1, pose: 'HELLO' }, ov: 1, tint: '#FF8A3D', glow: 0.4, rays: 0.22 }],
+      [0, { act: 0, brk: 0, bridge: 0.9, L: { x: -0.22, y: 0.2, s: 1.4, ry: -0.3, pose: 'HELLO' }, R: { x: 0.66, y: -0.18, s: 0.85, ry: -0.35, vis: 1, pose: 'HELLO' }, ov: 1, tint: '#FF8A3D', glow: 0.4, rays: 0.22 }],
       [0.3, {}], [0.37, { L: { pose: 'LOVE' }, R: { pose: 'LOVE' } }], [0.63, {}], [0.7, { L: { pose: 'B' }, R: { pose: 'OPEN' } }], [1, {}],
     ],
     moments: [
@@ -108,7 +109,7 @@
     const A = TL[i].state, B = last ? A : TL[i + 1].state;
     const t = last ? 0 : smooth((y - TL[i].y) / Math.max(1, TL[i + 1].y - TL[i].y));
     const out = { L: hand(A.L, B.L, t), R: hand(A.R, B.R, t) };
-    for (const k of ['bridge', 'brk', 'ov', 'glow', 'rays', 'ring', 'dim']) out[k] = lerp(A[k], B[k], t);
+    for (const k of ['bridge', 'brk', 'ov', 'glow', 'rays', 'ring', 'dim', 'act']) out[k] = lerp(A[k], B[k], t);
     const ca = hex(A.tint), cb = hex(B.tint); out.tint = ca.map((v, j) => lerp(v, cb[j], t));
     return out;
   }

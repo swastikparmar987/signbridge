@@ -192,6 +192,11 @@
       [0, 2, 4, 5, 7, 9].forEach((n, k) => voice(SCALE[n] * (k > 2 ? 2 : 1), { type: k % 2 ? 'sine' : 'triangle', dur: 5, gain: 0.045, attack: 0.05 + k * 0.03, rev: 0.9, when: k * 0.06 }));
       vibrate([40, 60, 90]);
     },
+    cast() {
+      noiseHit({ from: 5000, to: 9000, q: 5, dur: 0.5, gain: 0.018, attack: 0.02, rev: 0.7 });
+      voice(SCALE[(Math.random() * 5 | 0) + 5] * 2, { dur: 0.9, gain: 0.02, attack: 0.01, rev: 0.8 });
+      vibrate(8);
+    },
     hover(i = 0) { voice(SCALE[(i % 5) + 5] * 2, { dur: 0.16, gain: 0.02, rev: 0.25 }) },
     click() { voice(SCALE[5], { type: 'triangle', dur: 0.5, gain: 0.06 }); voice(SCALE[8], { dur: 0.7, gain: 0.04, when: 0.07 }) },
     chime(i = 0) { const f = SCALE[i % SCALE.length]; voice(f * 2, { type: 'triangle', dur: 1.4, gain: 0.055, rev: 0.7 }); voice(f * 3, { dur: 0.9, gain: 0.02, rev: 0.7, when: 0.04 }); vibrate(10) },
